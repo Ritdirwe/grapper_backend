@@ -17,7 +17,12 @@
     "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
     "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts"
   },
-  "keywords": ["nestjs", "ddd", "marketplace", "typescript"],
+  "keywords": [
+    "nestjs",
+    "ddd",
+    "marketplace",
+    "typescript"
+  ],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.22.0",
@@ -38,6 +43,7 @@
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "reflect-metadata": "~0.2.2",
+    "rxjs": "^7.8.2",
     "stripe": "^20.1.2",
     "typeorm": "^0.3.28"
   },

@@ -29,7 +29,7 @@ import { AuthController } from './presentation/auth.controller';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.expiresIn'),
+          expiresIn: (configService.get<string>('jwt.expiresIn') || '7d') as any,
         },
       }),
     }),
