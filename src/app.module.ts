@@ -3,17 +3,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './health/health.controller';
 import { IdentityModule } from './modules/identity/identity.module';
+import { UserManagementModule } from './modules/user-management/user-management.module';
+import { EmailModule } from './infrastructure/email/email.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import paymentConfig from './config/payment.config';
+import mailConfig from './config/mail.config';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, paymentConfig],
+      load: [appConfig, databaseConfig, jwtConfig, paymentConfig, mailConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
@@ -34,8 +37,12 @@ import paymentConfig from './config/payment.config';
       }),
     }),
 
+    // Infrastructure
+    EmailModule,
+
     // Domain Modules
     IdentityModule,
+    UserManagementModule,
   ],
   controllers: [HealthController],
   providers: [],

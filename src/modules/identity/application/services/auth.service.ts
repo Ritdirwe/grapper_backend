@@ -13,6 +13,7 @@ import { User } from '../../domain/entities/user.entity';
 import { RefreshToken } from '../../domain/entities/refresh-token.entity';
 import { VerificationCode } from '../../domain/entities/verification-code.entity';
 import { PasswordHasherService } from '../../domain/services/password-hasher.service';
+import { EmailService } from '../../../../infrastructure/email/email.service';
 import {
   RegisterDto,
   LoginDto,
@@ -41,6 +42,7 @@ export class AuthService {
     private passwordHasher: PasswordHasherService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
@@ -281,8 +283,12 @@ export class AuthService {
 
     await this.verificationCodeRepository.save(verificationCode);
 
-    // TODO: Send email/SMS with code
-    console.log(`Verification code for ${emailOrPhone}: ${code}`);
+    // Send email based on type
+    if (type === VerificationType.EMAIL) {
+      await this.emailService.sendVerificationCode(emailOrPhone, code);
+    } else if (type === VerificationType.PASSWORD_RESET) {
+      await this.emailService.sendPasswordResetCode(emailOrPhone, code);
+    }
 
     return verificationCode;
   }
