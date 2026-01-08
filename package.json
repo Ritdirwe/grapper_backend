@@ -1,0 +1,53 @@
+{
+  "name": "gripper-backend",
+  "version": "1.0.0",
+  "description": "Gripper Marketplace Backend - NestJS with DDD Architecture",
+  "main": "dist/main",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "pnpm typeorm migration:generate -d src/infrastructure/database/data-source.ts",
+    "migration:create": "pnpm typeorm migration:create",
+    "migration:run": "pnpm typeorm migration:run -d src/infrastructure/database/data-source.ts",
+    "migration:revert": "pnpm typeorm migration:revert -d src/infrastructure/database/data-source.ts",
+    "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
+    "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts"
+  },
+  "keywords": ["nestjs", "ddd", "marketplace", "typescript"],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@fastify/static": "^9.0.0",
+    "@nestjs/common": "^11.1.11",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.11",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.1.11",
+    "@nestjs/platform-fastify": "^11.1.11",
+    "@nestjs/typeorm": "^11.0.0",
+    "argon2": "^0.44.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.16.3",
+    "reflect-metadata": "~0.2.2",
+    "stripe": "^20.1.2",
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.14",
+    "@nestjs/schematics": "^11.0.9",
+    "@types/node": "^25.0.3",
+    "@types/passport-jwt": "^4.0.1",
+    "dotenv": "^17.2.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
