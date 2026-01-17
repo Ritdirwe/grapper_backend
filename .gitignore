@@ -5,4 +5,8 @@ node_modules/
 [._]s[a-rt-v][a-z]
 [._]ss[a-gi-z]
 [._]sw[a-p]
-
+.env
+checkout-url.txt
+uploads/
+src/infrastructure/database/migrations/
+docs/

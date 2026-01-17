@@ -80,6 +80,15 @@ export class ProviderProfile extends BaseEntity {
   @Column({ name: 'last_active_at', nullable: true })
   lastActiveAt?: Date;
 
+  @Column({ name: 'stripe_account_id', nullable: true })
+  stripeAccountId?: string;
+
+  @Column({ name: 'stripe_onboarding_complete', default: false })
+  stripeOnboardingComplete: boolean;
+
+  @Column({ name: 'paystack_subaccount_code', nullable: true })
+  paystackSubaccountCode?: string;
+
   // Helper methods
   updateRating(newRating: number): void {
     const totalRating = this.averageRating * this.totalReviews + newRating;

@@ -56,4 +56,8 @@ export class PayoutMethod extends BaseEntity {
   verify(): void {
     this.isVerified = true;
   }
+
+  setPaystackRecipient(recipientCode: string): void {
+    this.paystackRecipientCode = recipientCode;
+  }
 }

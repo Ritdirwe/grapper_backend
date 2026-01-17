@@ -5,11 +5,14 @@ import {
   Matches,
   IsOptional,
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterDto {
+  @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
   email: string;
 
+  @ApiProperty({ example: 'Password123!', minLength: 8 })
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
@@ -18,6 +21,7 @@ export class RegisterDto {
   })
   password: string;
 
+  @ApiProperty({ example: '+1234567890', required: false })
   @IsString()
   @IsOptional()
   @Matches(/^\+?[1-9]\d{1,14}$/, {
@@ -25,50 +29,61 @@ export class RegisterDto {
   })
   phoneNumber?: string;
 
+  @ApiProperty({ example: 'John Doe', required: false })
   @IsString()
   @IsOptional()
   name?: string;
 }
 
 export class LoginDto {
+  @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
   email: string;
 
+  @ApiProperty({ example: 'Password123!' })
   @IsString()
   password: string;
 }
 
 export class VerifyEmailDto {
+  @ApiProperty()
   @IsString()
   userId: string;
 
+  @ApiProperty({ example: '123456' })
   @IsString()
   @MinLength(6)
   code: string;
 }
 
 export class VerifyPhoneDto {
+  @ApiProperty()
   @IsString()
   userId: string;
 
+  @ApiProperty({ example: '123456' })
   @IsString()
   @MinLength(6)
   code: string;
 }
 
 export class ResetPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
   email: string;
 }
 
 export class ConfirmResetPasswordDto {
+  @ApiProperty()
   @IsString()
   userId: string;
 
+  @ApiProperty({ example: '123456' })
   @IsString()
   @MinLength(6)
   code: string;
 
+  @ApiProperty({ example: 'NewPassword123!', minLength: 8 })
   @IsString()
   @MinLength(8)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
@@ -79,6 +94,7 @@ export class ConfirmResetPasswordDto {
 }
 
 export class RefreshTokenDto {
+  @ApiProperty()
   @IsString()
   refreshToken: string;
 }

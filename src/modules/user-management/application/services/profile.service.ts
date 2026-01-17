@@ -1,14 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Profile } from '../../domain/entities/profile.entity';
+import { ProviderProfile } from '../../domain/entities/provider-profile.entity';
 import { UpdateProfileDto, ProfileResponseDto } from '../dto/profile.dto';
+import { StripeService } from '../../../payment/infrastructure/gateways/stripe.service';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
+    @InjectRepository(ProviderProfile)
+    private providerRepository: Repository<ProviderProfile>,
+    @Inject(forwardRef(() => StripeService))
+    private stripeService: StripeService,
   ) {}
 
   async getOrCreateProfile(userId: string): Promise<Profile> {
@@ -51,6 +57,64 @@ export class ProfileService {
     }
 
     return this.mapToResponseDto(profile);
+  }
+
+  async setupStripeConnect(userId: string) {
+    let provider = await this.providerRepository.findOne({ where: { userId } });
+    if (!provider) {
+      throw new NotFoundException('Provider profile not found');
+    }
+
+    if (!provider.stripeAccountId) {
+      const email = await this.getUserEmail(userId);
+      const account = await this.stripeService.createConnectAccount(userId, email);
+      provider.stripeAccountId = account.id;
+      await this.providerRepository.save(provider);
+    }
+
+    return this.getStripeOnboardingLink(userId);
+  }
+
+  async getStripeOnboardingLink(userId: string) {
+    const provider = await this.providerRepository.findOne({ where: { userId } });
+    if (!provider || !provider.stripeAccountId) {
+      throw new BadRequestException('Stripe account not initialized');
+    }
+
+    const link = await this.stripeService.createAccountLink(
+      provider.stripeAccountId,
+      'http://localhost:3000/api/profiles/stripe-refresh', // TODO: use config
+      'http://localhost:3000/api/profiles/stripe-return',
+    );
+
+    return { url: link.url };
+  }
+
+  async getVerificationStatus(userId: string) {
+    const provider = await this.providerRepository.findOne({ where: { userId } });
+    if (!provider || !provider.stripeAccountId) {
+      return { status: 'none' };
+    }
+
+    const account = await this.stripeService.getAccount(provider.stripeAccountId);
+    if (account.details_submitted && !provider.stripeOnboardingComplete) {
+      provider.stripeOnboardingComplete = true;
+      await this.providerRepository.save(provider);
+    }
+
+    return {
+      onboardingComplete: provider.stripeOnboardingComplete,
+      detailsSubmitted: account.details_submitted,
+      payoutsEnabled: account.payouts_enabled,
+    };
+  }
+
+  private async getUserEmail(userId: string): Promise<string> {
+    const profile = await this.profileRepository.findOne({
+      where: { userId },
+      relations: ['user'],
+    });
+    return profile?.user?.email || '';
   }
 
   private mapToResponseDto(profile: Profile): ProfileResponseDto {
