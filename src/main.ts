@@ -35,15 +35,30 @@ async function bootstrap() {
 
   // Swagger Configuration
   const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
+  const { writeFileSync } = await import('fs');
+  const { join } = await import('path');
+  
   const config = new DocumentBuilder()
     .setTitle('Gripper API')
     .setDescription('The comprehensive API for the Gripper platform backend.')
     .setVersion('1.0')
     .addBearerAuth()
+    .addServer(`http://localhost:${process.env.PORT || 3000}`, 'Local Development')
+    .addServer(process.env.API_URL || 'https://api.gripper.com', 'Production')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  
+  // Write swagger.json file for Postman import
+  const outputPath = join(process.cwd(), 'swagger.json');
+  writeFileSync(outputPath, JSON.stringify(document, null, 2));
+  console.log(`📄 Swagger JSON written to: ${outputPath}`);
+  
+  // Setup Swagger UI with JSON endpoint
+  // This automatically creates /api/docs-json endpoint
+  SwaggerModule.setup('api/docs', app, document, {
+    jsonDocumentUrl: 'api/docs-json',
+  });
 
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');

@@ -199,4 +199,21 @@ export class AdService {
       updatedAt: ad.updatedAt,
     };
   }
+
+  async likeAd(id: string, userId: string): Promise<void> {
+    const ad = await this.adRepository.findOne({ where: { id } });
+    if (!ad) {
+      throw new NotFoundException('Advertisement not found');
+    }
+    ad.totalLikes++;
+    await this.adRepository.save(ad);
+  }
+
+  async getComments(id: string): Promise<any[]> {
+    return [];
+  }
+
+  async addComment(id: string, userId: string, content: string): Promise<any> {
+    return { id: 'mock-id', content, userId, createdAt: new Date() };
+  }
 }

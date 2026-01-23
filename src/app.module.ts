@@ -15,6 +15,9 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { ContractsModule } from './modules/contracts/contracts.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { GigsModule } from './modules/gigs/gigs.module';
 import { EmailModule } from './infrastructure/email/email.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
@@ -65,6 +68,9 @@ import mailConfig from './config/mail.config';
     ReportingModule,
     StorageModule,
     NotificationModule,
+    ContractsModule,
+    ReviewsModule,
+    GigsModule,
   ],
   controllers: [HealthController],
   providers: [],

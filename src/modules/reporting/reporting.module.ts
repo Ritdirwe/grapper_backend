@@ -13,6 +13,7 @@ import { ReportingService } from './application/services/reporting.service';
 
 // Controllers
 import { ReportingController } from './presentation/reporting.controller';
+import { AnalyticsController } from './presentation/analytics.controller';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { ReportingController } from './presentation/reporting.controller';
       Advertisement,
     ]),
   ],
-  controllers: [ReportingController],
+  controllers: [ReportingController, AnalyticsController],
   providers: [ReportingService],
   exports: [ReportingService],
 })

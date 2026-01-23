@@ -10,3 +10,4 @@ checkout-url.txt
 uploads/
 src/infrastructure/database/migrations/
 docs/
+swagger.json

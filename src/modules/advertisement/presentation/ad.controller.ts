@@ -64,4 +64,23 @@ export class AdController {
   ): Promise<void> {
     return this.adService.delete(id, user.id);
   }
+
+  // Social interactions matching mobile expectations
+  // Note: If mobile expects 'ads' prefix, we might need a separate controller or route alias.
+  // For now adding them here.
+  
+  @Post(':id/like')
+  async likeAd(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.adService.likeAd(id, user.id);
+  }
+
+  @Get(':id/comments')
+  async getComments(@Param('id') id: string) {
+    return this.adService.getComments(id);
+  }
+
+  @Post(':id/comments')
+  async addComment(@CurrentUser() user: User, @Param('id') id: string, @Body('content') content: string) {
+    return this.adService.addComment(id, user.id, content);
+  }
 }
