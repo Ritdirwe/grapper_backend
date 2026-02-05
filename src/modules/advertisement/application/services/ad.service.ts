@@ -113,14 +113,43 @@ export class AdService {
     await this.adRepository.remove(ad);
   }
 
+  async getFeed(page = 1, limit = 20): Promise<{ data: AdResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    const skip = (page - 1) * limit;
+    const now = new Date();
+
+    const [ads, total] = await this.adRepository
+      .createQueryBuilder('ad')
+      .where('ad.status = :status', { status: AdStatus.ACTIVE })
+      .andWhere('ad.remainingBudget > 0')
+      .andWhere('ad.startDate <= :now', { now })
+      .andWhere('(ad.endDate IS NULL OR ad.endDate >= :now)', { now })
+      .orderBy('ad.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const data = ads.map(ad => this.mapToResponseDto(ad));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
+  }
+
   async getRecommendedAds(userId: string, adType: AdType, limit = 5): Promise<AdResponseDto[]> {
     const now = new Date();
-    
+
     // Very simple targeting for now: get active ads that still have budget
     const ads = await this.adRepository
       .createQueryBuilder('ad')
       .where('ad.status = :status', { status: AdStatus.ACTIVE })
-      .andWhere('ad.remaining_budget > 0')
+      .andWhere('ad.remainingBudget > 0')
       .andWhere('ad.adType = :adType', { adType })
       .andWhere('ad.startDate <= :now', { now })
       .andWhere('(ad.endDate IS NULL OR ad.endDate >= :now)', { now })

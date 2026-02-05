@@ -8,6 +8,7 @@ import { ProviderProfile } from './domain/entities/provider-profile.entity';
 import { PayoutMethod } from './domain/entities/payout-method.entity';
 import { UserPreferences } from './domain/entities/user-preferences.entity';
 import { UserFollow } from './domain/entities/user-follow.entity';
+import { UserSearch } from './domain/entities/user-search.entity';
 import { User } from '../identity/domain/entities/user.entity';
 
 // Services
@@ -17,6 +18,7 @@ import { PayoutMethodService } from './application/services/payout-method.servic
 import { PreferencesService } from './application/services/preferences.service';
 import { FollowService } from './application/services/follow.service';
 import { AdminUserService } from './application/services/admin-user.service';
+import { UserSearchService } from './application/services/user-search.service';
 
 // Controllers
 import { ProfileController } from './presentation/profile.controller';
@@ -25,6 +27,7 @@ import { PayoutMethodController } from './presentation/payout-method.controller'
 import { PreferencesController } from './presentation/preferences.controller';
 import { FollowController } from './presentation/follow.controller';
 import { AdminUserController } from './presentation/admin-user.controller';
+import { UserSearchController } from './presentation/user-search.controller';
 
 @Module({
   imports: [
@@ -34,6 +37,7 @@ import { AdminUserController } from './presentation/admin-user.controller';
       PayoutMethod,
       UserPreferences,
       UserFollow,
+      UserSearch,
       User,
     ]),
     forwardRef(() => PaymentModule),
@@ -45,6 +49,7 @@ import { AdminUserController } from './presentation/admin-user.controller';
     PreferencesController,
     FollowController,
     AdminUserController,
+    UserSearchController,
   ],
   providers: [
     ProfileService,
@@ -53,6 +58,7 @@ import { AdminUserController } from './presentation/admin-user.controller';
     PreferencesService,
     FollowService,
     AdminUserService,
+    UserSearchService,
   ],
   exports: [
     ProfileService,
@@ -61,6 +67,7 @@ import { AdminUserController } from './presentation/admin-user.controller';
     PreferencesService,
     FollowService,
     AdminUserService,
+    UserSearchService,
   ],
 })
 export class UserManagementModule {}

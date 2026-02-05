@@ -146,6 +146,7 @@ export class ServiceService {
     const {
       search,
       categoryId,
+      category,
       providerId,
       status,
       minPrice,
@@ -160,7 +161,8 @@ export class ServiceService {
     } = query;
 
     const skip = (page - 1) * limit;
-    const qb = this.serviceRepository.createQueryBuilder('service');
+    const qb = this.serviceRepository.createQueryBuilder('service')
+      .leftJoinAndSelect('service.category', 'category');
 
     // Only active services for public search
     if (!providerId) {
@@ -171,17 +173,21 @@ export class ServiceService {
 
     if (search) {
       qb.andWhere(
-        '(service.title ILIKE :search OR service.description ILIKE :search OR service.tags::text ILIKE :search)',
+        '(service.title ILIKE :search OR service.description ILIKE :search)',
         { search: `%${search}%` },
       );
     }
 
     if (categoryId) {
-      qb.andWhere('service.category_id = :categoryId', { categoryId });
+      qb.andWhere('service.categoryId = :categoryId', { categoryId });
+    }
+
+    if (category) {
+      qb.andWhere('category.name = :categoryName', { categoryName: category });
     }
 
     if (providerId) {
-      qb.andWhere('service.provider_id = :providerId', { providerId });
+      qb.andWhere('service.providerId = :providerId', { providerId });
     }
 
     if (minPrice !== undefined) {
@@ -193,7 +199,7 @@ export class ServiceService {
     }
 
     if (minRating !== undefined) {
-      qb.andWhere('service.average_rating >= :minRating', { minRating });
+      qb.andWhere('service.averageRating >= :minRating', { minRating });
     }
 
     if (location) {
@@ -201,17 +207,18 @@ export class ServiceService {
     }
 
     if (isFeatured !== undefined) {
-      qb.andWhere('service.is_featured = :isFeatured', { isFeatured });
+      qb.andWhere('service.isFeatured = :isFeatured', { isFeatured });
     }
 
     // Sorting
-    const sortColumn = {
+    const sortMapping: Record<string, string> = {
       price: 'service.price',
-      rating: 'service.average_rating',
-      orders: 'service.total_orders',
-      newest: 'service.created_at',
-    }[sortBy];
+      rating: 'service.averageRating',
+      orders: 'service.totalOrders',
+      newest: 'service.createdAt',
+    };
 
+    const sortColumn = sortMapping[sortBy] || 'service.createdAt';
     qb.orderBy(sortColumn, sortOrder.toUpperCase() as 'ASC' | 'DESC');
 
     const total = await qb.getCount();

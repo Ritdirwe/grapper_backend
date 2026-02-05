@@ -4,12 +4,16 @@ import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '../../identity/domain/entities/user.entity';
 import { ServiceService } from '../application/services/service.service';
+import { ProviderProfileService } from '../../user-management/application/services/provider-profile.service';
 import { Public } from '@common/decorators/public.decorator';
 
 @ApiTags('Discovery')
 @Controller()
 export class DiscoveryController {
-  constructor(private readonly serviceService: ServiceService) {}
+  constructor(
+    private readonly serviceService: ServiceService,
+    private readonly providerProfileService: ProviderProfileService,
+  ) {}
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -22,6 +26,30 @@ export class DiscoveryController {
       sortBy: 'orders' as any,
       sortOrder: 'desc',
     });
+  }
+
+  @Public()
+  @Get('recommendations/providers')
+  @ApiOperation({ summary: 'Get recommended providers based on rating and availability' })
+  async getProviderRecommendations() {
+    const result = await this.providerProfileService.searchProvidersWithUser({
+      isAvailable: true,
+      page: 1,
+      limit: 10,
+    });
+
+    // Transform to match frontend expected format with user profile data
+    const providers = result.data.map(provider => ({
+      id: provider.userId,
+      full_name: provider.businessName || provider.user?.profile?.fullName || 'Provider',
+      avatar_url: provider.user?.profile?.avatarUrl || null,
+      isVerified: provider.user?.profile?.verificationStatus === 'verified',
+      rating: provider.averageRating,
+      reviews_count: provider.totalReviews,
+      topService: null, // Could be enhanced to include top service
+    }));
+
+    return { providers };
   }
 
   @Public()

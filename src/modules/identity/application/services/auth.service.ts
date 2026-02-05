@@ -12,12 +12,14 @@ import { Repository } from 'typeorm';
 import { User } from '../../domain/entities/user.entity';
 import { RefreshToken } from '../../domain/entities/refresh-token.entity';
 import { VerificationCode } from '../../domain/entities/verification-code.entity';
+import { Profile } from '../../../user-management/domain/entities/profile.entity';
 import { PasswordHasherService } from '../../domain/services/password-hasher.service';
 import { EmailService } from '../../../../infrastructure/email/email.service';
 import {
   RegisterDto,
   LoginDto,
   VerifyEmailDto,
+  ResendVerificationEmailDto,
   RefreshTokenDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
@@ -39,6 +41,8 @@ export class AuthService {
     private refreshTokenRepository: Repository<RefreshToken>,
     @InjectRepository(VerificationCode)
     private verificationCodeRepository: Repository<VerificationCode>,
+    @InjectRepository(Profile)
+    private profileRepository: Repository<Profile>,
     private passwordHasher: PasswordHasherService,
     private jwtService: JwtService,
     private configService: ConfigService,
@@ -55,6 +59,16 @@ export class AuthService {
       throw new ConflictException('User with this email already exists');
     }
 
+    if (dto.phoneNumber) {
+      const existingByPhone = await this.userRepository.findOne({
+        where: { phoneNumber: dto.phoneNumber },
+      });
+
+      if (existingByPhone) {
+        throw new ConflictException('User with this phone number already exists');
+      }
+    }
+
     // Hash password
     const passwordHash = await this.passwordHasher.hash(dto.password);
 
@@ -65,7 +79,24 @@ export class AuthService {
       phoneNumber: dto.phoneNumber,
     });
 
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (error: any) {
+      // Postgres unique violation
+      if (error?.code === '23505') {
+        const detail: string | undefined = error?.detail;
+        if (typeof detail === 'string') {
+          if (detail.includes('(email)=(')) {
+            throw new ConflictException('User with this email already exists');
+          }
+          if (detail.includes('(phone_number)=(')) {
+            throw new ConflictException('User with this phone number already exists');
+          }
+        }
+        throw new ConflictException('User already exists');
+      }
+      throw error;
+    }
 
     // Generate email verification code
     await this.generateVerificationCode(
@@ -139,6 +170,41 @@ export class AuthService {
     await this.userRepository.update(dto.userId, { emailVerified: true });
 
     return { message: 'Email verified successfully' };
+  }
+
+  async resendVerificationEmail(
+    dto: ResendVerificationEmailDto,
+  ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.emailVerified) {
+      return { message: 'Email is already verified' };
+    }
+
+    const existingCodes = await this.verificationCodeRepository.find({
+      where: {
+        userId: user.id,
+        type: VerificationType.EMAIL,
+        isUsed: false,
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (existingCodes.length > 0) {
+      for (const c of existingCodes) {
+        c.markAsUsed();
+      }
+      await this.verificationCodeRepository.save(existingCodes);
+    }
+
+    await this.generateVerificationCode(user.id, VerificationType.EMAIL, user.email);
+    return { message: 'Verification code resent' };
   }
 
   async refreshTokens(dto: RefreshTokenDto): Promise<AuthResponseDto> {

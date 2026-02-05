@@ -10,6 +10,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PostService } from '../application/services/post.service';
 import { CommentService } from '../application/services/comment.service';
@@ -30,7 +32,9 @@ import {
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '../../identity/domain/entities/user.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { StorageService } from '../../storage/application/services/storage.service';
+import { PostVisibility } from '../domain/value-objects/social-enums.vo';
 
 @ApiTags('Social Posts')
 @ApiBearerAuth()
@@ -42,6 +46,7 @@ export class PostController {
     private readonly commentService: CommentService,
     private readonly likeService: LikeService,
     private readonly shareService: ShareService,
+    private readonly storageService: StorageService,
   ) {}
 
   @Get('feed')
@@ -53,7 +58,7 @@ export class PostController {
     @CurrentUser() user: User,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-  ): Promise<PostResponseDto[]> {
+  ): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
     return this.postService.getFeed(user.id, page, limit);
   }
 
@@ -66,7 +71,7 @@ export class PostController {
     @CurrentUser() user: User,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-  ): Promise<PostResponseDto[]> {
+  ): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
     return this.postService.getDiscover(user.id, page, limit);
   }
 
@@ -94,14 +99,56 @@ export class PostController {
     return this.postService.findById(id, user.id);
   }
 
-  @Post()
+  @Post('')
   @ApiOperation({ summary: 'Create a new post' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string' },
+        visibility: { type: 'string', enum: ['public', 'followers', 'private'] },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, type: PostResponseDto })
   async createPost(
-    @CurrentUser() user: User,
-    @Body() dto: CreatePostDto,
+    @Req() req: any,
   ): Promise<PostResponseDto> {
-    return this.postService.create(user.id, dto);
+    // Get user from request (set by JWT guard)
+    const user = req.user;
+    if (!user || !user.id) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    // Handle multipart form data
+    const parts = req.parts ? await req.parts() : [];
+    let content = '';
+    let visibility = 'public';
+    const mediaUrls: string[] = [];
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        const buffer = await part.toBuffer();
+        const path = `posts/${Date.now()}-${part.filename}`;
+        const url = await this.storageService.uploadFile(buffer, path, part.mimetype);
+        mediaUrls.push(url);
+      } else {
+        const value = await part.value;
+        if (part.fieldname === 'content') content = value;
+        if (part.fieldname === 'visibility') visibility = value;
+      }
+    }
+
+    return this.postService.create(user.id, { 
+      content, 
+      visibility: visibility as PostVisibility, 
+      mediaUrls 
+    });
   }
 
   @Put(':id')

@@ -31,13 +31,14 @@ export class StorageController {
     },
   })
   async uploadFile(@Req() req: any) {
-    const file = req.file; // Populated by @fastify/multipart
-    if (!file) {
+    const data = await req.file();
+    if (!data) {
       throw new BadRequestException('No file uploaded');
     }
 
-    const path = `uploads/${Date.now()}-${file.filename}`;
-    const url = await this.storageService.uploadFile(file.buffer, path, file.mimetype);
+    const buffer = await data.toBuffer();
+    const path = `uploads/${Date.now()}-${data.filename}`;
+    const url = await this.storageService.uploadFile(buffer, path, data.mimetype);
 
     return { url, path };
   }

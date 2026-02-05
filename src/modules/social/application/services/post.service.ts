@@ -34,7 +34,7 @@ export class PostService {
     const post = this.postRepository.create({
       userId,
       content: dto.content,
-      mediaUrls: dto.mediaUrls,
+      mediaUrls: dto.mediaUrls || dto.images,
       visibility: dto.visibility || PostVisibility.PUBLIC,
     });
 
@@ -113,7 +113,7 @@ export class PostService {
     await this.postRepository.remove(post);
   }
 
-  async getFeed(userId: string, page = 1, limit = 20): Promise<PostResponseDto[]> {
+  async getFeed(userId: string, page = 1, limit = 20): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
     // Get user's following list
     const following = await this.followRepository.find({
       where: { followerId: userId },
@@ -123,7 +123,7 @@ export class PostService {
     const followingIds = following.map(f => f.followingId);
     followingIds.push(userId); // Include own posts
 
-    const posts = await this.postRepository
+    const [posts, total] = await this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
       .leftJoinAndSelect('user.profile', 'profile')
@@ -133,27 +133,49 @@ export class PostService {
         followers: PostVisibility.FOLLOWERS,
         userId,
       })
-      .orderBy('post.created_at', 'DESC')
+      .orderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
-      .getMany();
+      .getManyAndCount();
 
-    return Promise.all(posts.map(post => this.mapToResponseDto(post, userId)));
+    const data = await Promise.all(posts.map(post => this.mapToResponseDto(post, userId)));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   }
 
-  async getDiscover(userId: string, page = 1, limit = 20): Promise<PostResponseDto[]> {
-    const posts = await this.postRepository
+  async getDiscover(userId: string, page = 1, limit = 20): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    const [posts, total] = await this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
       .leftJoinAndSelect('user.profile', 'profile')
       .where('post.visibility = :public', { public: PostVisibility.PUBLIC })
-      .orderBy('post.likes_count + post.comments_count + post.shares_count', 'DESC')
-      .addOrderBy('post.created_at', 'DESC')
+      .orderBy('post.likesCount + post.commentsCount + post.sharesCount', 'DESC')
+      .addOrderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
-      .getMany();
+      .getManyAndCount();
 
-    return Promise.all(posts.map(post => this.mapToResponseDto(post, userId)));
+    const data = await Promise.all(posts.map(post => this.mapToResponseDto(post, userId)));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    };
   }
 
   async getUserPosts(targetUserId: string, currentUserId: string, page = 1, limit = 20): Promise<PostResponseDto[]> {
@@ -182,7 +204,7 @@ export class PostService {
     }
 
     const posts = await query
-      .orderBy('post.created_at', 'DESC')
+      .orderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();
@@ -222,7 +244,7 @@ export class PostService {
         public: PostVisibility.PUBLIC,
         userId,
       })
-      .orderBy('post.created_at', 'DESC')
+      .orderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();

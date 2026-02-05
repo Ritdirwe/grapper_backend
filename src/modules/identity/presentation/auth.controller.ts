@@ -5,6 +5,7 @@ import {
   RegisterDto,
   LoginDto,
   VerifyEmailDto,
+  ResendVerificationEmailDto,
   RefreshTokenDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
@@ -44,6 +45,17 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Email verified successfully' })
   async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ message: string }> {
     return this.authService.verifyEmail(dto);
+  }
+
+  @Public()
+  @Post('resend-verification-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend email verification OTP code' })
+  @ApiResponse({ status: 200, description: 'Verification code resent' })
+  async resendVerificationEmail(
+    @Body() dto: ResendVerificationEmailDto,
+  ): Promise<{ message: string }> {
+    return this.authService.resendVerificationEmail(dto);
   }
 
   @Public()

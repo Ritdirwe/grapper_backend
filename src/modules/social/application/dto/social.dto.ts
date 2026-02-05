@@ -25,6 +25,12 @@ export class CreatePostDto {
   @IsOptional()
   mediaUrls?: string[];
 
+  @ApiProperty({ example: ['https://example.com/image.jpg'], isArray: true, required: false })
+  @IsArray()
+  @IsUrl({}, { each: true })
+  @IsOptional()
+  images?: string[];
+
   @ApiProperty({ enum: PostVisibility, required: false })
   @IsEnum(PostVisibility)
   @IsOptional()

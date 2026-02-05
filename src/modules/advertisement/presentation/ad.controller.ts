@@ -10,6 +10,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AdService } from '../application/services/ad.service';
 import {
@@ -18,13 +20,23 @@ import {
   AdResponseDto,
 } from '../application/dto/ad.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '../../identity/domain/entities/user.entity';
 
-@Controller('advertisements')
+@Controller('ads')
 @UseGuards(JwtAuthGuard)
 export class AdController {
   constructor(private readonly adService: AdService) {}
+
+  @Get('feed')
+  @Public()
+  async getFeed(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ): Promise<{ data: AdResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    return this.adService.getFeed(page, limit);
+  }
 
   @Post()
   async createAd(

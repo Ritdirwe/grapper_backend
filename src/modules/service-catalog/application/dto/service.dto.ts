@@ -227,10 +227,15 @@ export class ServiceQueryDto {
   @IsOptional()
   search?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, description: 'Category ID (UUID)' })
   @IsString()
   @IsOptional()
   categoryId?: string;
+
+  @ApiProperty({ required: false, description: 'Category name (e.g., Research Tools)' })
+  @IsString()
+  @IsOptional()
+  category?: string;
 
   @ApiProperty({ required: false })
   @IsString()

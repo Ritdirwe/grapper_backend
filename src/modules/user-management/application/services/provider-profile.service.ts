@@ -139,32 +139,83 @@ export class ProviderProfileService {
     const { skills, minRating, maxHourlyRate, isAvailable, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.providerProfileRepository
-      .createQueryBuilder('provider')
-      .leftJoin('profiles', 'profile', 'profile.user_id = provider.user_id')
-      .where('profile.verification_status = :status', { status: VerificationStatus.VERIFIED });
+    // Use simple find options instead of query builder to avoid TypeORM issues
+    const where: any = {};
 
     if (isAvailable !== undefined) {
-      queryBuilder.andWhere('provider.is_available = :isAvailable', { isAvailable });
+      where.isAvailable = isAvailable;
     }
 
     if (minRating) {
-      queryBuilder.andWhere('provider.average_rating >= :minRating', { minRating });
+      where.averageRating = { $gte: minRating };
     }
 
     if (maxHourlyRate) {
-      queryBuilder.andWhere('provider.hourly_rate <= :maxHourlyRate', { maxHourlyRate });
+      where.hourlyRate = { $lte: maxHourlyRate };
     }
 
-    const total = await queryBuilder.getCount();
-    const providers = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .orderBy('provider.average_rating', 'DESC')
-      .getMany();
+    if (skills && skills.length > 0) {
+      where.skills = { $overlap: skills };
+    }
+
+    const [providers, total] = await this.providerProfileRepository.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: {
+        averageRating: 'DESC',
+        totalReviews: 'DESC',
+      },
+    });
 
     return {
       data: providers.map(p => this.mapToResponseDto(p)),
+      total,
+    };
+  }
+
+  async searchProvidersWithUser(query: {
+    skills?: string[];
+    minRating?: number;
+    maxHourlyRate?: number;
+    isAvailable?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: (ProviderProfile & { user?: User })[]; total: number }> {
+    const { skills, minRating, maxHourlyRate, isAvailable, page = 1, limit = 20 } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (isAvailable !== undefined) {
+      where.isAvailable = isAvailable;
+    }
+
+    if (minRating) {
+      where.averageRating = { $gte: minRating };
+    }
+
+    if (maxHourlyRate) {
+      where.hourlyRate = { $lte: maxHourlyRate };
+    }
+
+    if (skills && skills.length > 0) {
+      where.skills = { $overlap: skills };
+    }
+
+    const [providers, total] = await this.providerProfileRepository.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: {
+        averageRating: 'DESC',
+        totalReviews: 'DESC',
+      },
+      relations: ['user', 'user.profile'],
+    });
+
+    return {
+      data: providers,
       total,
     };
   }

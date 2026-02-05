@@ -33,6 +33,11 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   name?: string;
+
+  @ApiProperty({ example: 'Nigeria', required: false })
+  @IsString()
+  @IsOptional()
+  country?: string;
 }
 
 export class LoginDto {
@@ -54,6 +59,12 @@ export class VerifyEmailDto {
   @IsString()
   @MinLength(6)
   code: string;
+}
+
+export class ResendVerificationEmailDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
 }
 
 export class VerifyPhoneDto {

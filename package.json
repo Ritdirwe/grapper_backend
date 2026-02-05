@@ -15,7 +15,8 @@
     "migration:run": "pnpm typeorm migration:run -d src/infrastructure/database/data-source.ts",
     "migration:revert": "pnpm typeorm migration:revert -d src/infrastructure/database/data-source.ts",
     "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
-    "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts"
+    "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeder.ts"
   },
   "keywords": [
     "nestjs",
@@ -29,6 +30,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.968.0",
     "@aws-sdk/s3-request-presigner": "^3.968.0",
+    "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^9.3.0",
     "@fastify/static": "^9.0.0",
     "@nestjs-modules/mailer": "^2.0.2",

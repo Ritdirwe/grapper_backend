@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './domain/entities/user.entity';
 import { RefreshToken } from './domain/entities/refresh-token.entity';
 import { VerificationCode } from './domain/entities/verification-code.entity';
+import { Profile } from '../user-management/domain/entities/profile.entity';
 
 // Services
 import { AuthService } from './application/services/auth.service';
@@ -21,7 +22,7 @@ import { AuthController } from './presentation/auth.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken, VerificationCode]),
+    TypeOrmModule.forFeature([User, RefreshToken, VerificationCode, Profile]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
