@@ -2,35 +2,26 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './health/health.controller';
-import { IdentityModule } from './modules/identity/identity.module';
-import { UserManagementModule } from './modules/user-management/user-management.module';
-import { ServiceCatalogModule } from './modules/service-catalog/service-catalog.module';
-import { BookingModule } from './modules/booking/booking.module';
-import { PaymentModule } from './modules/payment/payment.module';
-import { SocialModule } from './modules/social/social.module';
-import { MessagingModule } from './modules/messaging/messaging.module';
-import { SubscriptionModule } from './modules/subscription/subscription.module';
-import { AdvertisementModule } from './modules/advertisement/advertisement.module';
-import { AdminModule } from './modules/admin/admin.module';
-import { ReportingModule } from './modules/reporting/reporting.module';
+import { OpsModule } from './contexts/ops/ops.module';
+import { IdentityContextModule } from './contexts/identity/identity-context.module';
+import { MarketplaceModule } from './contexts/marketplace/marketplace.module';
+import { BillingModule } from './contexts/billing/billing.module';
+import { CommunityModule } from './contexts/community/community.module';
 import { StorageModule } from './modules/storage/storage.module';
-import { NotificationModule } from './modules/notification/notification.module';
-import { ContractsModule } from './modules/contracts/contracts.module';
-import { ReviewsModule } from './modules/reviews/reviews.module';
-import { GigsModule } from './modules/gigs/gigs.module';
 import { EmailModule } from './infrastructure/email/email.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import paymentConfig from './config/payment.config';
 import mailConfig from './config/mail.config';
+import storageConfig from './config/storage.config';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, paymentConfig, mailConfig],
+      load: [appConfig, databaseConfig, jwtConfig, paymentConfig, mailConfig, storageConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
@@ -55,22 +46,12 @@ import mailConfig from './config/mail.config';
     EmailModule,
 
     // Domain Modules
-    IdentityModule,
-    UserManagementModule,
-    ServiceCatalogModule,
-    BookingModule,
-    PaymentModule,
-    SocialModule,
-    MessagingModule,
-    SubscriptionModule,
-    AdvertisementModule,
-    AdminModule,
-    ReportingModule,
+    IdentityContextModule,
+    MarketplaceModule,
+    BillingModule,
+    CommunityModule,
+    OpsModule,
     StorageModule,
-    NotificationModule,
-    ContractsModule,
-    ReviewsModule,
-    GigsModule,
   ],
   controllers: [HealthController],
   providers: [],

@@ -7,6 +7,8 @@ tsConfigPaths.register({
   paths: {
     "@common/*": ["src/common/*"],
     "@modules/*": ["src/modules/*"],
+    "@shared/*": ["src/shared/*"],
+    "@contexts/*": ["src/contexts/*"],
     "@config/*": ["src/config/*"],
     "@infrastructure/*": ["src/infrastructure/*"],
   },

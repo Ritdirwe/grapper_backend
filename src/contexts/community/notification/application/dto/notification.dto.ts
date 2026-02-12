@@ -1,0 +1,32 @@
+import { IsString, IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class RegisterTokenDto {
+  @ApiProperty({ example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]' })
+  @IsString()
+  token: string;
+
+  @ApiProperty({ example: 'expo', enum: ['expo', 'fcm', 'apns'], default: 'expo' })
+  @IsEnum(['expo', 'fcm', 'apns'])
+  @IsOptional()
+  platform?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  deviceId?: string;
+}
+
+export class BroadcastDto {
+  @ApiProperty({ example: 'System Update' })
+  @IsString()
+  title: string;
+
+  @ApiProperty({ example: 'We have updated our terms of service.' })
+  @IsString()
+  message: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  data?: Record<string, any>;
+}

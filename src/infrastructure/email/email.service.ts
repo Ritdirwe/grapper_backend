@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { Transporter } from 'nodemailer';
 
 export interface EmailOptions {
@@ -10,16 +12,56 @@ export interface EmailOptions {
   text?: string;
 }
 
+type MailProvider = 'smtp' | 'resend' | 'mailtrap';
+
 @Injectable()
 export class EmailService {
   private transporter: Transporter;
+  private resendClient: Resend;
+  private readonly provider: MailProvider;
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private configService: ConfigService) {
-    this.createTransporter();
+    this.provider = this.configService.get<MailProvider>('mail.provider') || 'smtp';
+    this.initializeProvider();
   }
 
-  private createTransporter() {
+  private initializeProvider() {
+    if (this.provider === 'resend') {
+      this.initializeResendClient();
+      return;
+    }
+
+    if (this.provider === 'mailtrap') {
+      this.initializeMailtrapProvider();
+      return;
+    }
+
+    this.createSmtpTransporter();
+  }
+
+  private initializeResendClient() {
+    const resendApiKey = this.configService.get<string>('mail.resend.apiKey');
+    if (!resendApiKey) {
+      this.logger.warn(
+        'MAIL_PROVIDER is set to resend but RESEND_API_KEY is missing. Emails will be logged to console.',
+      );
+      return;
+    }
+
+    this.resendClient = new Resend(resendApiKey);
+  }
+
+  private initializeMailtrapProvider() {
+    const token = this.configService.get<string>('mail.mailtrap.token');
+    if (!token) {
+      this.logger.warn(
+        'MAIL_PROVIDER is set to mailtrap but MAILTRAP_API_TOKEN is missing. Emails will be logged to console.',
+      );
+    }
+  }
+
+  private createSmtpTransporter() {
     const mailConfig = {
       host: this.configService.get<string>('mail.host'),
       port: this.configService.get<number>('mail.port'),
@@ -42,41 +84,121 @@ export class EmailService {
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    try {
-      const from = {
-        name: this.configService.get<string>('mail.from.name'),
-        address: this.configService.get<string>('mail.from.address'),
-      };
+    if (!options.html && !options.text) {
+      this.logger.error('Email content is missing. Provide html and/or text body.');
+      return false;
+    }
 
-      // If no transporter (dev mode), log to console
-      if (!this.transporter) {
-        this.logger.log('='.repeat(60));
-        this.logger.log(`📧 EMAIL (Development Mode)`);
-        this.logger.log(`To: ${options.to}`);
-        this.logger.log(`Subject: ${options.subject}`);
-        this.logger.log(`From: ${from.name} <${from.address}>`);
-        if (options.text) {
-          this.logger.log(`Text: ${options.text}`);
-        }
-        this.logger.log('='.repeat(60));
-        return true;
+    const from = {
+      name: this.configService.get<string>('mail.from.name'),
+      address: this.configService.get<string>('mail.from.address'),
+    };
+
+    try {
+      switch (this.provider) {
+        case 'resend':
+          await this.sendWithResend(options, from);
+          break;
+        case 'mailtrap':
+          await this.sendWithMailtrap(options, from);
+          break;
+        case 'smtp':
+        default:
+          await this.sendWithSmtp(options, from);
+          break;
       }
 
-      const mailOptions = {
-        from: `"${from.name}" <${from.address}>`,
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent successfully to ${options.to}: ${info.messageId}`);
+      this.logger.log(`Email sent successfully to ${options.to} using ${this.provider}`);
       return true;
     } catch (error) {
       this.logger.error(`Failed to send email to ${options.to}:`, error);
       return false;
     }
+  }
+
+  private async sendWithSmtp(
+    options: EmailOptions,
+    from: { name: string; address: string },
+  ): Promise<void> {
+    if (!this.transporter) {
+      this.logEmailInDevelopmentMode(options, from, 'smtp');
+      return;
+    }
+
+    const mailOptions = {
+      from: `"${from.name}" <${from.address}>`,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
+
+  private async sendWithResend(
+    options: EmailOptions,
+    from: { name: string; address: string },
+  ): Promise<void> {
+    if (!this.resendClient) {
+      this.logEmailInDevelopmentMode(options, from, 'resend');
+      return;
+    }
+
+    await this.resendClient.emails.send({
+      from: `"${from.name}" <${from.address}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    });
+  }
+
+  private async sendWithMailtrap(
+    options: EmailOptions,
+    from: { name: string; address: string },
+  ): Promise<void> {
+    const token = this.configService.get<string>('mail.mailtrap.token');
+    const apiUrl = this.configService.get<string>('mail.mailtrap.apiUrl');
+
+    if (!token || !apiUrl) {
+      this.logEmailInDevelopmentMode(options, from, 'mailtrap');
+      return;
+    }
+
+    await axios.post(
+      apiUrl,
+      {
+        from: { email: from.address, name: from.name },
+        to: [{ email: options.to }],
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+        category: 'Transactional',
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+  }
+
+  private logEmailInDevelopmentMode(
+    options: EmailOptions,
+    from: { name: string; address: string },
+    provider: MailProvider,
+  ) {
+    this.logger.log('='.repeat(60));
+    this.logger.log(`EMAIL (${provider.toUpperCase()} Development Mode)`);
+    this.logger.log(`To: ${options.to}`);
+    this.logger.log(`Subject: ${options.subject}`);
+    this.logger.log(`From: ${from.name} <${from.address}>`);
+    if (options.text) {
+      this.logger.log(`Text: ${options.text}`);
+    }
+    this.logger.log('='.repeat(60));
   }
 
   async sendVerificationCode(email: string, code: string, userName?: string): Promise<boolean> {

@@ -11,4 +11,4 @@ uploads/
 src/infrastructure/database/migrations/
 docs/
 # swagger.json
-.env
+

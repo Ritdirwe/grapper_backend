@@ -16,7 +16,13 @@
     "migration:revert": "pnpm typeorm migration:revert -d src/infrastructure/database/data-source.ts",
     "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
     "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeder.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeder.ts",
+    "api:pass:a": "node scripts/api-reachability.js",
+    "api:pass:a:start": "node scripts/api-reachability.js --start",
+    "api:pass:b": "node scripts/api-happy-path.js",
+    "api:pass:b:start": "node scripts/api-happy-path.js --start",
+    "arch:check": "node scripts/check-boundaries.js",
+    "arch:status": "node scripts/migration-status.js"
   },
   "keywords": [
     "nestjs",
@@ -54,6 +60,7 @@
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "reflect-metadata": "~0.2.2",
+    "resend": "^6.9.2",
     "rxjs": "^7.8.2",
     "stripe": "^20.1.2",
     "typeorm": "^0.3.28"
