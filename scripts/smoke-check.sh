@@ -136,7 +136,7 @@ log "BASE_URL=$BASE_URL"
 log "DRY_RUN=$DRY_RUN"
 
 if [[ "$DRY_RUN" == "0" ]]; then
-  request "Health check" "GET" "$BASE_URL/health" "" "" "^2[0-9][0-9]$|^404$"
+  request "Health check" "GET" "$BASE_URL/" "" "" "^2[0-9][0-9]$|^404$"
 fi
 
 hr

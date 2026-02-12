@@ -99,8 +99,12 @@ async function bootstrap() {
   
   const document = SwaggerModule.createDocument(app, config);
   
-  // Write swagger.json file for Postman import
-  const outputPath = join(process.cwd(), 'swagger.json');
+  // Write swagger.json file for Postman import (root in dev, dist in prod)
+  const isProduction = process.env.NODE_ENV === 'production';
+  const outputDir = isProduction && process.cwd().includes('dist') 
+    ? process.cwd() 
+    : join(process.cwd(), isProduction ? 'dist' : '');
+  const outputPath = join(outputDir, 'swagger.json');
   writeFileSync(outputPath, JSON.stringify(document, null, 2));
   console.log(`📄 Swagger JSON written to: ${outputPath}`);
   
