@@ -13,7 +13,7 @@
     "tsConfigPath": "./tsconfig.build.json",
     "webpack": false,
     "deleteOutDir": true,
-    "assets": ["swagger.json"],
+    "assets": [],
     "watchAssets": false,
     "plugins": []
   }

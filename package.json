@@ -4,7 +4,7 @@
   "description": "Gripper Marketplace Backend - NestJS with DDD Architecture",
   "main": "dist/main",
   "scripts": {
-    "build": "nest build",
+    "build": "rm -rf dist tsconfig.build.tsbuildinfo && nest build && node scripts/generate-swagger-from-dist.js",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
