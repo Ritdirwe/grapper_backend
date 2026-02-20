@@ -6,8 +6,8 @@
   "scripts": {
     "build": "rm -rf dist tsconfig.build.tsbuildinfo && nest build && node scripts/generate-swagger-from-dist.js",
     "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
+    "start:dev": "rm -f tsconfig.build.tsbuildinfo && nest start --watch",
+    "start:debug": "rm -f tsconfig.build.tsbuildinfo && nest start --debug --watch",
     "start:prod": "node dist/main",
     "typeorm": "ts-node -r ./tsconfig-paths-bootstrap.js ./node_modules/typeorm/cli.js",
     "migration:generate": "pnpm typeorm migration:generate -d src/infrastructure/database/data-source.ts",

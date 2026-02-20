@@ -42,6 +42,7 @@ export class AdminUserService {
         'profile.id',
         'profile.full_name',
         'profile.display_name',
+        'profile.university',
         'profile.verification_status',
         'profile.strike_count',
         'profile.is_featured',
@@ -50,7 +51,7 @@ export class AdminUserService {
     // Apply filters
     if (search) {
       queryBuilder.andWhere(
-        '(user.email LIKE :search OR profile.full_name LIKE :search OR profile.display_name LIKE :search)',
+        '(user.email LIKE :search OR profile.full_name LIKE :search OR profile.display_name LIKE :search OR profile.university LIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -363,6 +364,7 @@ export class AdminUserService {
         ? {
             fullName: profile.fullName,
             displayName: profile.displayName,
+            university: profile.university,
             verificationStatus: profile.verificationStatus,
             strikeCount: profile.strikeCount,
             isFeatured: profile.isFeatured,

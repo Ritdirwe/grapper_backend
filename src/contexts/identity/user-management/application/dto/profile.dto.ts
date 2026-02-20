@@ -67,6 +67,11 @@ export class UpdateProfileDto {
   @IsOptional()
   website?: string;
 
+  @ApiProperty({ example: 'University of Lagos', required: false })
+  @IsString()
+  @IsOptional()
+  university?: string;
+
   @ApiProperty({ required: false })
   @IsObject()
   @IsOptional()
@@ -117,6 +122,9 @@ export class ProfileResponseDto {
 
   @ApiProperty({ required: false })
   website?: string;
+
+  @ApiProperty({ required: false })
+  university?: string;
 
   @ApiProperty({ required: false })
   socialLinks?: Record<string, string>;

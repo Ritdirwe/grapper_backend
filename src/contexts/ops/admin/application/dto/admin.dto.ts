@@ -163,3 +163,75 @@ export class ResolveDisputeAdminDto {
   @IsOptional()
   refundAmount?: number;
 }
+
+export class OverviewTotalsDto {
+  @ApiProperty()
+  users: number;
+
+  @ApiProperty()
+  profiles: number;
+
+  @ApiProperty()
+  posts: number;
+
+  @ApiProperty()
+  comments: number;
+
+  @ApiProperty()
+  services: number;
+
+  @ApiProperty()
+  ads: number;
+
+  @ApiProperty()
+  bookings: number;
+
+  @ApiProperty()
+  activeSessions: number;
+}
+
+export class DailyCountPointDto {
+  @ApiProperty()
+  day: string;
+
+  @ApiProperty()
+  count: number;
+}
+
+export class DailySpendPointDto {
+  @ApiProperty()
+  day: string;
+
+  @ApiProperty()
+  spend: number;
+}
+
+export class TopUniversityPointDto {
+  @ApiProperty()
+  university: string;
+
+  @ApiProperty()
+  count: number;
+}
+
+export class AdminOverviewDto {
+  @ApiProperty({ type: OverviewTotalsDto })
+  totals: OverviewTotalsDto;
+
+  @ApiProperty({ type: [DailyCountPointDto] })
+  postsByDay: DailyCountPointDto[];
+
+  @ApiProperty({ type: [DailyCountPointDto] })
+  commentsByDay: DailyCountPointDto[];
+
+  @ApiProperty({ type: [DailySpendPointDto] })
+  spendByDay: DailySpendPointDto[];
+
+  @ApiProperty({ type: [TopUniversityPointDto] })
+  topUniversities: TopUniversityPointDto[];
+}
+
+export class RecountPostCommentsDto {
+  @ApiProperty()
+  updatedPosts: number;
+}

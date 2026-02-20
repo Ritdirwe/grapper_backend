@@ -4,11 +4,12 @@ import { ModerationReport } from './domain/entities/moderation-report.entity';
 import { AdminService } from './application/services/admin.service';
 import { AdminController } from './presentation/admin.controller';
 import { ModerationController } from './presentation/moderation.controller';
+import { AdminOverviewController } from './presentation/admin-overview.controller';
 import { ReportingModule } from '../reporting/reporting.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ModerationReport]), ReportingModule],
-  controllers: [AdminController, ModerationController],
+  controllers: [AdminController, ModerationController, AdminOverviewController],
   providers: [AdminService],
   exports: [AdminService],
 })

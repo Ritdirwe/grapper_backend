@@ -36,6 +36,44 @@ export interface AdminDisputeListResult {
   total: number;
 }
 
+export interface AdminOverviewTotals {
+  users: number;
+  profiles: number;
+  posts: number;
+  comments: number;
+  services: number;
+  ads: number;
+  bookings: number;
+  activeSessions: number;
+}
+
+export interface AdminDailyCountPoint {
+  day: string;
+  count: number;
+}
+
+export interface AdminDailySpendPoint {
+  day: string;
+  spend: number;
+}
+
+export interface AdminTopUniversityPoint {
+  university: string;
+  count: number;
+}
+
+export interface AdminOverviewResult {
+  totals: AdminOverviewTotals;
+  postsByDay: AdminDailyCountPoint[];
+  commentsByDay: AdminDailyCountPoint[];
+  spendByDay: AdminDailySpendPoint[];
+  topUniversities: AdminTopUniversityPoint[];
+}
+
+export interface RecountPostCommentsResult {
+  updatedPosts: number;
+}
+
 export interface UsersWithProfilesResult {
   users: Record<string, unknown>[];
   total: number;
@@ -82,6 +120,9 @@ export interface PlatformReadContract {
     refundAmount?: number,
   ): Promise<boolean>;
   forceRefundBooking(bookingId: string): Promise<boolean>;
+
+  getAdminOverview(): Promise<AdminOverviewResult>;
+  recountPostComments(): Promise<RecountPostCommentsResult>;
 }
 
 export const PLATFORM_READ_CONTRACT = 'PLATFORM_READ_CONTRACT';

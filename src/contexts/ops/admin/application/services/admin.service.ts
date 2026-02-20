@@ -25,6 +25,10 @@ import {
   PLATFORM_READ_CONTRACT,
   PlatformReadContract,
 } from '@shared/contracts/platform-read.contract';
+import type {
+  AdminOverviewResult,
+  RecountPostCommentsResult,
+} from '@shared/contracts/platform-read.contract';
 
 @Injectable()
 export class AdminService {
@@ -126,6 +130,14 @@ export class AdminService {
     if (!refunded) {
       throw new NotFoundException('Booking not found');
     }
+  }
+
+  async getOverview(): Promise<AdminOverviewResult> {
+    return this.platformReadService.getAdminOverview();
+  }
+
+  async recountComments(): Promise<RecountPostCommentsResult> {
+    return this.platformReadService.recountPostComments();
   }
 
   async getUsers(page = 1, limit = 20): Promise<any> {

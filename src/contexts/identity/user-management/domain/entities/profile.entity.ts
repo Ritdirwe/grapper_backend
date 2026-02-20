@@ -50,6 +50,9 @@ export class Profile extends BaseEntity {
   @Column({ nullable: true })
   website?: string;
 
+  @Column({ nullable: true })
+  university?: string;
+
   @Column({ type: 'jsonb', nullable: true })
   socialLinks?: {
     twitter?: string;

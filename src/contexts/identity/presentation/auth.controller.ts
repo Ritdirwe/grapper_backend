@@ -1,4 +1,13 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+  Ip,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from '../application/services/auth.service';
 import {
@@ -25,8 +34,15 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
-  async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Ip() ip: string,
+    @Req() req: any,
+  ): Promise<AuthResponseDto> {
+    return this.authService.register(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @Public()
@@ -34,8 +50,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, type: AuthResponseDto })
-  async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Req() req: any,
+  ): Promise<AuthResponseDto> {
+    return this.authService.login(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @Public()
@@ -43,8 +66,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email with OTP code' })
   @ApiResponse({ status: 200, description: 'Email verified successfully' })
-  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ message: string }> {
-    return this.authService.verifyEmail(dto);
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
+    @Ip() ip: string,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    return this.authService.verifyEmail(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @Public()
@@ -54,8 +84,13 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Verification code resent' })
   async resendVerificationEmail(
     @Body() dto: ResendVerificationEmailDto,
+    @Ip() ip: string,
+    @Req() req: any,
   ): Promise<{ message: string }> {
-    return this.authService.resendVerificationEmail(dto);
+    return this.authService.resendVerificationEmail(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @Public()
@@ -63,8 +98,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access tokens using refresh token' })
   @ApiResponse({ status: 200, type: AuthResponseDto })
-  async refresh(@Body() dto: RefreshTokenDto): Promise<AuthResponseDto> {
-    return this.authService.refreshTokens(dto);
+  async refresh(
+    @Body() dto: RefreshTokenDto,
+    @Ip() ip: string,
+    @Req() req: any,
+  ): Promise<AuthResponseDto> {
+    return this.authService.refreshTokens(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @Public()
@@ -72,8 +114,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a password reset link/code' })
   @ApiResponse({ status: 200, description: 'Reset code sent if email exists' })
-  async forgotPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
-    return this.authService.requestPasswordReset(dto);
+  async forgotPassword(
+    @Body() dto: ResetPasswordDto,
+    @Ip() ip: string,
+    @Req() req: any,
+  ): Promise<{ message: string }> {
+    return this.authService.requestPasswordReset(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @Public()
@@ -83,8 +132,13 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Password reset successful' })
   async resetPassword(
     @Body() dto: ConfirmResetPasswordDto,
+    @Ip() ip: string,
+    @Req() req: any,
   ): Promise<{ message: string }> {
-    return this.authService.confirmPasswordReset(dto);
+    return this.authService.confirmPasswordReset(dto, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @ApiBearerAuth()
@@ -96,8 +150,13 @@ export class AuthController {
   async logout(
     @CurrentUser() user: AuthUser,
     @Body('refreshToken') refreshToken: string,
+    @Ip() ip: string,
+    @Req() req: any,
   ): Promise<{ message: string }> {
-    return this.authService.logout(user.id, refreshToken);
+    return this.authService.logout(user.id, refreshToken, {
+      ipAddress: ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
   @ApiBearerAuth()

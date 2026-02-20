@@ -36,6 +36,11 @@ export class AdminUpdateProfileDto {
   @ApiProperty({ example: false, required: false })
   @IsOptional()
   isFeatured?: boolean;
+
+  @ApiProperty({ example: 'University of Lagos', required: false })
+  @IsOptional()
+  @IsString()
+  university?: string;
 }
 
 export class AdminUserListQueryDto {
@@ -104,6 +109,7 @@ export class AdminUserResponseDto {
   profile?: {
     fullName?: string;
     displayName?: string;
+    university?: string;
     verificationStatus: VerificationStatus;
     strikeCount: number;
     isFeatured: boolean;

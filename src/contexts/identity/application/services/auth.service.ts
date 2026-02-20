@@ -15,6 +15,8 @@ import { VerificationCode } from '@contexts/identity/domain/entities/verificatio
 import { Profile } from '@contexts/identity/user-management/domain/entities/profile.entity';
 import { PasswordHasherService } from '@contexts/identity/domain/services/password-hasher.service';
 import { EmailService } from '@infrastructure/email/email.service';
+import { AuthActivityService } from './auth-activity.service';
+import { AuthActivityAction } from '@contexts/identity/domain/value-objects/auth-activity-action.vo';
 import {
   RegisterDto,
   LoginDto,
@@ -32,6 +34,11 @@ import {
 import { VerificationType } from '@contexts/identity/domain/value-objects/user-role.vo';
 import { randomBytes } from 'crypto';
 
+export interface AuthRequestContext {
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -44,12 +51,13 @@ export class AuthService {
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
     private passwordHasher: PasswordHasherService,
+    private authActivityService: AuthActivityService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthResponseDto> {
+  async register(dto: RegisterDto, context?: AuthRequestContext): Promise<AuthResponseDto> {
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
       where: { email: dto.email },
@@ -98,6 +106,14 @@ export class AuthService {
       throw error;
     }
 
+    await this.authActivityService.log({
+      action: AuthActivityAction.REGISTER,
+      userId: user.id,
+      email: user.email,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
     // Generate email verification code
     await this.generateVerificationCode(
       user.id,
@@ -109,13 +125,20 @@ export class AuthService {
     return this.generateAuthResponse(user);
   }
 
-  async login(dto: LoginDto): Promise<AuthResponseDto> {
+  async login(dto: LoginDto, context?: AuthRequestContext): Promise<AuthResponseDto> {
     // Find user
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
 
     if (!user) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.LOGIN_FAILED,
+        email: dto.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'user_not_found' },
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -126,14 +149,39 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.LOGIN_FAILED,
+        userId: user.id,
+        email: user.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'invalid_password' },
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Check if user can login
     if (!user.canLogin()) {
       if (!user.emailVerified) {
+        await this.authActivityService.log({
+          action: AuthActivityAction.LOGIN_FAILED,
+          userId: user.id,
+          email: user.email,
+          ipAddress: context?.ipAddress,
+          userAgent: context?.userAgent,
+          metadata: { reason: 'email_not_verified' },
+        });
         throw new UnauthorizedException('Please verify your email first');
       }
+
+      await this.authActivityService.log({
+        action: AuthActivityAction.LOGIN_FAILED,
+        userId: user.id,
+        email: user.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'account_not_active' },
+      });
       throw new UnauthorizedException('Account is not active');
     }
 
@@ -141,11 +189,22 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await this.userRepository.save(user);
 
+    await this.authActivityService.log({
+      action: AuthActivityAction.LOGIN_SUCCESS,
+      userId: user.id,
+      email: user.email,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
     // Generate tokens
     return this.generateAuthResponse(user);
   }
 
-  async verifyEmail(dto: VerifyEmailDto): Promise<{ message: string }> {
+  async verifyEmail(
+    dto: VerifyEmailDto,
+    context?: AuthRequestContext,
+  ): Promise<{ message: string }> {
     const code = await this.verificationCodeRepository.findOne({
       where: {
         userId: dto.userId,
@@ -155,10 +214,24 @@ export class AuthService {
     });
 
     if (!code) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.VERIFY_EMAIL_FAILED,
+        userId: dto.userId,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'code_not_found' },
+      });
       throw new BadRequestException('Invalid verification code');
     }
 
     if (!code.isValid()) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.VERIFY_EMAIL_FAILED,
+        userId: dto.userId,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'code_expired_or_used' },
+      });
       throw new BadRequestException('Verification code has expired or been used');
     }
 
@@ -169,21 +242,44 @@ export class AuthService {
     // Update user
     await this.userRepository.update(dto.userId, { emailVerified: true });
 
+    await this.authActivityService.log({
+      action: AuthActivityAction.VERIFY_EMAIL,
+      userId: dto.userId,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
     return { message: 'Email verified successfully' };
   }
 
   async resendVerificationEmail(
     dto: ResendVerificationEmailDto,
+    context?: AuthRequestContext,
   ): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
 
     if (!user) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.RESEND_VERIFICATION_EMAIL,
+        email: dto.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'user_not_found' },
+      });
       throw new NotFoundException('User not found');
     }
 
     if (user.emailVerified) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.RESEND_VERIFICATION_EMAIL,
+        userId: user.id,
+        email: user.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'already_verified' },
+      });
       return { message: 'Email is already verified' };
     }
 
@@ -204,16 +300,30 @@ export class AuthService {
     }
 
     await this.generateVerificationCode(user.id, VerificationType.EMAIL, user.email);
+
+    await this.authActivityService.log({
+      action: AuthActivityAction.RESEND_VERIFICATION_EMAIL,
+      userId: user.id,
+      email: user.email,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
     return { message: 'Verification code resent' };
   }
 
-  async refreshTokens(dto: RefreshTokenDto): Promise<AuthResponseDto> {
+  async refreshTokens(dto: RefreshTokenDto, context?: AuthRequestContext): Promise<AuthResponseDto> {
     const refreshToken = await this.refreshTokenRepository.findOne({
       where: { token: dto.refreshToken },
       relations: ['user'],
     });
 
     if (!refreshToken || !refreshToken.isValid()) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.REFRESH_FAILED,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'invalid_refresh_token' },
+      });
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -222,15 +332,35 @@ export class AuthService {
     await this.refreshTokenRepository.save(refreshToken);
 
     // Generate new tokens
-    return this.generateAuthResponse(refreshToken.user);
+    const response = await this.generateAuthResponse(refreshToken.user);
+
+    await this.authActivityService.log({
+      action: AuthActivityAction.REFRESH_SUCCESS,
+      userId: refreshToken.user.id,
+      email: refreshToken.user.email,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
+    return response;
   }
 
-  async requestPasswordReset(dto: ResetPasswordDto): Promise<{ message: string }> {
+  async requestPasswordReset(
+    dto: ResetPasswordDto,
+    context?: AuthRequestContext,
+  ): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
     });
 
     if (!user) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.PASSWORD_RESET_REQUEST,
+        email: dto.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'user_not_found' },
+      });
       // Don't reveal if user exists
       return { message: 'If the email exists, a reset code has been sent' };
     }
@@ -242,11 +372,20 @@ export class AuthService {
       user.email,
     );
 
+    await this.authActivityService.log({
+      action: AuthActivityAction.PASSWORD_RESET_REQUEST,
+      userId: user.id,
+      email: user.email,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
     return { message: 'If the email exists, a reset code has been sent' };
   }
 
   async confirmPasswordReset(
     dto: ConfirmResetPasswordDto,
+    context?: AuthRequestContext,
   ): Promise<{ message: string }> {
     const code = await this.verificationCodeRepository.findOne({
       where: {
@@ -257,6 +396,13 @@ export class AuthService {
     });
 
     if (!code || !code.isValid()) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.PASSWORD_RESET_FAILED,
+        userId: dto.userId,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'invalid_or_expired_code' },
+      });
       throw new BadRequestException('Invalid or expired reset code');
     }
 
@@ -270,10 +416,21 @@ export class AuthService {
     code.markAsUsed();
     await this.verificationCodeRepository.save(code);
 
+    await this.authActivityService.log({
+      action: AuthActivityAction.PASSWORD_RESET_SUCCESS,
+      userId: dto.userId,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
     return { message: 'Password reset successfully' };
   }
 
-  async logout(userId: string, refreshToken: string): Promise<{ message: string }> {
+  async logout(
+    userId: string,
+    refreshToken: string,
+    context?: AuthRequestContext,
+  ): Promise<{ message: string }> {
     const token = await this.refreshTokenRepository.findOne({
       where: { token: refreshToken, user: { id: userId } },
     });
@@ -282,6 +439,13 @@ export class AuthService {
       token.revoke();
       await this.refreshTokenRepository.save(token);
     }
+
+    await this.authActivityService.log({
+      action: AuthActivityAction.LOGOUT,
+      userId,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
 
     return { message: 'Logged out successfully' };
   }

@@ -191,6 +191,7 @@ export class ProfileService {
       country: profile.country,
       city: profile.city,
       website: profile.website,
+      university: profile.university,
       socialLinks: profile.socialLinks,
       verificationStatus: profile.verificationStatus,
       isVerified: profile.isVerified(),

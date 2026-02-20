@@ -3,7 +3,9 @@ import { DataSource } from 'typeorm';
 import {
   AdminBookingListResult,
   AdminDisputeListResult,
+  AdminOverviewResult,
   AdminPaymentListResult,
+  RecountPostCommentsResult,
   DashboardSnapshot,
   ExportEntity,
   PlatformReadContract,
@@ -463,5 +465,167 @@ export class PlatformReadService implements PlatformReadContract {
     );
 
     return true;
+  }
+
+  async getAdminOverview(): Promise<AdminOverviewResult> {
+    const daysBack = 13;
+
+    const [
+      [{ count: users }],
+      [{ count: profiles }],
+      [{ count: posts }],
+      [{ count: comments }],
+      [{ count: services }],
+      [{ count: ads }],
+      [{ count: bookings }],
+      [{ count: activeSessions }],
+      postsByDay,
+      commentsByDay,
+      spendByDay,
+      topUniversities,
+    ] = await Promise.all([
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM users'),
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM profiles'),
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM posts'),
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM comments'),
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM services'),
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM advertisements'),
+      this.dataSource.query('SELECT COUNT(*)::int AS count FROM bookings'),
+      this.dataSource.query(
+        `SELECT COUNT(DISTINCT user_id)::int AS count
+         FROM auth_activities
+         WHERE user_id IS NOT NULL
+           AND action IN ('login_success', 'refresh_success')
+           AND created_at >= NOW() - INTERVAL '24 hours'`,
+      ),
+      this.dataSource.query(
+        `SELECT TO_CHAR(d.day, 'YYYY-MM-DD') AS day,
+                COALESCE(p.count, 0)::int AS count
+         FROM generate_series(
+           CURRENT_DATE - INTERVAL '${daysBack} days',
+           CURRENT_DATE,
+           INTERVAL '1 day'
+         ) AS d(day)
+         LEFT JOIN (
+           SELECT DATE_TRUNC('day', created_at)::date AS day,
+                  COUNT(*)::int AS count
+           FROM posts
+           WHERE created_at >= CURRENT_DATE - INTERVAL '${daysBack} days'
+           GROUP BY 1
+         ) p ON p.day = d.day::date
+         ORDER BY d.day ASC`,
+      ),
+      this.dataSource.query(
+        `SELECT TO_CHAR(d.day, 'YYYY-MM-DD') AS day,
+                COALESCE(c.count, 0)::int AS count
+         FROM generate_series(
+           CURRENT_DATE - INTERVAL '${daysBack} days',
+           CURRENT_DATE,
+           INTERVAL '1 day'
+         ) AS d(day)
+         LEFT JOIN (
+           SELECT DATE_TRUNC('day', created_at)::date AS day,
+                  COUNT(*)::int AS count
+           FROM comments
+           WHERE created_at >= CURRENT_DATE - INTERVAL '${daysBack} days'
+           GROUP BY 1
+         ) c ON c.day = d.day::date
+         ORDER BY d.day ASC`,
+      ),
+      this.dataSource.query(
+        `SELECT TO_CHAR(d.day, 'YYYY-MM-DD') AS day,
+                COALESCE(s.spend, 0) AS spend
+         FROM generate_series(
+           CURRENT_DATE - INTERVAL '${daysBack} days',
+           CURRENT_DATE,
+           INTERVAL '1 day'
+         ) AS d(day)
+         LEFT JOIN (
+           SELECT DATE_TRUNC('day', created_at)::date AS day,
+                  COALESCE(SUM(cost), 0) AS spend
+           FROM (
+             SELECT created_at, cost FROM ad_clicks
+             UNION ALL
+             SELECT created_at, cost FROM ad_impressions
+           ) t
+           WHERE created_at >= CURRENT_DATE - INTERVAL '${daysBack} days'
+           GROUP BY 1
+         ) s ON s.day = d.day::date
+         ORDER BY d.day ASC`,
+      ),
+      this.dataSource.query(
+        `SELECT university,
+                COUNT(*)::int AS count
+         FROM profiles
+         WHERE university IS NOT NULL
+           AND BTRIM(university) <> ''
+         GROUP BY university
+         ORDER BY count DESC
+         LIMIT 8`,
+      ),
+    ]);
+
+    return {
+      totals: {
+        users: Number(users || 0),
+        profiles: Number(profiles || 0),
+        posts: Number(posts || 0),
+        comments: Number(comments || 0),
+        services: Number(services || 0),
+        ads: Number(ads || 0),
+        bookings: Number(bookings || 0),
+        activeSessions: Number(activeSessions || 0),
+      },
+      postsByDay: (postsByDay || []).map((r: any) => ({
+        day: String(r.day),
+        count: Number(r.count || 0),
+      })),
+      commentsByDay: (commentsByDay || []).map((r: any) => ({
+        day: String(r.day),
+        count: Number(r.count || 0),
+      })),
+      spendByDay: (spendByDay || []).map((r: any) => ({
+        day: String(r.day),
+        spend: Number(r.spend || 0),
+      })),
+      topUniversities: (topUniversities || []).map((r: any) => ({
+        university: String(r.university),
+        count: Number(r.count || 0),
+      })),
+    };
+  }
+
+  async recountPostComments(): Promise<RecountPostCommentsResult> {
+    const updatedWithComments = await this.dataSource.query(
+      `WITH counts AS (
+         SELECT post_id, COUNT(*)::int AS cnt
+         FROM comments
+         GROUP BY post_id
+       )
+       UPDATE posts p
+       SET comments_count = counts.cnt,
+           updated_at = NOW()
+       FROM counts
+       WHERE p.id = counts.post_id
+         AND p.comments_count <> counts.cnt
+       RETURNING p.id`,
+    );
+
+    const updatedToZero = await this.dataSource.query(
+      `UPDATE posts p
+       SET comments_count = 0,
+           updated_at = NOW()
+       WHERE p.comments_count <> 0
+         AND NOT EXISTS (
+           SELECT 1
+           FROM comments c
+           WHERE c.post_id = p.id
+         )
+       RETURNING p.id`,
+    );
+
+    return {
+      updatedPosts: (updatedWithComments?.length || 0) + (updatedToZero?.length || 0),
+    };
   }
 }
