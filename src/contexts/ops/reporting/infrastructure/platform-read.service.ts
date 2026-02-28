@@ -278,31 +278,81 @@ export class PlatformReadService implements PlatformReadContract {
     page: number,
     limit: number,
     status?: string,
+    search?: string,
   ): Promise<AdminBookingListResult> {
     const offset = (page - 1) * limit;
 
     const values: any[] = [limit, offset];
-    let whereClause = '';
+    const whereParts: string[] = [];
+
     if (status) {
-      whereClause = 'WHERE b.status = $3';
       values.push(status);
+      whereParts.push(`b.status = $${values.length}`);
     }
 
+    if (search && search.trim()) {
+      const q = `%${search.trim()}%`;
+      values.push(q);
+      const idx = values.length;
+      whereParts.push(
+        `(
+          b.reference_code ILIKE $${idx}
+          OR s.title ILIKE $${idx}
+          OR cu.email ILIKE $${idx}
+          OR pu.email ILIKE $${idx}
+          OR cp.display_name ILIKE $${idx}
+          OR pp.display_name ILIKE $${idx}
+        )`,
+      );
+    }
+
+    const whereClause = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
+
     const bookings = await this.dataSource.query(
-      `SELECT b.*, s.title AS service_title
+      `SELECT
+          b.id,
+          b.reference_code,
+          b.status,
+          b.amount,
+          b.currency,
+          b.customer_id,
+          b.provider_id,
+          b.service_id,
+          b.created_at,
+          b.updated_at,
+          s.title AS service_title,
+          COALESCE(cp.display_name, cp.full_name, 'Unknown') AS customer_name,
+          cu.email AS customer_email,
+          cu.phone_number AS customer_phone,
+          COALESCE(pp.display_name, pp.full_name, 'Unknown') AS provider_name,
+          pu.email AS provider_email,
+          pu.phone_number AS provider_phone
        FROM bookings b
        LEFT JOIN services s ON s.id = b.service_id
+       LEFT JOIN users cu ON cu.id = b.customer_id
+       LEFT JOIN users pu ON pu.id = b.provider_id
+       LEFT JOIN profiles cp ON cp.user_id = b.customer_id
+       LEFT JOIN profiles pp ON pp.user_id = b.provider_id
        ${whereClause}
        ORDER BY b.created_at DESC
        LIMIT $1 OFFSET $2`,
       values,
     );
 
-    const countQuery = status
-      ? `SELECT COUNT(*)::int AS count FROM bookings WHERE status = $1`
-      : `SELECT COUNT(*)::int AS count FROM bookings`;
-    const countValues = status ? [status] : [];
-    const [{ count }] = await this.dataSource.query(countQuery, countValues);
+    const countParams = whereParts.length ? values : [];
+    const count = await this.dataSource
+      .query(
+        `SELECT COUNT(*)::int AS count
+         FROM bookings b
+         LEFT JOIN services s ON s.id = b.service_id
+         LEFT JOIN users cu ON cu.id = b.customer_id
+         LEFT JOIN users pu ON pu.id = b.provider_id
+         LEFT JOIN profiles cp ON cp.user_id = b.customer_id
+         LEFT JOIN profiles pp ON pp.user_id = b.provider_id
+         ${whereClause}`,
+        countParams,
+      )
+      .then((rows) => rows?.[0]?.count);
 
     return {
       bookings,
@@ -312,9 +362,21 @@ export class PlatformReadService implements PlatformReadContract {
 
   async getAdminBookingDetail(bookingId: string): Promise<Record<string, unknown> | undefined> {
     const rows = await this.dataSource.query(
-      `SELECT b.*, s.title AS service_title
+      `SELECT
+          b.*, 
+          s.title AS service_title,
+          COALESCE(cp.display_name, cp.full_name, 'Unknown') AS customer_name,
+          cu.email AS customer_email,
+          cu.phone_number AS customer_phone,
+          COALESCE(pp.display_name, pp.full_name, 'Unknown') AS provider_name,
+          pu.email AS provider_email,
+          pu.phone_number AS provider_phone
        FROM bookings b
        LEFT JOIN services s ON s.id = b.service_id
+       LEFT JOIN users cu ON cu.id = b.customer_id
+       LEFT JOIN users pu ON pu.id = b.provider_id
+       LEFT JOIN profiles cp ON cp.user_id = b.customer_id
+       LEFT JOIN profiles pp ON pp.user_id = b.provider_id
        WHERE b.id = $1
        LIMIT 1`,
       [bookingId],
@@ -337,6 +399,38 @@ export class PlatformReadService implements PlatformReadContract {
       ...booking,
       transactions,
     };
+  }
+
+  async updateAdminBookingStatus(
+    bookingId: string,
+    status: string,
+    actorId: string,
+    reason?: string,
+  ): Promise<boolean> {
+    if (status === 'cancelled') {
+      const result = await this.dataSource.query(
+        `UPDATE bookings
+         SET status = $2,
+             cancelled_at = NOW(),
+             cancelled_by = $3,
+             cancellation_reason = COALESCE($4, cancellation_reason),
+             updated_at = NOW()
+         WHERE id = $1
+         RETURNING id`,
+        [bookingId, status, actorId, reason || null],
+      );
+      return result.length > 0;
+    }
+
+    const result = await this.dataSource.query(
+      `UPDATE bookings
+       SET status = $2,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING id`,
+      [bookingId, status],
+    );
+    return result.length > 0;
   }
 
   async getAdminPayments(page: number, limit: number): Promise<AdminPaymentListResult> {
@@ -414,6 +508,41 @@ export class PlatformReadService implements PlatformReadContract {
     return {
       disputes,
       total: Number(count || 0),
+    };
+  }
+
+  async getAdminDisputeDetail(disputeId: string): Promise<Record<string, unknown> | null> {
+    const [dispute] = await this.dataSource.query(
+      `SELECT d.*, o.order_number, o.amount as order_amount, o.status as order_status,
+              s.title as service_title
+       FROM disputes d
+       LEFT JOIN orders o ON o.id = d.order_id
+       LEFT JOIN services s ON s.id = o.service_id
+       WHERE d.id = $1`,
+      [disputeId],
+    );
+
+    if (!dispute) {
+      return null;
+    }
+
+    const booking = dispute.order_id ? {
+      id: dispute.order_id,
+      service_title: dispute.service_title,
+      amount: dispute.order_amount,
+      status: dispute.order_status,
+    } : null;
+
+    const timeline = [
+      { key: 'created', label: 'Dispute Created', at: dispute.created_at },
+      dispute.resolved_at ? { key: 'resolved', label: 'Dispute Resolved', at: dispute.resolved_at, by: dispute.resolved_by } : null,
+    ].filter(Boolean);
+
+    return {
+      dispute,
+      booking,
+      timeline,
+      auditEvents: [],
     };
   }
 

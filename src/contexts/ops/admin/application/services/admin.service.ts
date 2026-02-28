@@ -9,10 +9,12 @@ import { Repository } from 'typeorm';
 import { ModerationReport } from '../../domain/entities/moderation-report.entity';
 import {
   AdminBookingListDto,
+  AdminBookingsQueryDto,
   AdminDisputeListDto,
   AdminPaymentListDto,
   CreateReportDto,
   ReportResponseDto,
+  AdminUpdateBookingStatusDto,
   ResolveDisputeAdminDto,
   ResolveReportDto,
   SystemStatsDto,
@@ -86,8 +88,12 @@ export class AdminService {
     };
   }
 
-  async getBookings(page = 1, limit = 20, status?: string): Promise<AdminBookingListDto> {
-    return this.platformReadService.getAdminBookings(page, limit, status);
+  async getBookings(query: AdminBookingsQueryDto = {}): Promise<AdminBookingListDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const status = query.status;
+    const search = query.search;
+    return this.platformReadService.getAdminBookings(page, limit, status, search);
   }
 
   async getBookingDetail(bookingId: string): Promise<Record<string, unknown>> {
@@ -97,6 +103,30 @@ export class AdminService {
     }
 
     return booking;
+  }
+
+  async updateBookingStatus(
+    adminId: string,
+    bookingId: string,
+    dto: AdminUpdateBookingStatusDto,
+  ): Promise<void> {
+    const updated = await this.platformReadService.updateAdminBookingStatus(
+      bookingId,
+      dto.status,
+      adminId,
+      dto.reason,
+    );
+    if (!updated) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    await this.reportingService.log(
+      adminId,
+      AuditAction.BOOKING_STATUS_CHANGED,
+      'booking',
+      bookingId,
+      { status: dto.status, reason: dto.reason },
+    );
   }
 
   async getPayments(page = 1, limit = 20): Promise<AdminPaymentListDto> {
@@ -109,6 +139,14 @@ export class AdminService {
 
   async getDisputes(page = 1, limit = 20, status?: string): Promise<AdminDisputeListDto> {
     return this.platformReadService.getAdminDisputes(page, limit, status);
+  }
+
+  async getDisputeDetail(disputeId: string): Promise<Record<string, unknown>> {
+    const detail = await this.platformReadService.getAdminDisputeDetail(disputeId);
+    if (!detail) {
+      throw new NotFoundException('Dispute not found');
+    }
+    return detail;
   }
 
   async resolveDispute(adminId: string, disputeId: string, dto: ResolveDisputeAdminDto): Promise<void> {

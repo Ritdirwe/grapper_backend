@@ -364,6 +364,13 @@ export class AdminUserService {
         ? {
             fullName: profile.fullName,
             displayName: profile.displayName,
+            bio: profile.bio,
+            avatarUrl: profile.avatarUrl,
+            coverImageUrl: profile.coverImageUrl,
+            location: profile.location,
+            country: profile.country,
+            city: profile.city,
+            website: profile.website,
             university: profile.university,
             verificationStatus: profile.verificationStatus,
             strikeCount: profile.strikeCount,

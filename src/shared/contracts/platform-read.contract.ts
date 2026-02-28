@@ -107,11 +107,23 @@ export interface PlatformReadContract {
   ): Promise<Record<string, unknown>[]>;
   getProviderPendingClearance(userId: string, completedStatus: string): Promise<number>;
 
-  getAdminBookings(page: number, limit: number, status?: string): Promise<AdminBookingListResult>;
+  getAdminBookings(
+    page: number,
+    limit: number,
+    status?: string,
+    search?: string,
+  ): Promise<AdminBookingListResult>;
   getAdminBookingDetail(bookingId: string): Promise<Record<string, unknown> | undefined>;
+  updateAdminBookingStatus(
+    bookingId: string,
+    status: string,
+    actorId: string,
+    reason?: string,
+  ): Promise<boolean>;
   getAdminPayments(page: number, limit: number): Promise<AdminPaymentListResult>;
   getAdminPaymentSummary(period: 'day' | 'week' | 'month'): Promise<Record<string, unknown>>;
   getAdminDisputes(page: number, limit: number, status?: string): Promise<AdminDisputeListResult>;
+  getAdminDisputeDetail(disputeId: string): Promise<Record<string, unknown> | null>;
   resolveAdminDispute(
     disputeId: string,
     resolution: string,

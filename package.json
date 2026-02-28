@@ -17,6 +17,8 @@
     "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
     "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts",
     "seed": "ts-node -r tsconfig-paths/register src/database/seeder.ts",
+    "seed:payments": "ts-node -r tsconfig-paths/register src/scripts/seed-payments.ts",
+    "seed:bookings": "ts-node -r tsconfig-paths/register src/scripts/seed-bookings.ts",
     "api:pass:a": "node scripts/api-reachability.js",
     "api:pass:a:start": "node scripts/api-reachability.js --start",
     "api:pass:b": "node scripts/api-happy-path.js",

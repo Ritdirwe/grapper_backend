@@ -5,9 +5,15 @@ import {
   MaxLength,
   IsUUID,
   IsNumber,
+  IsInt,
+  Min,
+  Max,
+  IsIn,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { ReportReason, ReportStatus } from '../../domain/value-objects/moderation-enums.vo';
+import { BookingStatus } from '@contexts/marketplace/booking/domain/value-objects/booking-enums.vo';
 
 export class CreateReportDto {
   @ApiProperty({ example: 'post' })
@@ -128,6 +134,46 @@ export class AdminBookingListDto {
 
   @ApiProperty()
   total: number;
+}
+
+export class AdminBookingsQueryDto {
+  @ApiProperty({ required: false, example: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @ApiProperty({ required: false, example: 20 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty({ required: false, enum: BookingStatus })
+  @IsEnum(BookingStatus)
+  @IsOptional()
+  status?: BookingStatus;
+
+  @ApiProperty({ required: false, example: 'seedpay' })
+  @IsString()
+  @MaxLength(120)
+  @IsOptional()
+  search?: string;
+}
+
+export class AdminUpdateBookingStatusDto {
+  @ApiProperty({ enum: [BookingStatus.CANCELLED, BookingStatus.DISPUTED] })
+  @IsIn([BookingStatus.CANCELLED, BookingStatus.DISPUTED])
+  status: BookingStatus;
+
+  @ApiProperty({ required: false, example: 'Fraud suspected' })
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  reason?: string;
 }
 
 export class AdminPaymentListDto {

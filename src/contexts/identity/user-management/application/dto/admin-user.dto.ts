@@ -19,9 +19,59 @@ export class AdminUpdateUserDto {
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus;
+
+  @ApiProperty({ required: false, example: "+2348012345678" })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
 }
 
 export class AdminUpdateProfileDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  displayName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  website?: string;
+
   @ApiProperty({ enum: VerificationStatus, required: false })
   @IsEnum(VerificationStatus)
   @IsOptional()
@@ -109,6 +159,13 @@ export class AdminUserResponseDto {
   profile?: {
     fullName?: string;
     displayName?: string;
+    bio?: string;
+    avatarUrl?: string;
+    coverImageUrl?: string;
+    location?: string;
+    country?: string;
+    city?: string;
+    website?: string;
     university?: string;
     verificationStatus: VerificationStatus;
     strikeCount: number;

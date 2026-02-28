@@ -3,6 +3,7 @@ export enum AuditAction {
   USER_BANNED = 'user_banned',
   CONTENT_DELETED = 'content_deleted',
   SERVICE_MODIFIED = 'service_modified',
+  BOOKING_STATUS_CHANGED = 'booking_status_changed',
   PLAN_MODIFIED = 'plan_modified',
   SETTINGS_CHANGED = 'settings_changed',
   ADMIN_LOGIN = 'admin_login',

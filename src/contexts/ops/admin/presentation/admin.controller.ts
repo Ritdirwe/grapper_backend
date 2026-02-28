@@ -17,8 +17,10 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { Role } from '@shared/types/role.type';
 import {
   AdminBookingListDto,
+  AdminBookingsQueryDto,
   AdminDisputeListDto,
   AdminPaymentListDto,
+  AdminUpdateBookingStatusDto,
   ResolveDisputeAdminDto,
   SystemStatsDto,
 } from '../application/dto/admin.dto';
@@ -52,13 +54,12 @@ export class AdminController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'search', required: false })
   @ApiResponse({ status: 200, type: AdminBookingListDto })
   async getBookings(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: string,
+    @Query() query?: AdminBookingsQueryDto,
   ): Promise<AdminBookingListDto> {
-    return this.adminService.getBookings(page, limit, status);
+    return this.adminService.getBookings(query);
   }
 
   @Get('bookings/:id')
@@ -66,6 +67,18 @@ export class AdminController {
   @ApiResponse({ status: 200 })
   async getBookingDetail(@Param('id') id: string): Promise<Record<string, unknown>> {
     return this.adminService.getBookingDetail(id);
+  }
+
+  @Put('bookings/:id/status')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Update booking status (moderation-safe actions only)' })
+  @ApiResponse({ status: 204 })
+  async updateBookingStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateBookingStatusDto,
+  ): Promise<void> {
+    return this.adminService.updateBookingStatus(user.id, id, dto);
   }
 
   @Get('payments')
@@ -102,6 +115,13 @@ export class AdminController {
     @Query('status') status?: string,
   ): Promise<AdminDisputeListDto> {
     return this.adminService.getDisputes(page, limit, status);
+  }
+
+  @Get('disputes/:id')
+  @ApiOperation({ summary: 'Get dispute detail with booking context' })
+  @ApiResponse({ status: 200 })
+  async getDisputeDetail(@Param('id') id: string): Promise<Record<string, unknown>> {
+    return this.adminService.getDisputeDetail(id);
   }
 
   @Put('disputes/:id/resolve')

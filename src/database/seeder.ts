@@ -2,8 +2,9 @@ import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import * as argon2 from 'argon2';
 
-// Load environment variables
-config({ path: ['.env.local', '.env'] });
+// Load environment variables (.env then .env.local overrides)
+config({ path: '.env' });
+config({ path: '.env.local', override: true });
 
 // Import entities
 import { User } from '../modules/identity/domain/entities/user.entity';
@@ -17,10 +18,21 @@ import { Comment } from '../modules/social/domain/entities/comment.entity';
 import { Like } from '../modules/social/domain/entities/like.entity';
 import { Share } from '../modules/social/domain/entities/share.entity';
 import { Hashtag } from '../modules/social/domain/entities/hashtag.entity';
+import { Order } from '../modules/booking/domain/entities/order.entity';
+import { Booking } from '../modules/booking/domain/entities/booking.entity';
+import { BookingCorrection } from '../contexts/marketplace/booking/domain/entities/booking-correction.entity';
+import { BookingFile } from '../contexts/marketplace/booking/domain/entities/booking-file.entity';
+import { BookingMessage } from '../contexts/marketplace/booking/domain/entities/booking-message.entity';
+import { Milestone } from '../modules/booking/domain/entities/milestone.entity';
+import { Dispute } from '../modules/booking/domain/entities/dispute.entity';
+import { Transaction } from '../modules/payment/domain/entities/transaction.entity';
+import { VerificationRequest } from '../contexts/identity/user-management/domain/entities/verification-request.entity';
 import { UserRole, UserStatus } from '../modules/identity/domain/value-objects/user-role.vo';
 import { VerificationStatus, Gender } from '../modules/user-management/domain/value-objects/user-enums.vo';
 import { ServiceStatus, PricingType, DeliveryType } from '../modules/service-catalog/domain/value-objects/service-enums.vo';
 import { PostVisibility } from '../modules/social/domain/value-objects/social-enums.vo';
+import { BookingStatus, OrderStatus, PaymentStatus, DisputeStatus, DisputeReason } from '../modules/booking/domain/value-objects/booking-enums.vo';
+import { TransactionType, TransactionStatus, PaymentGateway } from '../modules/payment/domain/value-objects/payment-enums.vo';
 
 // Seeder class
 export class DatabaseSeeder {
@@ -31,22 +43,44 @@ export class DatabaseSeeder {
       type: 'postgres',
       host: process.env.DATABASE_HOST || 'localhost',
       port: parseInt(process.env.DATABASE_PORT || '5432'),
-      username: process.env.DATABASE_USERNAME || 'postgres',
-      password: process.env.DATABASE_PASSWORD || 'password',
-      database: process.env.DATABASE_DATABASE || 'gripper_marketplace',
-      entities: [User, RefreshToken, Profile, ProviderProfile, Category, Service, Post, Comment, Like, Share, Hashtag],
-      synchronize: true,
+      username: process.env.DATABASE_USER || process.env.DATABASE_USERNAME || 'postgres',
+      password: process.env.DATABASE_PASSWORD || 'postgres',
+      database: process.env.DATABASE_NAME || process.env.DATABASE_DATABASE || 'gripper_marketplace',
+      entities: [
+        User,
+        RefreshToken,
+        Profile,
+        ProviderProfile,
+        Category,
+        Service,
+        Post,
+        Comment,
+        Like,
+        Share,
+        Hashtag,
+        Booking,
+        BookingCorrection,
+        BookingFile,
+        BookingMessage,
+        Order,
+        Milestone,
+        Dispute,
+        Transaction,
+        VerificationRequest,
+      ],
+      // This project uses migrations; seeder should not mutate schema.
+      synchronize: false,
     });
   }
 
   async createDatabaseIfNotExists(): Promise<void> {
-    const dbName = process.env.DATABASE_DATABASE || 'gripper_marketplace';
+    const dbName = process.env.DATABASE_NAME || process.env.DATABASE_DATABASE || 'gripper_marketplace';
     const tempDataSource = new DataSource({
       type: 'postgres',
       host: process.env.DATABASE_HOST || 'localhost',
       port: parseInt(process.env.DATABASE_PORT || '5432'),
-      username: process.env.DATABASE_USERNAME || 'postgres',
-      password: process.env.DATABASE_PASSWORD || 'password',
+      username: process.env.DATABASE_USER || process.env.DATABASE_USERNAME || 'postgres',
+      password: process.env.DATABASE_PASSWORD || 'postgres',
       database: 'postgres', // Connect to default postgres database
       entities: [],
       synchronize: false,
@@ -95,7 +129,9 @@ export class DatabaseSeeder {
       // Clear existing data using TRUNCATE CASCADE to handle FK constraints (if tables exist)
       console.log('🧹 Clearing existing data...');
       try {
-        await queryRunner.query('TRUNCATE TABLE likes, comments, posts, payout_methods, orders, bookings, services, categories, provider_profiles, profiles, refresh_tokens, users CASCADE');
+        await queryRunner.query(
+          'TRUNCATE TABLE transactions, disputes, orders, likes, comments, posts, payout_methods, bookings, services, categories, provider_profiles, profiles, refresh_tokens, users CASCADE',
+        );
       } catch (error) {
         console.log('⚠️  Some tables do not exist yet (first run), skipping truncate');
         // Rollback and restart transaction since the error aborted it
@@ -115,6 +151,9 @@ export class DatabaseSeeder {
       console.log('🔧 Seeding services...');
       const services = await this.seedServices(queryRunner, providers, categories);
 
+      console.log('📅 Seeding bookings...');
+      const bookings = await this.seedBookings(queryRunner, providers, customers, services);
+
       // Seed posts, comments, and likes
       console.log('📝 Seeding posts...');
       const posts = await this.seedPosts(queryRunner, providers, customers);
@@ -124,6 +163,15 @@ export class DatabaseSeeder {
 
       console.log('❤️ Seeding likes...');
       const likes = await this.seedLikes(queryRunner, providers, customers);
+
+      console.log('📦 Seeding orders...');
+      const orders = await this.seedOrders(queryRunner, providers, customers, services);
+
+      console.log('💳 Seeding transactions...');
+      const transactions = await this.seedTransactions(queryRunner, providers, customers, bookings, orders);
+
+      console.log('⚖️ Seeding disputes...');
+      const disputes = await this.seedDisputes(queryRunner, orders);
 
       await queryRunner.commitTransaction();
       console.log('\n✅ Database seeding completed successfully!');
@@ -135,6 +183,10 @@ export class DatabaseSeeder {
       console.log(`   - Posts: ${posts.length}`);
       console.log(`   - Comments: ${comments.length}`);
       console.log(`   - Likes: ${likes.length}`);
+      console.log(`   - Bookings: ${bookings.length}`);
+      console.log(`   - Orders: ${orders.length}`);
+      console.log(`   - Transactions: ${transactions.length}`);
+      console.log(`   - Disputes: ${disputes.length}`);
       console.log(`\n🔑 Default passwords: "password123" for all users`);
       console.log(`   Admin: admin@gripper.com`);
       console.log(`   Providers: sarah@gripper.com, james@gripper.com, etc.`);
@@ -720,6 +772,273 @@ export class DatabaseSeeder {
     return savedServices;
   }
 
+  private async seedBookings(
+    queryRunner: any,
+    providers: User[],
+    customers: User[],
+    services: Service[],
+  ): Promise<Booking[]> {
+    const daysAgo = (n: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      return d;
+    };
+
+    const templates: Array<{
+      status: BookingStatus;
+      daysBack: number;
+      depositPaid?: boolean;
+      finalPaymentPaid?: boolean;
+      customerApproved?: boolean;
+      correctionsUsed?: number;
+      cancellationReason?: string;
+    }> = [
+      { status: BookingStatus.PENDING_DEPOSIT, daysBack: 1, depositPaid: false },
+      { status: BookingStatus.PENDING, daysBack: 2, depositPaid: true },
+      { status: BookingStatus.CONFIRMED, daysBack: 3, depositPaid: true },
+      { status: BookingStatus.IN_PROGRESS, daysBack: 4, depositPaid: true },
+      { status: BookingStatus.DELIVERED, daysBack: 5, depositPaid: true },
+      { status: BookingStatus.REVISION_REQUESTED, daysBack: 6, depositPaid: true, correctionsUsed: 1 },
+      {
+        status: BookingStatus.PENDING_COMPLETION_PAYMENT,
+        daysBack: 7,
+        depositPaid: true,
+        customerApproved: true,
+      },
+      {
+        status: BookingStatus.COMPLETED,
+        daysBack: 10,
+        depositPaid: true,
+        finalPaymentPaid: true,
+        customerApproved: true,
+      },
+      {
+        status: BookingStatus.CANCELLED,
+        daysBack: 8,
+        depositPaid: true,
+        cancellationReason: 'Seed cancellation',
+      },
+      { status: BookingStatus.DISPUTED, daysBack: 9, depositPaid: true },
+    ];
+
+    const bookings: Booking[] = [];
+    for (let i = 0; i < templates.length; i++) {
+      const t = templates[i];
+      const customer = customers[i % customers.length];
+      const provider = providers[i % providers.length];
+      const service = services[i % services.length];
+
+      const booking = queryRunner.manager.create(Booking, {
+        customerId: customer.id,
+        providerId: provider.id,
+        serviceId: service.id,
+        status: t.status,
+        notes: `Seed booking (${t.status})`,
+        amount: service.price,
+        currency: service.currency || 'NGN',
+        referenceCode: `SEEDBKG-${Date.now()}-${(i + 1).toString().padStart(2, '0')}-${Math.random().toString(16).slice(2, 6).toUpperCase()}`,
+        depositAmount: Math.floor((Number(service.price) || 12000) * 0.2),
+        platformFee: Math.floor((Number(service.price) || 12000) * 0.12),
+        depositPaid: Boolean(t.depositPaid),
+        finalPaymentPaid: Boolean(t.finalPaymentPaid),
+        customerApproved: Boolean(t.customerApproved),
+        correctionsUsed: t.correctionsUsed ?? 0,
+      });
+
+      if (t.status === BookingStatus.CONFIRMED) booking.confirmedAt = daysAgo(t.daysBack);
+      if (t.status === BookingStatus.IN_PROGRESS) {
+        booking.confirmedAt = daysAgo(t.daysBack + 1);
+        booking.startedAt = daysAgo(t.daysBack);
+      }
+      if (t.status === BookingStatus.DELIVERED || t.status === BookingStatus.REVISION_REQUESTED) {
+        booking.confirmedAt = daysAgo(t.daysBack + 2);
+        booking.startedAt = daysAgo(t.daysBack + 1);
+        booking.metadata = {
+          delivery: {
+            note: 'Seed delivery',
+            attachments: ['https://example.com/seed/attachment.zip'],
+            deliveredAt: daysAgo(t.daysBack).toISOString(),
+          },
+        };
+      }
+      if (t.status === BookingStatus.PENDING_COMPLETION_PAYMENT) {
+        booking.confirmedAt = daysAgo(t.daysBack + 3);
+        booking.startedAt = daysAgo(t.daysBack + 2);
+        booking.customerApproved = true;
+        booking.customerApprovedAt = daysAgo(t.daysBack + 1);
+      }
+      if (t.status === BookingStatus.COMPLETED) {
+        booking.confirmedAt = daysAgo(t.daysBack + 6);
+        booking.startedAt = daysAgo(t.daysBack + 5);
+        booking.customerApproved = true;
+        booking.customerApprovedAt = daysAgo(t.daysBack + 3);
+        booking.completedAt = daysAgo(t.daysBack);
+      }
+      if (t.status === BookingStatus.CANCELLED) {
+        booking.cancelledAt = daysAgo(t.daysBack);
+        booking.cancelledBy = customer.id;
+        booking.cancellationReason = t.cancellationReason;
+      }
+
+      const saved = await queryRunner.manager.save(Booking, booking);
+      // Backdate created_at/updated_at to make admin views realistic.
+      await queryRunner.query(
+        `UPDATE bookings SET created_at = $2, updated_at = $2 WHERE id = $1`,
+        [saved.id, daysAgo(t.daysBack)],
+      );
+
+      bookings.push(saved);
+    }
+
+    return bookings;
+  }
+
+  private async seedTransactions(
+    queryRunner: any,
+    providers: User[],
+    customers: User[],
+    bookings: Booking[],
+    orders: Order[],
+  ): Promise<Transaction[]> {
+    const daysAgo = (n: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() - n);
+      return d;
+    };
+
+    // Keep idempotent (seeder truncates, but this also covers partial runs).
+    await queryRunner.query(`DELETE FROM transactions WHERE reference LIKE 'seedpay-%'`);
+
+    const customer = customers[0];
+    const provider = providers[0];
+    const booking = bookings.find((b) => b.status === BookingStatus.CONFIRMED) || bookings[0];
+    const order = orders[0];
+
+    const seedRef = (i: number) => `seedpay-${Date.now()}-${i}`;
+
+    const seedTransactions: Array<Partial<Transaction> & { createdAt: Date }> = [
+      {
+        reference: seedRef(1),
+        userId: customer.id,
+        type: TransactionType.BOOKING_PAYMENT,
+        amount: booking.depositAmount || 3000,
+        currency: booking.currency || 'NGN',
+        status: TransactionStatus.COMPLETED,
+        gateway: PaymentGateway.PAYSTACK,
+        gatewayReference: `${Math.random().toString(16).slice(2)}-${Date.now()}`,
+        bookingId: booking.id,
+        description: 'Booking deposit (seed)',
+        paidAt: daysAgo(8),
+        createdAt: daysAgo(8),
+      },
+      {
+        reference: seedRef(2),
+        userId: customer.id,
+        type: TransactionType.ORDER_PAYMENT,
+        amount: order.amount,
+        currency: order.currency || 'NGN',
+        status: TransactionStatus.COMPLETED,
+        gateway: PaymentGateway.PAYSTACK,
+        gatewayReference: `${Math.random().toString(16).slice(2)}-${Date.now()}`,
+        orderId: order.id,
+        description: 'Order payment (seed)',
+        paidAt: daysAgo(6),
+        createdAt: daysAgo(6),
+      },
+      {
+        reference: seedRef(3),
+        userId: provider.id,
+        type: TransactionType.PAYOUT,
+        amount: 12000,
+        currency: 'NGN',
+        status: TransactionStatus.PENDING,
+        gateway: PaymentGateway.PAYSTACK,
+        description: 'Provider payout pending (seed)',
+        createdAt: daysAgo(3),
+      },
+      {
+        reference: seedRef(4),
+        userId: customer.id,
+        type: TransactionType.REFUND,
+        amount: 5000,
+        currency: 'NGN',
+        status: TransactionStatus.REFUNDED,
+        gateway: PaymentGateway.PAYSTACK,
+        bookingId: booking.id,
+        description: 'Partial refund (seed)',
+        createdAt: daysAgo(2),
+      },
+      {
+        reference: seedRef(5),
+        userId: customer.id,
+        type: TransactionType.BOOKING_PAYMENT,
+        amount: (Number(booking.amount) || 15000) - (Number(booking.depositAmount) || 3000),
+        currency: 'NGN',
+        status: TransactionStatus.FAILED,
+        gateway: PaymentGateway.PAYSTACK,
+        bookingId: booking.id,
+        description: 'Booking completion payment failed (seed)',
+        failureReason: 'Insufficient funds',
+        failedAt: daysAgo(1),
+        createdAt: daysAgo(1),
+      },
+    ];
+
+    // Add some extra volume across the last 14 days.
+    for (let i = 0; i < 18; i++) {
+      const day = (i % 14) + 1;
+      seedTransactions.push({
+        reference: seedRef(100 + i),
+        userId: customer.id,
+        type: TransactionType.ORDER_PAYMENT,
+        amount: 2500 + i * 350,
+        currency: 'NGN',
+        status: i % 5 === 0 ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+        gateway: PaymentGateway.PAYSTACK,
+        orderId: order.id,
+        gatewayReference: i % 5 === 0 ? undefined : `${Math.random().toString(16).slice(2)}-${Date.now()}`,
+        description: 'Seed order payment',
+        paidAt: i % 5 === 0 ? undefined : daysAgo(day),
+        createdAt: daysAgo(day),
+      });
+    }
+
+    const inserted: Transaction[] = [];
+    for (const tx of seedTransactions) {
+      const entity = queryRunner.manager.create(Transaction, {
+        reference: tx.reference!,
+        userId: tx.userId!,
+        type: tx.type!,
+        amount: tx.amount as any,
+        currency: tx.currency || 'NGN',
+        status: tx.status!,
+        gateway: tx.gateway!,
+        gatewayReference: tx.gatewayReference,
+        orderId: tx.orderId,
+        bookingId: tx.bookingId,
+        description: tx.description,
+        paidAt: (tx as any).paidAt,
+        failedAt: (tx as any).failedAt,
+        failureReason: (tx as any).failureReason,
+      });
+
+      const saved = await queryRunner.manager.save(Transaction, entity);
+      inserted.push(saved);
+    }
+
+    // Backdate created_at for nicer charts.
+    for (let idx = 0; idx < inserted.length; idx++) {
+      const desired = seedTransactions[idx].createdAt;
+      if (!desired) continue;
+      await queryRunner.query(
+        `UPDATE transactions SET created_at = $2, updated_at = $2 WHERE id = $1`,
+        [inserted[idx].id, desired],
+      );
+    }
+
+    return inserted;
+  }
+
   private async seedPosts(queryRunner: any, providers: User[], customers: User[]): Promise<Post[]> {
     const allUsers = [...providers, ...customers];
     const postsData = [
@@ -1056,6 +1375,127 @@ export class DatabaseSeeder {
     }
 
     return likes;
+  }
+
+  private async seedOrders(queryRunner: any, providers: User[], customers: User[], services: Service[]): Promise<Order[]> {
+    const ordersData = [
+      {
+        customerIndex: 0,
+        providerIndex: 0,
+        serviceIndex: 0,
+        status: OrderStatus.COMPLETED,
+        paymentStatus: PaymentStatus.COMPLETED,
+        amount: 25000,
+      },
+      {
+        customerIndex: 1,
+        providerIndex: 1,
+        serviceIndex: 2,
+        status: OrderStatus.COMPLETED,
+        paymentStatus: PaymentStatus.COMPLETED,
+        amount: 20000,
+      },
+      {
+        customerIndex: 2,
+        providerIndex: 0,
+        serviceIndex: 1,
+        status: OrderStatus.DISPUTED,
+        paymentStatus: PaymentStatus.COMPLETED,
+        amount: 40000,
+      },
+      {
+        customerIndex: 3,
+        providerIndex: 2,
+        serviceIndex: 4,
+        status: OrderStatus.DISPUTED,
+        paymentStatus: PaymentStatus.COMPLETED,
+        amount: 30000,
+      },
+      {
+        customerIndex: 4,
+        providerIndex: 3,
+        serviceIndex: 6,
+        status: OrderStatus.IN_PROGRESS,
+        paymentStatus: PaymentStatus.COMPLETED,
+        amount: 150000,
+      },
+    ];
+
+    const orders: Order[] = [];
+    for (const orderData of ordersData) {
+      const customer = customers[orderData.customerIndex % customers.length];
+      const provider = providers[orderData.providerIndex % providers.length];
+      const service = services[orderData.serviceIndex % services.length];
+
+      const order = queryRunner.manager.create(Order, {
+        orderNumber: `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+        customerId: customer.id,
+        providerId: provider.id,
+        serviceId: service.id,
+        status: orderData.status,
+        paymentStatus: orderData.paymentStatus,
+        amount: orderData.amount,
+        currency: 'NGN',
+        platformFee: Math.floor(orderData.amount * 0.1),
+        providerEarnings: Math.floor(orderData.amount * 0.9),
+        description: `Order for ${service.title}`,
+        paidAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      });
+
+      if (orderData.status === OrderStatus.COMPLETED) {
+        order.completedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+      }
+
+      const saved = await queryRunner.manager.save(Order, order);
+      orders.push(saved);
+    }
+
+    return orders;
+  }
+
+  private async seedDisputes(queryRunner: any, orders: Order[]): Promise<Dispute[]> {
+    const disputesData = [
+      {
+        orderIndex: 2,
+        reason: DisputeReason.POOR_QUALITY,
+        description: 'The statistical analysis was incomplete and contained errors. The regression models were not properly validated and the results chapter had multiple inconsistencies.',
+        evidence: ['Screenshot of error in SPSS output', 'Email from supervisor pointing out issues', 'Original vs delivered comparison'],
+        status: DisputeStatus.OPEN,
+      },
+      {
+        orderIndex: 3,
+        reason: DisputeReason.LATE_DELIVERY,
+        description: 'The dashboard was delivered 5 days after the agreed deadline, causing me to miss my presentation deadline. The delay was not communicated in advance.',
+        evidence: ['Chat log showing original deadline', 'Screenshot of late delivery notification'],
+        status: DisputeStatus.UNDER_REVIEW,
+      },
+      {
+        orderIndex: 4,
+        reason: DisputeReason.NOT_AS_DESCRIBED,
+        description: 'The thesis support was supposed to include methodology design but the provider only provided editing services. Key deliverables were missing.',
+        evidence: ['Service description screenshot', 'List of missing deliverables'],
+        status: DisputeStatus.OPEN,
+      },
+    ];
+
+    const disputes: Dispute[] = [];
+    for (const disputeData of disputesData) {
+      const order = orders[disputeData.orderIndex % orders.length];
+
+      const dispute = queryRunner.manager.create(Dispute, {
+        orderId: order.id,
+        raisedBy: order.customerId,
+        reason: disputeData.reason,
+        description: disputeData.description,
+        evidence: disputeData.evidence,
+        status: disputeData.status,
+      });
+
+      const saved = await queryRunner.manager.save(Dispute, dispute);
+      disputes.push(saved);
+    }
+
+    return disputes;
   }
 }
 
