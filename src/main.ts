@@ -95,7 +95,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .addServer(`http://localhost:${process.env.PORT || 3000}`, 'Local Development')
-    .addServer(process.env.API_URL || 'https://api.gripper.com', 'Production')
+    .addServer(process.env.API_URL || 'https://api.grapper.net', 'Production')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
