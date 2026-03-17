@@ -10,6 +10,7 @@ module.exports = {
       max_memory_restart: "1G",
       env: {
         NODE_ENV: "production",
+        API_URL: "https://api.grapper.net",
       },
       error_file: "./logs/err.log",
       out_file: "./logs/out.log",
