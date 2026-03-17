@@ -94,8 +94,7 @@ async function bootstrap() {
     .setDescription('The comprehensive API for the Gripper platform backend.')
     .setVersion('1.0')
     .addBearerAuth()
-    .addServer(`http://localhost:${process.env.PORT || 3000}`, 'Local Development')
-    .addServer(process.env.API_URL || 'https://api.grapper.net', 'Production')
+    .addServer('/', 'Current Host')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);

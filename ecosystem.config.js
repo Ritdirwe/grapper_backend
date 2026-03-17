@@ -12,6 +12,10 @@ module.exports = {
         NODE_ENV: "production",
         API_URL: "https://api.grapper.net",
       },
+      env_production: {
+        NODE_ENV: "production",
+        API_URL: "https://api.grapper.net",
+      },
       error_file: "./logs/err.log",
       out_file: "./logs/out.log",
       log_date_format: "YYYY-MM-DD HH:mm Z",
