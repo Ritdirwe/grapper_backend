@@ -47,11 +47,11 @@ async function main() {
     const orderRepo = queryRunner.manager.getRepository(Order);
     const txRepo = queryRunner.manager.getRepository(Transaction);
 
-    let admin = await userRepo.findOne({ where: { email: 'admin@gripper.com' } });
+    let admin = await userRepo.findOne({ where: { email: 'admin@grapper.com' } });
     if (!admin) {
       admin = await userRepo.save(
         userRepo.create({
-          email: 'admin@gripper.com',
+          email: 'admin@grapper.com',
           passwordHash: 'seeded',
           role: UserRole.ADMIN,
           status: UserStatus.ACTIVE,
@@ -62,11 +62,11 @@ async function main() {
       );
     }
 
-    let provider = await userRepo.findOne({ where: { email: 'pay.provider@gripper.com' } });
+    let provider = await userRepo.findOne({ where: { email: 'pay.provider@grapper.com' } });
     if (!provider) {
       provider = await userRepo.save(
         userRepo.create({
-          email: 'pay.provider@gripper.com',
+          email: 'pay.provider@grapper.com',
           passwordHash: 'seeded',
           role: UserRole.PROVIDER,
           status: UserStatus.ACTIVE,
@@ -303,7 +303,7 @@ async function main() {
     // eslint-disable-next-line no-console
     console.log(`   Customer: pay.customer@example.com`);
     // eslint-disable-next-line no-console
-    console.log(`   Provider: pay.provider@gripper.com`);
+    console.log(`   Provider: pay.provider@grapper.com`);
   } catch (err: any) {
     await queryRunner.rollbackTransaction();
     // eslint-disable-next-line no-console

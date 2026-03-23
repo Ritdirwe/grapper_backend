@@ -1,65 +1,71 @@
-const fs = require('fs');
-const path = require('path');
-const { spawn } = require('child_process');
+const fs = require("fs");
+const path = require("path");
+const { spawn } = require("child_process");
 
-const ROOT = path.resolve(__dirname, '..');
-const SWAGGER_PATH = path.join(ROOT, 'swagger.json');
+const ROOT = path.resolve(__dirname, "..");
+const SWAGGER_PATH = path.join(ROOT, "swagger.json");
 
-const DEFAULT_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3101';
-const START_PORT = process.env.API_SMOKE_PORT || '3101';
+const DEFAULT_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3101";
+const START_PORT = process.env.API_SMOKE_PORT || "3101";
 const START_TIMEOUT_MS = 120000;
 const REQUEST_TIMEOUT_MS = 10000;
 const CONCURRENCY = 8;
 
 const DEFAULT_CREDENTIALS = {
   admin: {
-    email: process.env.ADMIN_EMAIL || 'admin@gripper.com',
-    password: process.env.ADMIN_PASSWORD || 'password123',
+    email: process.env.ADMIN_EMAIL || "admin@grapper.com",
+    password: process.env.ADMIN_PASSWORD || "password123",
   },
   provider: {
-    email: process.env.PROVIDER_EMAIL || 'sarah@gripper.com',
-    password: process.env.PROVIDER_PASSWORD || 'password123',
+    email: process.env.PROVIDER_EMAIL || "sarah@grapper.com",
+    password: process.env.PROVIDER_PASSWORD || "password123",
   },
   user: {
-    email: process.env.USER_EMAIL || 'john@example.com',
-    password: process.env.USER_PASSWORD || 'password123',
+    email: process.env.USER_EMAIL || "john@example.com",
+    password: process.env.USER_PASSWORD || "password123",
   },
 };
 
 const SAMPLE_VALUES = {
-  id: '00000000-0000-4000-8000-000000000001',
-  userId: '00000000-0000-4000-8000-000000000002',
-  postId: '00000000-0000-4000-8000-000000000003',
-  commentId: '00000000-0000-4000-8000-000000000004',
-  milestoneId: '00000000-0000-4000-8000-000000000005',
-  imageId: '00000000-0000-4000-8000-000000000006',
-  index: '0',
-  type: 'post',
-  action: 'approve',
-  reference: 'ref_test_001',
-  slug: 'sample-slug',
-  tag: 'sample-tag',
+  id: "00000000-0000-4000-8000-000000000001",
+  userId: "00000000-0000-4000-8000-000000000002",
+  postId: "00000000-0000-4000-8000-000000000003",
+  commentId: "00000000-0000-4000-8000-000000000004",
+  milestoneId: "00000000-0000-4000-8000-000000000005",
+  imageId: "00000000-0000-4000-8000-000000000006",
+  index: "0",
+  type: "post",
+  action: "approve",
+  reference: "ref_test_001",
+  slug: "sample-slug",
+  tag: "sample-tag",
 };
 
 function parseArgs() {
   return {
-    startServer: process.argv.includes('--start'),
+    startServer: process.argv.includes("--start"),
   };
 }
 
 function readSwagger() {
   if (!fs.existsSync(SWAGGER_PATH)) {
-    throw new Error(`swagger.json not found at ${SWAGGER_PATH}. Start the app once to generate it.`);
+    throw new Error(
+      `swagger.json not found at ${SWAGGER_PATH}. Start the app once to generate it.`,
+    );
   }
 
-  return JSON.parse(fs.readFileSync(SWAGGER_PATH, 'utf8'));
+  return JSON.parse(fs.readFileSync(SWAGGER_PATH, "utf8"));
 }
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function requestWithTimeout(url, init = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+async function requestWithTimeout(
+  url,
+  init = {},
+  timeoutMs = REQUEST_TIMEOUT_MS,
+) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -78,7 +84,11 @@ async function waitUntilReady(baseUrl, timeoutMs = START_TIMEOUT_MS) {
 
   while (Date.now() - start < timeoutMs) {
     try {
-      const response = await requestWithTimeout(`${baseUrl}/api/docs-json`, { method: 'GET' }, 2500);
+      const response = await requestWithTimeout(
+        `${baseUrl}/api/docs-json`,
+        { method: "GET" },
+        2500,
+      );
       if (response.ok) {
         return;
       }
@@ -89,25 +99,27 @@ async function waitUntilReady(baseUrl, timeoutMs = START_TIMEOUT_MS) {
     await sleep(1000);
   }
 
-  throw new Error(`API did not become ready within ${timeoutMs}ms at ${baseUrl}`);
+  throw new Error(
+    `API did not become ready within ${timeoutMs}ms at ${baseUrl}`,
+  );
 }
 
 function startServer(port) {
-  const child = spawn('pnpm', ['start'], {
+  const child = spawn("pnpm", ["start"], {
     cwd: ROOT,
     detached: true,
     env: {
       ...process.env,
       PORT: String(port),
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ["ignore", "pipe", "pipe"],
   });
 
-  child.stdout.on('data', (chunk) => {
+  child.stdout.on("data", (chunk) => {
     process.stdout.write(`[api] ${chunk}`);
   });
 
-  child.stderr.on('data', (chunk) => {
+  child.stderr.on("data", (chunk) => {
     process.stderr.write(`[api] ${chunk}`);
   });
 
@@ -120,9 +132,9 @@ function stopServer(child) {
   }
 
   try {
-    process.kill(-child.pid, 'SIGTERM');
+    process.kill(-child.pid, "SIGTERM");
   } catch (_) {
-    child.kill('SIGTERM');
+    child.kill("SIGTERM");
   }
 }
 
@@ -139,9 +151,9 @@ function needsAuth(operation) {
 
 async function loginAndGetToken(baseUrl, email, password) {
   const response = await requestWithTimeout(`${baseUrl}/api/auth/login`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({ email, password }),
   });
@@ -152,7 +164,9 @@ async function loginAndGetToken(baseUrl, email, password) {
 
   const payload = await response.json();
   if (!payload?.accessToken) {
-    throw new Error(`Login succeeded for ${email} but no accessToken was returned`);
+    throw new Error(
+      `Login succeeded for ${email} but no accessToken was returned`,
+    );
   }
 
   return payload.accessToken;
@@ -197,11 +211,11 @@ function pickToken(pathName, operation, tokens) {
     return undefined;
   }
 
-  if (pathName.includes('/admin/') || pathName.includes('/moderation')) {
+  if (pathName.includes("/admin/") || pathName.includes("/moderation")) {
     return tokens.admin;
   }
 
-  if (pathName.includes('/provider') || pathName.includes('/payouts')) {
+  if (pathName.includes("/provider") || pathName.includes("/payouts")) {
     return tokens.provider || tokens.user;
   }
 
@@ -217,18 +231,18 @@ function buildRequestInit(pathName, method, operation, tokens) {
     init.headers.Authorization = `Bearer ${token}`;
   }
 
-  if (operation.requestBody && ['POST', 'PUT', 'PATCH'].includes(upperMethod)) {
+  if (operation.requestBody && ["POST", "PUT", "PATCH"].includes(upperMethod)) {
     const content = operation.requestBody.content || {};
-    if (content['application/json']) {
-      init.headers['Content-Type'] = 'application/json';
+    if (content["application/json"]) {
+      init.headers["Content-Type"] = "application/json";
       init.body = JSON.stringify({});
-    } else if (content['application/x-www-form-urlencoded']) {
-      init.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-      init.body = '';
-    } else if (content['multipart/form-data']) {
+    } else if (content["application/x-www-form-urlencoded"]) {
+      init.headers["Content-Type"] = "application/x-www-form-urlencoded";
+      init.body = "";
+    } else if (content["multipart/form-data"]) {
       return {
         skipped: true,
-        reason: 'multipart/form-data skipped in pass A',
+        reason: "multipart/form-data skipped in pass A",
       };
     }
   }
@@ -242,7 +256,7 @@ function enumerateOperations(swagger) {
 
   for (const [pathName, operations] of Object.entries(paths)) {
     for (const [method, operation] of Object.entries(operations)) {
-      if (!['get', 'post', 'put', 'patch', 'delete'].includes(method)) {
+      if (!["get", "post", "put", "patch", "delete"].includes(method)) {
         continue;
       }
 
@@ -265,7 +279,10 @@ async function runWithConcurrency(items, concurrency, worker) {
     }
   }
 
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => runOne());
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => runOne(),
+  );
   await Promise.all(workers);
   return results;
 }
@@ -274,42 +291,46 @@ async function runPassA(baseUrl, swagger, tokens) {
   const operations = enumerateOperations(swagger);
   const startedAt = new Date().toISOString();
 
-  const results = await runWithConcurrency(operations, CONCURRENCY, async ({ pathName, method, operation }) => {
-    const request = buildRequestInit(pathName, method, operation, tokens);
-    if (request.skipped) {
-      return {
-        path: pathName,
-        method: method.toUpperCase(),
-        status: 'SKIPPED',
-        ok: true,
-        reason: request.reason,
-      };
-    }
+  const results = await runWithConcurrency(
+    operations,
+    CONCURRENCY,
+    async ({ pathName, method, operation }) => {
+      const request = buildRequestInit(pathName, method, operation, tokens);
+      if (request.skipped) {
+        return {
+          path: pathName,
+          method: method.toUpperCase(),
+          status: "SKIPPED",
+          ok: true,
+          reason: request.reason,
+        };
+      }
 
-    const url = buildUrl(baseUrl, pathName);
+      const url = buildUrl(baseUrl, pathName);
 
-    try {
-      const response = await requestWithTimeout(url, request.init);
-      const ok = response.status < 500;
-      return {
-        path: pathName,
-        method: method.toUpperCase(),
-        status: response.status,
-        ok,
-      };
-    } catch (error) {
-      return {
-        path: pathName,
-        method: method.toUpperCase(),
-        status: 'ERROR',
-        ok: false,
-        reason: error.message,
-      };
-    }
-  });
+      try {
+        const response = await requestWithTimeout(url, request.init);
+        const ok = response.status < 500;
+        return {
+          path: pathName,
+          method: method.toUpperCase(),
+          status: response.status,
+          ok,
+        };
+      } catch (error) {
+        return {
+          path: pathName,
+          method: method.toUpperCase(),
+          status: "ERROR",
+          ok: false,
+          reason: error.message,
+        };
+      }
+    },
+  );
 
   const failed = results.filter((r) => !r.ok);
-  const skipped = results.filter((r) => r.status === 'SKIPPED');
+  const skipped = results.filter((r) => r.status === "SKIPPED");
 
   const summary = {
     startedAt,
@@ -328,8 +349,8 @@ async function runPassA(baseUrl, swagger, tokens) {
 }
 
 function printSummary(report) {
-  console.log('\nPass A Reachability Report');
-  console.log('--------------------------');
+  console.log("\nPass A Reachability Report");
+  console.log("--------------------------");
   console.log(`Base URL: ${report.summary.baseUrl}`);
   console.log(`Total operations: ${report.summary.total}`);
   console.log(`Passed: ${report.summary.passed}`);
@@ -337,16 +358,20 @@ function printSummary(report) {
   console.log(`Skipped: ${report.summary.skipped}`);
 
   if (report.failed.length > 0) {
-    console.log('\nFailures (5xx/network):');
+    console.log("\nFailures (5xx/network):");
     for (const fail of report.failed.slice(0, 30)) {
-      console.log(`- ${fail.method} ${fail.path} -> ${fail.status}${fail.reason ? ` (${fail.reason})` : ''}`);
+      console.log(
+        `- ${fail.method} ${fail.path} -> ${fail.status}${fail.reason ? ` (${fail.reason})` : ""}`,
+      );
     }
   }
 }
 
 async function main() {
   const args = parseArgs();
-  const targetPort = args.startServer ? START_PORT : new URL(DEFAULT_BASE_URL).port;
+  const targetPort = args.startServer
+    ? START_PORT
+    : new URL(DEFAULT_BASE_URL).port;
   const baseUrl = args.startServer
     ? `http://127.0.0.1:${targetPort}`
     : DEFAULT_BASE_URL;

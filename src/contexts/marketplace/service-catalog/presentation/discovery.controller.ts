@@ -1,11 +1,14 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { ServiceService } from '../application/services/service.service';
 import { ProviderProfileService } from '@contexts/identity/user-management/application/services/provider-profile.service';
 import { Public } from '@common/decorators/public.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Discovery')
 @Controller()
@@ -16,9 +19,10 @@ export class DiscoveryController {
   ) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get('recommendations')
   @ApiOperation({ summary: 'Get personalized service recommendations for the current user' })
+  @Permissions(PERMISSIONS.MARKETPLACE_DISCOVERY_PERSONALIZED_READ)
   async getRecommendations(@CurrentUser() user: AuthUser) {
     // Basic implementation: return most ordered services for now
     return this.serviceService.search({

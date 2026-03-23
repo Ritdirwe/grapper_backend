@@ -1,31 +1,31 @@
-const path = require('path');
-const { spawn } = require('child_process');
+const path = require("path");
+const { spawn } = require("child_process");
 
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, "..");
 
-const DEFAULT_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:3101';
-const START_PORT = process.env.API_SMOKE_PORT || '3101';
+const DEFAULT_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3101";
+const START_PORT = process.env.API_SMOKE_PORT || "3101";
 const START_TIMEOUT_MS = 120000;
 const REQUEST_TIMEOUT_MS = 15000;
 
 const DEFAULT_CREDENTIALS = {
   admin: {
-    email: process.env.ADMIN_EMAIL || 'admin@gripper.com',
-    password: process.env.ADMIN_PASSWORD || 'password123',
+    email: process.env.ADMIN_EMAIL || "admin@grapper.com",
+    password: process.env.ADMIN_PASSWORD || "password123",
   },
   provider: {
-    email: process.env.PROVIDER_EMAIL || 'sarah@gripper.com',
-    password: process.env.PROVIDER_PASSWORD || 'password123',
+    email: process.env.PROVIDER_EMAIL || "sarah@grapper.com",
+    password: process.env.PROVIDER_PASSWORD || "password123",
   },
   user: {
-    email: process.env.USER_EMAIL || 'john@example.com',
-    password: process.env.USER_PASSWORD || 'password123',
+    email: process.env.USER_EMAIL || "john@example.com",
+    password: process.env.USER_PASSWORD || "password123",
   },
 };
 
 function parseArgs() {
   return {
-    startServer: process.argv.includes('--start'),
+    startServer: process.argv.includes("--start"),
   };
 }
 
@@ -33,7 +33,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function requestWithTimeout(url, init = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+async function requestWithTimeout(
+  url,
+  init = {},
+  timeoutMs = REQUEST_TIMEOUT_MS,
+) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -51,7 +55,11 @@ async function waitUntilReady(baseUrl, timeoutMs = START_TIMEOUT_MS) {
 
   while (Date.now() - start < timeoutMs) {
     try {
-      const response = await requestWithTimeout(`${baseUrl}/api/docs-json`, { method: 'GET' }, 2500);
+      const response = await requestWithTimeout(
+        `${baseUrl}/api/docs-json`,
+        { method: "GET" },
+        2500,
+      );
       if (response.ok) {
         return;
       }
@@ -62,25 +70,27 @@ async function waitUntilReady(baseUrl, timeoutMs = START_TIMEOUT_MS) {
     await sleep(1000);
   }
 
-  throw new Error(`API did not become ready within ${timeoutMs}ms at ${baseUrl}`);
+  throw new Error(
+    `API did not become ready within ${timeoutMs}ms at ${baseUrl}`,
+  );
 }
 
 function startServer(port) {
-  const child = spawn('pnpm', ['start'], {
+  const child = spawn("pnpm", ["start"], {
     cwd: ROOT,
     detached: true,
     env: {
       ...process.env,
       PORT: String(port),
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ["ignore", "pipe", "pipe"],
   });
 
-  child.stdout.on('data', (chunk) => {
+  child.stdout.on("data", (chunk) => {
     process.stdout.write(`[api] ${chunk}`);
   });
 
-  child.stderr.on('data', (chunk) => {
+  child.stderr.on("data", (chunk) => {
     process.stderr.write(`[api] ${chunk}`);
   });
 
@@ -93,9 +103,9 @@ function stopServer(child) {
   }
 
   try {
-    process.kill(-child.pid, 'SIGTERM');
+    process.kill(-child.pid, "SIGTERM");
   } catch (_) {
-    child.kill('SIGTERM');
+    child.kill("SIGTERM");
   }
 }
 
@@ -122,7 +132,7 @@ async function httpRequest(baseUrl, method, route, options = {}) {
 
   let body;
   if (options.json !== undefined) {
-    headers['Content-Type'] = 'application/json';
+    headers["Content-Type"] = "application/json";
     body = JSON.stringify(options.json);
   } else if (options.formData) {
     body = options.formData;
@@ -155,14 +165,14 @@ function statusUnder500(response) {
 
 function getErrorContext(response) {
   if (!response) {
-    return 'no response';
+    return "no response";
   }
 
   if (response.json) {
     return JSON.stringify(response.json);
   }
 
-  return response.text || '(empty response body)';
+  return response.text || "(empty response body)";
 }
 
 async function runStep(report, step) {
@@ -181,24 +191,31 @@ async function runStep(report, step) {
       pass,
       durationMs: Date.now() - start,
       note: step.note,
-      error: pass ? undefined : `Unexpected response: ${getErrorContext(response)}`,
+      error: pass
+        ? undefined
+        : `Unexpected response: ${getErrorContext(response)}`,
     };
 
     report.steps.push(entry);
 
     if (!pass) {
-      throw new Error(`${step.method} ${step.route} failed with status ${response.status}`);
+      throw new Error(
+        `${step.method} ${step.route} failed with status ${response.status}`,
+      );
     }
 
     return response;
   } catch (error) {
-    if (!report.steps[report.steps.length - 1] || report.steps[report.steps.length - 1].name !== step.name) {
+    if (
+      !report.steps[report.steps.length - 1] ||
+      report.steps[report.steps.length - 1].name !== step.name
+    ) {
       report.steps.push({
         flow: step.flow,
         name: step.name,
         method: step.method,
         route: step.route,
-        status: 'ERROR',
+        status: "ERROR",
         pass: false,
         durationMs: Date.now() - start,
         note: step.note,
@@ -211,7 +228,7 @@ async function runStep(report, step) {
 }
 
 async function login(baseUrl, email, password) {
-  const response = await httpRequest(baseUrl, 'POST', '/api/auth/login', {
+  const response = await httpRequest(baseUrl, "POST", "/api/auth/login", {
     json: { email, password },
   });
 
@@ -226,103 +243,127 @@ async function login(baseUrl, email, password) {
 }
 
 async function runIdentityFlow(baseUrl, report, context) {
-  const flow = 'Identity';
+  const flow = "Identity";
 
   const adminLogin = await runStep(report, {
     flow,
-    name: 'login admin',
-    method: 'POST',
-    route: '/api/auth/login',
+    name: "login admin",
+    method: "POST",
+    route: "/api/auth/login",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/auth/login', { json: DEFAULT_CREDENTIALS.admin }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/auth/login", {
+        json: DEFAULT_CREDENTIALS.admin,
+      }),
   });
   context.adminToken = adminLogin.json.accessToken;
   context.adminUser = adminLogin.json.user;
 
   const providerLogin = await runStep(report, {
     flow,
-    name: 'login provider',
-    method: 'POST',
-    route: '/api/auth/login',
+    name: "login provider",
+    method: "POST",
+    route: "/api/auth/login",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/auth/login', { json: DEFAULT_CREDENTIALS.provider }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/auth/login", {
+        json: DEFAULT_CREDENTIALS.provider,
+      }),
   });
   context.providerToken = providerLogin.json.accessToken;
   context.providerUser = providerLogin.json.user;
 
   const userLogin = await runStep(report, {
     flow,
-    name: 'login user',
-    method: 'POST',
-    route: '/api/auth/login',
+    name: "login user",
+    method: "POST",
+    route: "/api/auth/login",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/auth/login', { json: DEFAULT_CREDENTIALS.user }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/auth/login", {
+        json: DEFAULT_CREDENTIALS.user,
+      }),
   });
   context.userToken = userLogin.json.accessToken;
   context.userUser = userLogin.json.user;
 
   await runStep(report, {
     flow,
-    name: 'admin /auth/me',
-    method: 'POST',
-    route: '/api/auth/me',
+    name: "admin /auth/me",
+    method: "POST",
+    route: "/api/auth/me",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/auth/me', { token: context.adminToken }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/auth/me", {
+        token: context.adminToken,
+      }),
   });
 
   await runStep(report, {
     flow,
-    name: 'provider /auth/me',
-    method: 'POST',
-    route: '/api/auth/me',
+    name: "provider /auth/me",
+    method: "POST",
+    route: "/api/auth/me",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/auth/me', { token: context.providerToken }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/auth/me", {
+        token: context.providerToken,
+      }),
   });
 
   await runStep(report, {
     flow,
-    name: 'user /auth/me',
-    method: 'POST',
-    route: '/api/auth/me',
+    name: "user /auth/me",
+    method: "POST",
+    route: "/api/auth/me",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/auth/me', { token: context.userToken }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/auth/me", {
+        token: context.userToken,
+      }),
   });
 }
 
 async function runProfileAndPreferencesFlow(baseUrl, report, context) {
-  const flow = 'Profile+Preferences';
+  const flow = "Profile+Preferences";
 
   await runStep(report, {
     flow,
-    name: 'get my profile',
-    method: 'GET',
-    route: '/api/profiles/me',
-    expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', '/api/profiles/me', { token: context.userToken }),
-  });
-
-  await runStep(report, {
-    flow,
-    name: 'get preferences',
-    method: 'GET',
-    route: '/api/preferences',
-    expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', '/api/preferences', { token: context.userToken }),
-  });
-
-  await runStep(report, {
-    flow,
-    name: 'update preferences',
-    method: 'PUT',
-    route: '/api/preferences',
+    name: "get my profile",
+    method: "GET",
+    route: "/api/profiles/me",
     expect: statusIs(200),
     action: () =>
-      httpRequest(baseUrl, 'PUT', '/api/preferences', {
+      httpRequest(baseUrl, "GET", "/api/profiles/me", {
+        token: context.userToken,
+      }),
+  });
+
+  await runStep(report, {
+    flow,
+    name: "get preferences",
+    method: "GET",
+    route: "/api/preferences",
+    expect: statusIs(200),
+    action: () =>
+      httpRequest(baseUrl, "GET", "/api/preferences", {
+        token: context.userToken,
+      }),
+  });
+
+  await runStep(report, {
+    flow,
+    name: "update preferences",
+    method: "PUT",
+    route: "/api/preferences",
+    expect: statusIs(200),
+    action: () =>
+      httpRequest(baseUrl, "PUT", "/api/preferences", {
         token: context.userToken,
         json: {
-          language: 'en',
-          timezone: 'UTC',
-          currency: 'USD',
+          language: "en",
+          timezone: "UTC",
+          currency: "USD",
           emailNotifications: true,
           pushNotifications: true,
           smsNotifications: false,
@@ -336,45 +377,53 @@ async function runProfileAndPreferencesFlow(baseUrl, report, context) {
 }
 
 async function runSocialFlow(baseUrl, report, context) {
-  const flow = 'Social';
+  const flow = "Social";
   const runId = `passb-${Date.now()}`;
 
   const form = new FormData();
-  form.append('content', `Pass B social flow ${runId}`);
-  form.append('visibility', 'public');
+  form.append("content", `Pass B social flow ${runId}`);
+  form.append("visibility", "public");
 
   const createPost = await runStep(report, {
     flow,
-    name: 'create post',
-    method: 'POST',
-    route: '/api/posts',
+    name: "create post",
+    method: "POST",
+    route: "/api/posts",
     expect: statusIs(201),
-    action: () => httpRequest(baseUrl, 'POST', '/api/posts', { token: context.userToken, formData: form }),
+    action: () =>
+      httpRequest(baseUrl, "POST", "/api/posts", {
+        token: context.userToken,
+        formData: form,
+      }),
   });
 
   const postId = createPost.json?.id;
   if (!postId) {
-    throw new Error('Post created but no id returned');
+    throw new Error("Post created but no id returned");
   }
   context.postId = postId;
 
   await runStep(report, {
     flow,
-    name: 'like post',
-    method: 'POST',
+    name: "like post",
+    method: "POST",
     route: `/api/posts/${postId}/like`,
     expect: statusIs(201),
-    action: () => httpRequest(baseUrl, 'POST', `/api/posts/${postId}/like`, { token: context.userToken, json: {} }),
+    action: () =>
+      httpRequest(baseUrl, "POST", `/api/posts/${postId}/like`, {
+        token: context.userToken,
+        json: {},
+      }),
   });
 
   await runStep(report, {
     flow,
-    name: 'comment post',
-    method: 'POST',
+    name: "comment post",
+    method: "POST",
     route: `/api/posts/${postId}/comments`,
     expect: statusIs(201),
     action: () =>
-      httpRequest(baseUrl, 'POST', `/api/posts/${postId}/comments`, {
+      httpRequest(baseUrl, "POST", `/api/posts/${postId}/comments`, {
         token: context.providerToken,
         json: { content: `Pass B comment ${runId}` },
       }),
@@ -382,12 +431,12 @@ async function runSocialFlow(baseUrl, report, context) {
 
   await runStep(report, {
     flow,
-    name: 'share post',
-    method: 'POST',
+    name: "share post",
+    method: "POST",
     route: `/api/posts/${postId}/share`,
     expect: statusIs(201),
     action: () =>
-      httpRequest(baseUrl, 'POST', `/api/posts/${postId}/share`, {
+      httpRequest(baseUrl, "POST", `/api/posts/${postId}/share`, {
         token: context.providerToken,
         json: { caption: `Pass B share ${runId}` },
       }),
@@ -395,216 +444,246 @@ async function runSocialFlow(baseUrl, report, context) {
 
   await runStep(report, {
     flow,
-    name: 'get post comments',
-    method: 'GET',
+    name: "get post comments",
+    method: "GET",
     route: `/api/posts/${postId}/comments`,
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', `/api/posts/${postId}/comments`, { token: context.userToken }),
+    action: () =>
+      httpRequest(baseUrl, "GET", `/api/posts/${postId}/comments`, {
+        token: context.userToken,
+      }),
   });
 
   await runStep(report, {
     flow,
-    name: 'get post shares',
-    method: 'GET',
+    name: "get post shares",
+    method: "GET",
     route: `/api/posts/${postId}/shares`,
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', `/api/posts/${postId}/shares`, { token: context.userToken }),
+    action: () =>
+      httpRequest(baseUrl, "GET", `/api/posts/${postId}/shares`, {
+        token: context.userToken,
+      }),
   });
 
   await runStep(report, {
     flow,
-    name: 'delete post cleanup',
-    method: 'DELETE',
+    name: "delete post cleanup",
+    method: "DELETE",
     route: `/api/posts/${postId}`,
     expect: statusIs(204),
-    action: () => httpRequest(baseUrl, 'DELETE', `/api/posts/${postId}`, { token: context.userToken }),
+    action: () =>
+      httpRequest(baseUrl, "DELETE", `/api/posts/${postId}`, {
+        token: context.userToken,
+      }),
   });
 }
 
 async function runMarketplaceFlow(baseUrl, report, context) {
-  const flow = 'Marketplace';
+  const flow = "Marketplace";
   const runId = `passb-${Date.now()}`;
 
   const categories = await runStep(report, {
     flow,
-    name: 'list categories',
-    method: 'GET',
-    route: '/api/categories',
+    name: "list categories",
+    method: "GET",
+    route: "/api/categories",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', '/api/categories'),
+    action: () => httpRequest(baseUrl, "GET", "/api/categories"),
   });
 
-  const firstCategory = Array.isArray(categories.json) ? categories.json.find((c) => c && c.id) : undefined;
+  const firstCategory = Array.isArray(categories.json)
+    ? categories.json.find((c) => c && c.id)
+    : undefined;
   if (!firstCategory) {
-    throw new Error('No category available for service creation');
+    throw new Error("No category available for service creation");
   }
 
   const createService = await runStep(report, {
     flow,
-    name: 'create service',
-    method: 'POST',
-    route: '/api/services',
+    name: "create service",
+    method: "POST",
+    route: "/api/services",
     expect: statusIs(201),
     action: () =>
-      httpRequest(baseUrl, 'POST', '/api/services', {
+      httpRequest(baseUrl, "POST", "/api/services", {
         token: context.providerToken,
         json: {
           title: `Pass B Service ${runId}`,
           description:
-            'This is a deterministic pass B service creation payload used for end-to-end API flow validation in CI and local checks.',
-          shortDescription: 'Deterministic pass B service payload',
+            "This is a deterministic pass B service creation payload used for end-to-end API flow validation in CI and local checks.",
+          shortDescription: "Deterministic pass B service payload",
           categoryId: firstCategory.id,
           price: 150,
-          currency: 'USD',
-          pricingType: 'fixed',
-          deliveryType: 'remote',
+          currency: "USD",
+          pricingType: "fixed",
+          deliveryType: "remote",
           durationDays: 3,
-          tags: ['pass-b', 'automation'],
-          features: ['Flow-safe creation', 'Deterministic payload'],
-          requirements: ['None'],
-          location: 'Remote',
-          serviceArea: ['Worldwide'],
+          tags: ["pass-b", "automation"],
+          features: ["Flow-safe creation", "Deterministic payload"],
+          requirements: ["None"],
+          location: "Remote",
+          serviceArea: ["Worldwide"],
         },
       }),
   });
 
   const serviceId = createService.json?.id;
   if (!serviceId) {
-    throw new Error('Service created but no id returned');
+    throw new Error("Service created but no id returned");
   }
   context.serviceId = serviceId;
 
   await runStep(report, {
     flow,
-    name: 'publish service',
-    method: 'POST',
+    name: "publish service",
+    method: "POST",
     route: `/api/services/${serviceId}/publish`,
     expect: statusIs(200),
     action: () =>
-      httpRequest(baseUrl, 'POST', `/api/services/${serviceId}/publish`, {
+      httpRequest(baseUrl, "POST", `/api/services/${serviceId}/publish`, {
         token: context.providerToken,
       }),
   });
 
   const createBooking = await runStep(report, {
     flow,
-    name: 'create booking',
-    method: 'POST',
-    route: '/api/bookings',
+    name: "create booking",
+    method: "POST",
+    route: "/api/bookings",
     expect: statusIs(201),
     action: () =>
-      httpRequest(baseUrl, 'POST', '/api/bookings', {
+      httpRequest(baseUrl, "POST", "/api/bookings", {
         token: context.userToken,
         json: {
           serviceId,
-          scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          scheduledTime: '10:00 AM',
-          notes: 'Pass B booking flow validation',
-          location: 'Remote',
+          scheduledDate: new Date(
+            Date.now() + 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          scheduledTime: "10:00 AM",
+          notes: "Pass B booking flow validation",
+          location: "Remote",
         },
       }),
   });
 
   const bookingId = createBooking.json?.id;
   if (!bookingId) {
-    throw new Error('Booking created but no id returned');
+    throw new Error("Booking created but no id returned");
   }
   context.bookingId = bookingId;
 
   await runStep(report, {
     flow,
-    name: 'confirm booking',
-    method: 'POST',
+    name: "confirm booking",
+    method: "POST",
     route: `/api/bookings/${bookingId}/confirm`,
     expect: statusIs(200),
     action: () =>
-      httpRequest(baseUrl, 'POST', `/api/bookings/${bookingId}/confirm`, {
+      httpRequest(baseUrl, "POST", `/api/bookings/${bookingId}/confirm`, {
         token: context.providerToken,
       }),
   });
 }
 
 async function runPaymentsFlow(baseUrl, report, context) {
-  const flow = 'Payments';
+  const flow = "Payments";
 
   await runStep(report, {
     flow,
-    name: 'list transactions',
-    method: 'GET',
-    route: '/api/payments/transactions',
+    name: "list transactions",
+    method: "GET",
+    route: "/api/payments/transactions",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', '/api/payments/transactions', { token: context.userToken }),
+    action: () =>
+      httpRequest(baseUrl, "GET", "/api/payments/transactions", {
+        token: context.userToken,
+      }),
   });
 
   await runStep(report, {
     flow,
-    name: 'initialize payment (gateway-dependent)',
-    method: 'POST',
-    route: '/api/payments/initialize',
+    name: "initialize payment (gateway-dependent)",
+    method: "POST",
+    route: "/api/payments/initialize",
     expect: statusUnder500,
-    note: 'Passes on any non-5xx response to isolate app-level failures from gateway setup differences.',
+    note: "Passes on any non-5xx response to isolate app-level failures from gateway setup differences.",
     action: () =>
-      httpRequest(baseUrl, 'POST', '/api/payments/initialize', {
+      httpRequest(baseUrl, "POST", "/api/payments/initialize", {
         token: context.userToken,
         json: {
           amount: 100,
-          currency: 'NGN',
-          type: 'booking_payment',
+          currency: "NGN",
+          type: "booking_payment",
           bookingId: context.bookingId,
           email: DEFAULT_CREDENTIALS.user.email,
-          description: 'Pass B payment initialize check',
+          description: "Pass B payment initialize check",
         },
       }),
   });
 
   await runStep(report, {
     flow,
-    name: 'webhook payload guard',
-    method: 'POST',
-    route: '/api/payments/webhook/paystack',
+    name: "webhook payload guard",
+    method: "POST",
+    route: "/api/payments/webhook/paystack",
     expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'POST', '/api/payments/webhook/paystack', { json: {} }),
-  });
-}
-
-async function runAdminFlow(baseUrl, report, context) {
-  const flow = 'Admin';
-
-  await runStep(report, {
-    flow,
-    name: 'dashboard stats',
-    method: 'GET',
-    route: '/api/moderation/dashboard/stats',
-    expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', '/api/moderation/dashboard/stats', { token: context.adminToken }),
-  });
-
-  await runStep(report, {
-    flow,
-    name: 'list reports',
-    method: 'GET',
-    route: '/api/moderation/reports',
-    expect: statusIs(200),
-    action: () => httpRequest(baseUrl, 'GET', '/api/moderation/reports', { token: context.adminToken }),
-  });
-
-  const unknownPostId = '00000000-0000-4000-8000-0000000000aa';
-  await runStep(report, {
-    flow,
-    name: 'delete safe missing content',
-    method: 'DELETE',
-    route: `/api/moderation/content/post/${unknownPostId}`,
-    expect: statusUnder500,
     action: () =>
-      httpRequest(baseUrl, 'DELETE', `/api/moderation/content/post/${unknownPostId}`, {
-        token: context.adminToken,
+      httpRequest(baseUrl, "POST", "/api/payments/webhook/paystack", {
+        json: {},
       }),
   });
 }
 
+async function runAdminFlow(baseUrl, report, context) {
+  const flow = "Admin";
+
+  await runStep(report, {
+    flow,
+    name: "dashboard stats",
+    method: "GET",
+    route: "/api/moderation/dashboard/stats",
+    expect: statusIs(200),
+    action: () =>
+      httpRequest(baseUrl, "GET", "/api/moderation/dashboard/stats", {
+        token: context.adminToken,
+      }),
+  });
+
+  await runStep(report, {
+    flow,
+    name: "list reports",
+    method: "GET",
+    route: "/api/moderation/reports",
+    expect: statusIs(200),
+    action: () =>
+      httpRequest(baseUrl, "GET", "/api/moderation/reports", {
+        token: context.adminToken,
+      }),
+  });
+
+  const unknownPostId = "00000000-0000-4000-8000-0000000000aa";
+  await runStep(report, {
+    flow,
+    name: "delete safe missing content",
+    method: "DELETE",
+    route: `/api/moderation/content/post/${unknownPostId}`,
+    expect: statusUnder500,
+    action: () =>
+      httpRequest(
+        baseUrl,
+        "DELETE",
+        `/api/moderation/content/post/${unknownPostId}`,
+        {
+          token: context.adminToken,
+        },
+      ),
+  });
+}
+
 function printReport(report) {
-  console.log('\nPass B Happy-Path Report');
-  console.log('------------------------');
+  console.log("\nPass B Happy-Path Report");
+  console.log("------------------------");
   console.log(`Base URL: ${report.baseUrl}`);
   console.log(`Total steps: ${report.steps.length}`);
 
@@ -614,9 +693,11 @@ function printReport(report) {
   console.log(`Failed: ${failed}`);
 
   for (const step of report.steps) {
-    const icon = step.pass ? 'PASS' : 'FAIL';
-    const status = String(step.status).padEnd(5, ' ');
-    console.log(`- [${icon}] [${step.flow}] ${step.method} ${step.route} -> ${status} (${step.durationMs}ms)`);
+    const icon = step.pass ? "PASS" : "FAIL";
+    const status = String(step.status).padEnd(5, " ");
+    console.log(
+      `- [${icon}] [${step.flow}] ${step.method} ${step.route} -> ${status} (${step.durationMs}ms)`,
+    );
     if (step.note) {
       console.log(`  note: ${step.note}`);
     }
@@ -656,8 +737,12 @@ async function runPassB(baseUrl) {
 
 async function main() {
   const args = parseArgs();
-  const targetPort = args.startServer ? START_PORT : new URL(DEFAULT_BASE_URL).port;
-  const baseUrl = args.startServer ? `http://127.0.0.1:${targetPort}` : DEFAULT_BASE_URL;
+  const targetPort = args.startServer
+    ? START_PORT
+    : new URL(DEFAULT_BASE_URL).port;
+  const baseUrl = args.startServer
+    ? `http://127.0.0.1:${targetPort}`
+    : DEFAULT_BASE_URL;
 
   let server;
   try {

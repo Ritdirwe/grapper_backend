@@ -248,3 +248,38 @@ export class AdminVerificationResponseDto {
   @ApiProperty()
   updatedAt: Date;
 }
+
+export class AdminAssignRoleDto {
+  @ApiProperty({ enum: UserRole })
+  @IsEnum(UserRole)
+  role: UserRole;
+}
+
+export class AdminSetPrimaryRoleDto {
+  @ApiProperty({ enum: UserRole })
+  @IsEnum(UserRole)
+  role: UserRole;
+}
+
+export class AdminUserRoleAssignmentResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ enum: UserRole })
+  role: UserRole;
+
+  @ApiProperty()
+  isPrimary: boolean;
+
+  @ApiProperty({ required: false })
+  assignedBy?: string;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+}

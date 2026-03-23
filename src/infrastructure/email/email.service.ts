@@ -202,7 +202,7 @@ export class EmailService {
   }
 
   async sendVerificationCode(email: string, code: string, userName?: string): Promise<boolean> {
-    const subject = 'Verify Your Email - Gripper Marketplace';
+    const subject = 'Verify Your Email - Grapper Marketplace';
     const html = this.getVerificationEmailTemplate(code, userName);
     const text = `Your verification code is: ${code}\n\nThis code will expire in 15 minutes.\n\nIf you didn't request this code, please ignore this email.`;
 
@@ -210,7 +210,7 @@ export class EmailService {
   }
 
   async sendPasswordResetCode(email: string, code: string, userName?: string): Promise<boolean> {
-    const subject = 'Reset Your Password - Gripper Marketplace';
+    const subject = 'Reset Your Password - Grapper Marketplace';
     const html = this.getPasswordResetTemplate(code, userName);
     const text = `Your password reset code is: ${code}\n\nThis code will expire in 15 minutes.\n\nIf you didn't request this code, please ignore this email.`;
 
@@ -218,9 +218,9 @@ export class EmailService {
   }
 
   async sendWelcomeEmail(email: string, userName: string): Promise<boolean> {
-    const subject = 'Welcome to Gripper Marketplace!';
+    const subject = 'Welcome to Grapper Marketplace!';
     const html = this.getWelcomeEmailTemplate(userName);
-    const text = `Welcome to Gripper Marketplace, ${userName}!\n\nWe're excited to have you on board.`;
+    const text = `Welcome to Grapper Marketplace, ${userName}!\n\nWe're excited to have you on board.`;
 
     return this.sendEmail({ to: email, subject, html, text });
   }
@@ -242,7 +242,7 @@ export class EmailService {
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Gripper Marketplace</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Grapper Marketplace</h1>
             </td>
           </tr>
           
@@ -280,7 +280,7 @@ export class EmailService {
           <tr>
             <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px; text-align: center;">
               <p style="margin: 0; color: #999999; font-size: 12px;">
-                © ${new Date().getFullYear()} Gripper Marketplace. All rights reserved.
+                © ${new Date().getFullYear()} Grapper Marketplace. All rights reserved.
               </p>
             </td>
           </tr>
@@ -348,7 +348,7 @@ export class EmailService {
           <tr>
             <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px; text-align: center;">
               <p style="margin: 0; color: #999999; font-size: 12px;">
-                © ${new Date().getFullYear()} Gripper Marketplace. All rights reserved.
+                © ${new Date().getFullYear()} Grapper Marketplace. All rights reserved.
               </p>
             </td>
           </tr>
@@ -368,7 +368,7 @@ export class EmailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Gripper!</title>
+  <title>Welcome to Grapper!</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
@@ -387,7 +387,7 @@ export class EmailService {
             <td style="padding: 40px;">
               <h2 style="margin: 0 0 20px; color: #333333; font-size: 24px; font-weight: 600;">Hi ${userName}!</h2>
               <p style="margin: 0 0 20px; color: #666666; font-size: 16px; line-height: 1.5;">
-                Welcome to <strong>Gripper Marketplace</strong>! We're thrilled to have you join our community.
+                Welcome to <strong>Grapper Marketplace</strong>! We're thrilled to have you join our community.
               </p>
               <p style="margin: 0 0 30px; color: #666666; font-size: 16px; line-height: 1.5;">
                 You can now explore services, connect with providers, and start booking amazing experiences.
@@ -409,7 +409,7 @@ export class EmailService {
           <tr>
             <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 8px 8px; text-align: center;">
               <p style="margin: 0; color: #999999; font-size: 12px;">
-                © ${new Date().getFullYear()} Gripper Marketplace. All rights reserved.
+                © ${new Date().getFullYear()} Grapper Marketplace. All rights reserved.
               </p>
             </td>
           </tr>

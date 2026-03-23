@@ -45,7 +45,7 @@ export class DatabaseSeeder {
       port: parseInt(process.env.DATABASE_PORT || '5432'),
       username: process.env.DATABASE_USER || process.env.DATABASE_USERNAME || 'postgres',
       password: process.env.DATABASE_PASSWORD || 'postgres',
-      database: process.env.DATABASE_NAME || process.env.DATABASE_DATABASE || 'gripper_marketplace',
+      database: process.env.DATABASE_NAME || process.env.DATABASE_DATABASE || 'grapper_marketplace',
       entities: [
         User,
         RefreshToken,
@@ -74,7 +74,7 @@ export class DatabaseSeeder {
   }
 
   async createDatabaseIfNotExists(): Promise<void> {
-    const dbName = process.env.DATABASE_NAME || process.env.DATABASE_DATABASE || 'gripper_marketplace';
+    const dbName = process.env.DATABASE_NAME || process.env.DATABASE_DATABASE || 'grapper_marketplace';
     const tempDataSource = new DataSource({
       type: 'postgres',
       host: process.env.DATABASE_HOST || 'localhost',
@@ -188,8 +188,8 @@ export class DatabaseSeeder {
       console.log(`   - Transactions: ${transactions.length}`);
       console.log(`   - Disputes: ${disputes.length}`);
       console.log(`\n🔑 Default passwords: "password123" for all users`);
-      console.log(`   Admin: admin@gripper.com`);
-      console.log(`   Providers: sarah@gripper.com, james@gripper.com, etc.`);
+      console.log(`   Admin: admin@grapper.com`);
+      console.log(`   Providers: sarah@grapper.com, james@grapper.com, etc.`);
       console.log(`   Customers: john@example.com, emma@example.com, etc.\n`);
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -282,7 +282,7 @@ export class DatabaseSeeder {
 
     // Admin user
     const adminUser = queryRunner.manager.create(User, {
-      email: 'admin@gripper.com',
+      email: 'admin@grapper.com',
       passwordHash: hashedPassword,
       phoneNumber: '+2348012345678',
       role: UserRole.ADMIN,
@@ -295,7 +295,7 @@ export class DatabaseSeeder {
     // Provider data
     const providersData = [
       {
-        email: 'sarah@gripper.com',
+        email: 'sarah@grapper.com',
         phoneNumber: '+2348023456789',
         fullName: 'Dr. Sarah Chen',
         displayName: 'Dr. Sarah',
@@ -320,7 +320,7 @@ export class DatabaseSeeder {
         ],
       },
       {
-        email: 'james@gripper.com',
+        email: 'james@grapper.com',
         phoneNumber: '+2348034567890',
         fullName: 'James Wilson',
         displayName: 'James W.',
@@ -343,7 +343,7 @@ export class DatabaseSeeder {
         ],
       },
       {
-        email: 'maria@gripper.com',
+        email: 'maria@grapper.com',
         phoneNumber: '+2348045678901',
         fullName: 'Maria Rodriguez',
         displayName: 'Maria R.',
@@ -368,7 +368,7 @@ export class DatabaseSeeder {
         ],
       },
       {
-        email: 'david@gripper.com',
+        email: 'david@grapper.com',
         phoneNumber: '+2348056789012',
         fullName: 'David Okonkwo',
         displayName: 'David O.',
@@ -391,7 +391,7 @@ export class DatabaseSeeder {
         ],
       },
       {
-        email: 'grace@gripper.com',
+        email: 'grace@grapper.com',
         phoneNumber: '+2348067890123',
         fullName: 'Dr. Grace Adeyemi',
         displayName: 'Dr. Grace',

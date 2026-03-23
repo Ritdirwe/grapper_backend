@@ -1,7 +1,7 @@
 {
-  "name": "gripper-backend",
+  "name": "grapper-backend",
   "version": "1.0.0",
-  "description": "Gripper Marketplace Backend - NestJS with DDD Architecture",
+  "description": "Grapper Marketplace Backend - NestJS with DDD Architecture",
   "main": "dist/main",
   "scripts": {
     "build": "rm -rf dist tsconfig.build.tsbuildinfo && nest build && node scripts/generate-swagger-from-dist.js",
@@ -23,6 +23,8 @@
     "api:pass:a:start": "node scripts/api-reachability.js --start",
     "api:pass:b": "node scripts/api-happy-path.js",
     "api:pass:b:start": "node scripts/api-happy-path.js --start",
+    "api:pass:register-rbac": "node scripts/api-register-rbac.js",
+    "api:pass:register-rbac:start": "node scripts/api-register-rbac.js --start",
     "arch:check": "node scripts/check-boundaries.js",
     "arch:status": "node scripts/migration-status.js"
   },

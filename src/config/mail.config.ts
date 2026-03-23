@@ -10,8 +10,8 @@ export default registerAs('mail', () => ({
     pass: process.env.MAIL_PASSWORD,
   },
   from: {
-    name: process.env.MAIL_FROM_NAME || 'Gripper Marketplace',
-    address: process.env.MAIL_FROM_ADDRESS || 'noreply@gripper.com',
+    name: process.env.MAIL_FROM_NAME || 'Grapper Marketplace',
+    address: process.env.MAIL_FROM_ADDRESS || 'noreply@grapper.com',
   },
   resend: {
     apiKey: process.env.RESEND_API_KEY || process.env.RESEND_MAIL_API,

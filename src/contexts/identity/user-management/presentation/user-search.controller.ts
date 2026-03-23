@@ -5,15 +5,19 @@ import { CreateUserSearchDto, UserSearchResponseDto, UserSearchQueryDto } from '
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '../../domain/entities/user.entity';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
+import { Permissions } from '@common/decorators/permissions.decorator';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('User Searches')
 @Controller('user/searches')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class UserSearchController {
   constructor(private readonly userSearchService: UserSearchService) {}
 
   @Post()
+  @Permissions(PERMISSIONS.IDENTITY_USER_SEARCH_CREATE_SELF)
   @ApiOperation({ summary: 'Save a user search query' })
   @ApiResponse({ status: 201, description: 'Search saved successfully' })
   async create(
@@ -31,6 +35,7 @@ export class UserSearchController {
   }
 
   @Get()
+  @Permissions(PERMISSIONS.IDENTITY_USER_SEARCH_READ_SELF)
   @ApiOperation({ summary: 'Get user search history' })
   @ApiResponse({ status: 200, type: [UserSearchResponseDto] })
   async findByUser(
@@ -48,6 +53,7 @@ export class UserSearchController {
   }
 
   @Get('recent')
+  @Permissions(PERMISSIONS.IDENTITY_USER_SEARCH_READ_SELF)
   @ApiOperation({ summary: 'Get recent unique search queries' })
   @ApiResponse({ status: 200, type: [String] })
   async getRecentSearches(
@@ -58,6 +64,7 @@ export class UserSearchController {
   }
 
   @Delete(':id')
+  @Permissions(PERMISSIONS.IDENTITY_USER_SEARCH_DELETE_SELF)
   @ApiOperation({ summary: 'Delete a search from history' })
   @ApiResponse({ status: 200, description: 'Search deleted' })
   async delete(

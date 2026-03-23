@@ -7,6 +7,7 @@ import { VerificationRequest } from '../../domain/entities/verification-request.
 import { User } from '../../../domain/entities/user.entity';
 import { UserRole } from '../../../domain/value-objects/user-role.vo';
 import { VerificationStatus } from '../../domain/value-objects/user-enums.vo';
+import { PermissionsService } from '@common/authz/application/services/permissions.service';
 import {
   UpdateProviderProfileDto,
   ProviderProfileResponseDto,
@@ -24,6 +25,7 @@ export class ProviderProfileService {
     private userRepository: Repository<User>,
     @InjectRepository(VerificationRequest)
     private verificationRepository: Repository<VerificationRequest>,
+    private readonly permissionsService: PermissionsService,
   ) {}
 
   async getOrCreateProviderProfile(userId: string): Promise<ProviderProfile> {
@@ -38,6 +40,8 @@ export class ProviderProfileService {
         user.role = UserRole.PROVIDER;
         await this.userRepository.save(user);
       }
+
+      await this.permissionsService.assignRoleToUser(userId, UserRole.PROVIDER);
 
       providerProfile = this.providerProfileRepository.create({ userId });
       await this.providerProfileRepository.save(providerProfile);

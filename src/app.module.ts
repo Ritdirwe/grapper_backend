@@ -15,6 +15,7 @@ import jwtConfig from './config/jwt.config';
 import paymentConfig from './config/payment.config';
 import mailConfig from './config/mail.config';
 import storageConfig from './config/storage.config';
+import { AuthorizationModule } from '@common/authz/authorization.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import storageConfig from './config/storage.config';
     }),
 
     // Infrastructure
+    AuthorizationModule,
     EmailModule,
 
     // Domain Modules

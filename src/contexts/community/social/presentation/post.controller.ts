@@ -30,16 +30,19 @@ import {
   ShareResponseDto,
 } from '../application/dto/social.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { StorageService } from '@infrastructure/storage/storage.service';
 import { PostVisibility } from '../domain/value-objects/social-enums.vo';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Social Posts')
 @ApiBearerAuth()
 @Controller('posts')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PostController {
   constructor(
     private readonly postService: PostService,
@@ -50,6 +53,7 @@ export class PostController {
   ) {}
 
   @Get('feed')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Get current user social feed' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -63,6 +67,7 @@ export class PostController {
   }
 
   @Get('discover')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Discover new posts' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -76,6 +81,7 @@ export class PostController {
   }
 
   @Get('user/:userId')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Get posts by a specific user' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -90,6 +96,7 @@ export class PostController {
   }
 
   @Get(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Get post details by ID' })
   @ApiResponse({ status: 200, type: PostResponseDto })
   async getPost(
@@ -100,6 +107,7 @@ export class PostController {
   }
 
   @Post('')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_CREATE)
   @ApiOperation({ summary: 'Create a new post' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -152,6 +160,7 @@ export class PostController {
   }
 
   @Put(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_UPDATE_OWN)
   @ApiOperation({ summary: 'Update an existing post' })
   @ApiResponse({ status: 200, type: PostResponseDto })
   async updatePost(
@@ -163,6 +172,7 @@ export class PostController {
   }
 
   @Delete(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_DELETE_OWN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a post' })
   @ApiResponse({ status: 204 })
@@ -174,6 +184,7 @@ export class PostController {
   }
 
   @Get(':id/stats')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Get post engagement statistics' })
   @ApiResponse({ status: 200 })
   async getStats(@Param('id') id: string) {
@@ -181,6 +192,7 @@ export class PostController {
   }
 
   @Get('hashtags/trending')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Get trending hashtags' })
   @ApiResponse({ status: 200 })
   async getTrendingHashtags(@Query('limit') limit?: number) {
@@ -188,6 +200,7 @@ export class PostController {
   }
 
   @Get('hashtags/:tag')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_READ)
   @ApiOperation({ summary: 'Get posts by hashtag' })
   @ApiResponse({ status: 200, type: [PostResponseDto] })
   async getPostsByHashtag(
@@ -201,6 +214,7 @@ export class PostController {
 
   // Comments
   @Get(':postId/comments')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_READ)
   @ApiOperation({ summary: 'Get comments for a post' })
   @ApiResponse({ status: 200, type: [CommentResponseDto] })
   async getComments(
@@ -213,6 +227,7 @@ export class PostController {
   }
 
   @Post(':postId/comments')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_CREATE)
   @ApiOperation({ summary: 'Add a comment to a post' })
   @ApiResponse({ status: 201, type: CommentResponseDto })
   async createComment(
@@ -225,6 +240,7 @@ export class PostController {
 
   // Likes
   @Post(':postId/like')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_INTERACT)
   @ApiOperation({ summary: 'Like a post' })
   @ApiResponse({ status: 201 })
   async likePost(
@@ -236,6 +252,7 @@ export class PostController {
   }
 
   @Delete(':postId/like')
+  @Permissions(PERMISSIONS.COMMUNITY_POST_INTERACT)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Unlike a post' })
   @ApiResponse({ status: 204 })
@@ -248,6 +265,7 @@ export class PostController {
 
   // Shares
   @Post(':postId/share')
+  @Permissions(PERMISSIONS.COMMUNITY_SHARE_CREATE)
   @ApiOperation({ summary: 'Share a post' })
   @ApiResponse({ status: 201, type: ShareResponseDto })
   async sharePost(
@@ -259,6 +277,7 @@ export class PostController {
   }
 
   @Get(':postId/shares')
+  @Permissions(PERMISSIONS.COMMUNITY_SHARE_READ)
   @ApiOperation({ summary: 'Get users who shared a post' })
   @ApiResponse({ status: 200, type: [ShareResponseDto] })
   async getShares(

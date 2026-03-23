@@ -11,19 +11,23 @@ import {
 } from '@nestjs/common';
 import { FollowService } from '../application/services/follow.service';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User } from '../../domain/entities/user.entity';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Permissions } from '@common/decorators/permissions.decorator';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Social Follows')
 @ApiBearerAuth()
 @Controller('follows')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
   @Post(':userId')
   @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_CREATE_SELF)
   @ApiOperation({ summary: 'Follow a user' })
   @ApiResponse({ status: 200, description: 'Followed successfully' })
   async follow(
@@ -34,6 +38,7 @@ export class FollowController {
   }
 
   @Delete(':userId')
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_DELETE_SELF)
   @ApiOperation({ summary: 'Unfollow a user' })
   @ApiResponse({ status: 200, description: 'Unfollowed successfully' })
   async unfollow(
@@ -44,6 +49,7 @@ export class FollowController {
   }
 
   @Get(':userId/status')
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_READ_SELF)
   @ApiOperation({ summary: 'Check if current user is following target user' })
   @ApiResponse({ status: 200 })
   async isFollowing(
@@ -55,6 +61,7 @@ export class FollowController {
   }
 
   @Get('followers')
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_READ_SELF)
   @ApiOperation({ summary: 'Get current user followers' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -71,6 +78,7 @@ export class FollowController {
   }
 
   @Get('following')
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_READ_SELF)
   @ApiOperation({ summary: 'Get users current user is following' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -87,6 +95,7 @@ export class FollowController {
   }
 
   @Get(':userId/followers')
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_READ_SELF)
   @ApiOperation({ summary: 'Get followers of a specific user' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -103,6 +112,7 @@ export class FollowController {
   }
 
   @Get(':userId/following')
+  @Permissions(PERMISSIONS.IDENTITY_FOLLOW_READ_SELF)
   @ApiOperation({ summary: 'Get users a specific user is following' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })

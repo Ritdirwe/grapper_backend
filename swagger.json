@@ -1547,6 +1547,188 @@
         ]
       }
     },
+    "/api/admin/users/{userId}/roles": {
+      "get": {
+        "operationId": "AdminUserController_getUserRoles",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserRoleAssignmentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get assigned roles for a specific user",
+        "tags": [
+          "Admin User Management"
+        ]
+      },
+      "post": {
+        "operationId": "AdminUserController_assignRole",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminAssignRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserRoleAssignmentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign a role to a user",
+        "tags": [
+          "Admin User Management"
+        ]
+      }
+    },
+    "/api/admin/users/{userId}/roles/{role}": {
+      "delete": {
+        "operationId": "AdminUserController_removeRole",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserRoleAssignmentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a role from a user",
+        "tags": [
+          "Admin User Management"
+        ]
+      }
+    },
+    "/api/admin/users/{userId}/roles/primary": {
+      "put": {
+        "operationId": "AdminUserController_setPrimaryRole",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminSetPrimaryRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserRoleAssignmentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set primary role for a user",
+        "tags": [
+          "Admin User Management"
+        ]
+      }
+    },
     "/api/admin/users/{userId}/verifications": {
       "get": {
         "operationId": "AdminUserController_getUserVerifications",
@@ -8365,6 +8547,159 @@
         ]
       }
     },
+    "/api/admin/permissions/roles": {
+      "get": {
+        "operationId": "AdminPermissionsController_getRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all available roles",
+        "tags": [
+          "Admin Permissions"
+        ]
+      }
+    },
+    "/api/admin/permissions/matrix": {
+      "get": {
+        "operationId": "AdminPermissionsController_getPermissionMatrix",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get role-permission matrix grouped by domain",
+        "tags": [
+          "Admin Permissions"
+        ]
+      }
+    },
+    "/api/admin/permissions/roles/{role}": {
+      "get": {
+        "operationId": "AdminPermissionsController_getRolePermissions",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get permissions for a role",
+        "tags": [
+          "Admin Permissions"
+        ]
+      },
+      "put": {
+        "operationId": "AdminPermissionsController_bulkSetRolePermissions",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolePermissionBulkUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Bulk set permissions for a role",
+        "tags": [
+          "Admin Permissions"
+        ]
+      }
+    },
+    "/api/admin/permissions/roles/{role}/{permissionKey}": {
+      "put": {
+        "operationId": "AdminPermissionsController_setRolePermission",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "permissionKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRolePermissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set single permission for a role",
+        "tags": [
+          "Admin Permissions"
+        ]
+      }
+    },
     "/api/reporting/audit-logs": {
       "get": {
         "operationId": "ReportingController_getAuditLogs",
@@ -8726,20 +9061,16 @@
     }
   },
   "info": {
-    "title": "Gripper API",
-    "description": "The comprehensive API for the Gripper platform backend.",
+    "title": "Grapper API",
+    "description": "The comprehensive API for the Grapper platform backend.",
     "version": "1.0",
     "contact": {}
   },
   "tags": [],
   "servers": [
     {
-      "url": "http://localhost:3000",
-      "description": "Local Development"
-    },
-    {
-      "url": "https://api.gripper.com",
-      "description": "Production"
+      "url": "/",
+      "description": "Current Host"
     }
   ],
   "components": {
@@ -8774,6 +9105,16 @@
           "country": {
             "type": "string",
             "example": "Nigeria"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "provider",
+              "admin",
+              "both"
+            ],
+            "example": "user"
           }
         },
         "required": [
@@ -9576,6 +9917,79 @@
           "emailVerified",
           "phoneVerified",
           "createdAt"
+        ]
+      },
+      "AdminUserRoleAssignmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "provider",
+              "admin"
+            ]
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "assignedBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "role",
+          "isPrimary",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "AdminAssignRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "provider",
+              "admin"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "AdminSetPrimaryRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "provider",
+              "admin"
+            ]
+          }
+        },
+        "required": [
+          "role"
         ]
       },
       "AdminReviewVerificationDto": {
@@ -11079,7 +11493,7 @@
           },
           "redirectURL": {
             "type": "string",
-            "example": "https://gripper.com/bookings"
+            "example": "https://grapper.com/bookings"
           },
           "email": {
             "type": "string",
@@ -12633,6 +13047,49 @@
         },
         "required": [
           "updatedPosts"
+        ]
+      },
+      "SetRolePermissionDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "RolePermissionBulkItemDto": {
+        "type": "object",
+        "properties": {
+          "permissionKey": {
+            "type": "string",
+            "example": "marketplace.service.create.own"
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "permissionKey",
+          "enabled"
+        ]
+      },
+      "RolePermissionBulkUpdateDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RolePermissionBulkItemDto"
+            }
+          }
+        },
+        "required": [
+          "permissions"
         ]
       }
     }

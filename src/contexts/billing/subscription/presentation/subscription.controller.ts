@@ -22,12 +22,15 @@ import {
   SubscriptionResponseDto,
 } from '../application/dto/subscription.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { Role } from '@shared/types/role.type';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Subscription Plans')
 @Controller('plans')
@@ -53,8 +56,9 @@ export class PlanController {
 
   @ApiBearerAuth()
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @Permissions(PERMISSIONS.BILLING_PLAN_MANAGE)
   @ApiOperation({ summary: 'Create a new subscription plan (Admin only)' })
   @ApiResponse({ status: 201, type: PlanResponseDto })
   async createPlan(@Body() dto: CreatePlanDto): Promise<PlanResponseDto> {
@@ -63,8 +67,9 @@ export class PlanController {
 
   @ApiBearerAuth()
   @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @Permissions(PERMISSIONS.BILLING_PLAN_MANAGE)
   @ApiOperation({ summary: 'Update an existing subscription plan (Admin only)' })
   @ApiResponse({ status: 200, type: PlanResponseDto })
   async updatePlan(
@@ -76,8 +81,9 @@ export class PlanController {
 
   @ApiBearerAuth()
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @Permissions(PERMISSIONS.BILLING_PLAN_MANAGE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete/Deactivate a subscription plan (Admin only)' })
   @ApiResponse({ status: 204 })
@@ -89,11 +95,12 @@ export class PlanController {
 @ApiTags('Subscriptions')
 @ApiBearerAuth()
 @Controller('subscriptions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
   @Get('me')
+  @Permissions(PERMISSIONS.BILLING_SUBSCRIPTION_READ_SELF)
   @ApiOperation({ summary: 'Get current user active subscription' })
   @ApiResponse({ status: 200, type: SubscriptionResponseDto })
   async getMySubscription(
@@ -103,6 +110,7 @@ export class SubscriptionController {
   }
 
   @Get(':id')
+  @Permissions(PERMISSIONS.BILLING_SUBSCRIPTION_READ_SELF)
   @ApiOperation({ summary: 'Get subscription details by ID' })
   @ApiResponse({ status: 200, type: SubscriptionResponseDto })
   async getSubscription(
@@ -113,6 +121,7 @@ export class SubscriptionController {
   }
 
   @Post()
+  @Permissions(PERMISSIONS.BILLING_SUBSCRIPTION_CREATE_SELF)
   @ApiOperation({ summary: 'Subscribe to a plan' })
   @ApiResponse({ status: 201, type: SubscriptionResponseDto })
   async createSubscription(
@@ -123,6 +132,7 @@ export class SubscriptionController {
   }
 
   @Post(':id/cancel')
+  @Permissions(PERMISSIONS.BILLING_SUBSCRIPTION_CANCEL_SELF)
   @ApiOperation({ summary: 'Cancel an active subscription' })
   @ApiResponse({ status: 200, type: SubscriptionResponseDto })
   async cancelSubscription(

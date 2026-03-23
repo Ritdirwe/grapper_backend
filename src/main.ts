@@ -90,8 +90,8 @@ async function bootstrap() {
   const { join } = await import('path');
   
   const config = new DocumentBuilder()
-    .setTitle('Gripper API')
-    .setDescription('The comprehensive API for the Gripper platform backend.')
+    .setTitle('Grapper API')
+    .setDescription('The comprehensive API for the Grapper platform backend.')
     .setVersion('1.0')
     .addBearerAuth()
     .addServer('/', 'Current Host')

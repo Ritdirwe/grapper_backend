@@ -1,18 +1,22 @@
 import { Controller, Post, Body, UseGuards, Delete, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { PushService } from '../application/services/push.service';
 import { RegisterTokenDto, BroadcastDto } from '../application/dto/notification.dto';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 
 import { UserRole } from '@contexts/identity/domain/value-objects/user-role.vo';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Push Notifications')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(PERMISSIONS.COMMUNITY_PUSH_SELF)
 @Controller('push')
 export class PushController {
   constructor(private readonly pushService: PushService) {}
@@ -38,6 +42,7 @@ export class PushController {
   @Post('broadcast')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
+  @Permissions(PERMISSIONS.COMMUNITY_PUSH_BROADCAST)
   @ApiOperation({ summary: 'Broadcast a notification to all active devices (Admin only)' })
   async broadcast(@Body() dto: BroadcastDto) {
     return this.pushService.broadcast(dto);
@@ -49,7 +54,7 @@ export class PushController {
     return this.pushService.sendToUser(
       user.id,
       'Test Notification',
-      'This is a test notification from the Gripper backend.',
+      'This is a test notification from the Grapper backend.',
       { type: 'test' }
     );
   }

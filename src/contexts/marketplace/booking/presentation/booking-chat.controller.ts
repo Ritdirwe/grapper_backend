@@ -12,18 +12,22 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { BookingChatService } from '../application/services/booking-chat.service';
 import {
   BookingMessageResponseDto,
   SendBookingMessageDto,
 } from '../application/dto/booking-message.dto';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Service Bookings')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('bookings/:id/messages')
+@Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CHAT_MANAGE_PARTICIPANT)
 export class BookingChatController {
   constructor(private readonly bookingChatService: BookingChatService) {}
 

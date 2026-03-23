@@ -18,9 +18,12 @@ import {
   CertificationDto,
 } from '../application/dto/provider-profile.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { User } from '../../domain/entities/user.entity';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 class UpdateAvailabilityDto {
   @ApiProperty() isAvailable: boolean;
@@ -28,12 +31,13 @@ class UpdateAvailabilityDto {
 
 @ApiTags('Provider Profiles')
 @Controller('provider-profiles')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ProviderProfileController {
   constructor(private readonly providerProfileService: ProviderProfileService) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Get('me')
+  @Permissions(PERMISSIONS.IDENTITY_PROVIDER_PROFILE_READ_SELF)
   @ApiOperation({ summary: 'Get current user provider profile' })
   @ApiResponse({ status: 200, type: ProviderProfileResponseDto })
   async getMyProviderProfile(@CurrentUser() user: User): Promise<ProviderProfileResponseDto> {
@@ -41,8 +45,8 @@ export class ProviderProfileController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Put('me')
+  @Permissions(PERMISSIONS.IDENTITY_PROVIDER_PROFILE_UPDATE_SELF)
   @ApiOperation({ summary: 'Update current user provider profile' })
   @ApiResponse({ status: 200, type: ProviderProfileResponseDto })
   async updateMyProviderProfile(
@@ -53,8 +57,8 @@ export class ProviderProfileController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post('me/portfolio')
+  @Permissions(PERMISSIONS.IDENTITY_PROVIDER_PORTFOLIO_MANAGE_SELF)
   @ApiOperation({ summary: 'Add an item to portfolio' })
   @ApiResponse({ status: 201, type: ProviderProfileResponseDto })
   async addPortfolioItem(
@@ -65,8 +69,8 @@ export class ProviderProfileController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Delete('me/portfolio/:index')
+  @Permissions(PERMISSIONS.IDENTITY_PROVIDER_PORTFOLIO_MANAGE_SELF)
   @ApiOperation({ summary: 'Remove an item from portfolio' })
   @ApiResponse({ status: 200, type: ProviderProfileResponseDto })
   async removePortfolioItem(
@@ -77,8 +81,8 @@ export class ProviderProfileController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Post('me/certifications')
+  @Permissions(PERMISSIONS.IDENTITY_PROVIDER_CERTIFICATION_MANAGE_SELF)
   @ApiOperation({ summary: 'Add a certification' })
   @ApiResponse({ status: 201, type: ProviderProfileResponseDto })
   async addCertification(
@@ -89,8 +93,8 @@ export class ProviderProfileController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   @Put('me/availability')
+  @Permissions(PERMISSIONS.IDENTITY_PROVIDER_AVAILABILITY_UPDATE_SELF)
   @ApiOperation({ summary: 'Update availability status' })
   @ApiResponse({ status: 200, type: ProviderProfileResponseDto })
   async updateAvailability(

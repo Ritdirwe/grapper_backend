@@ -19,10 +19,13 @@ import {
   RespondToReviewDto,
 } from '../application/dto/review.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Service Reviews')
 @Controller('reviews')
@@ -48,8 +51,9 @@ export class ReviewController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post()
+  @Permissions(PERMISSIONS.MARKETPLACE_REVIEW_CREATE)
   @ApiOperation({ summary: 'Create a new review' })
   @ApiResponse({ status: 201, type: ReviewResponseDto })
   async create(
@@ -60,8 +64,9 @@ export class ReviewController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Put(':id')
+  @Permissions(PERMISSIONS.MARKETPLACE_REVIEW_UPDATE_OWN)
   @ApiOperation({ summary: 'Update an existing review' })
   @ApiResponse({ status: 200, type: ReviewResponseDto })
   async update(
@@ -73,8 +78,9 @@ export class ReviewController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete(':id')
+  @Permissions(PERMISSIONS.MARKETPLACE_REVIEW_DELETE_OWN)
   @ApiOperation({ summary: 'Delete a review' })
   @ApiResponse({ status: 200 })
   async delete(
@@ -85,8 +91,9 @@ export class ReviewController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post(':id/respond')
+  @Permissions(PERMISSIONS.MARKETPLACE_REVIEW_RESPOND_PROVIDER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Respond to a review (Provider only)' })
   @ApiResponse({ status: 200, type: ReviewResponseDto })
@@ -98,7 +105,10 @@ export class ReviewController {
     return this.reviewService.respond(id, user.id, dto);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post(':id/helpful')
+  @Permissions(PERMISSIONS.MARKETPLACE_REVIEW_MARK_HELPFUL)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Mark a review as helpful' })
   @ApiResponse({ status: 200, type: ReviewResponseDto })

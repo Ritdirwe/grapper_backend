@@ -20,17 +20,21 @@ import {
   AdResponseDto,
 } from '../application/dto/ad.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { Public } from '@common/decorators/public.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @Controller('ads')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AdController {
   constructor(private readonly adService: AdService) {}
 
   @Get('feed')
   @Public()
+  @Permissions(PERMISSIONS.COMMUNITY_AD_READ_FEED)
   async getFeed(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
@@ -39,6 +43,7 @@ export class AdController {
   }
 
   @Post()
+  @Permissions(PERMISSIONS.COMMUNITY_AD_MANAGE_OWN)
   async createAd(
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateAdDto,
@@ -47,11 +52,13 @@ export class AdController {
   }
 
   @Get()
+  @Permissions(PERMISSIONS.COMMUNITY_AD_MANAGE_OWN)
   async getMyAds(@CurrentUser() user: AuthUser): Promise<AdResponseDto[]> {
     return this.adService.findAll(user.id);
   }
 
   @Get(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_AD_MANAGE_OWN)
   async getAd(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
@@ -60,6 +67,7 @@ export class AdController {
   }
 
   @Put(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_AD_MANAGE_OWN)
   async updateAd(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
@@ -69,6 +77,7 @@ export class AdController {
   }
 
   @Delete(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_AD_MANAGE_OWN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAd(
     @CurrentUser() user: AuthUser,
@@ -82,16 +91,19 @@ export class AdController {
   // For now adding them here.
   
   @Post(':id/like')
+  @Permissions(PERMISSIONS.COMMUNITY_AD_INTERACT)
   async likeAd(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.adService.likeAd(id, user.id);
   }
 
   @Get(':id/comments')
+  @Permissions(PERMISSIONS.COMMUNITY_AD_INTERACT)
   async getComments(@Param('id') id: string) {
     return this.adService.getComments(id);
   }
 
   @Post(':id/comments')
+  @Permissions(PERMISSIONS.COMMUNITY_AD_INTERACT)
   async addComment(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body('content') content: string) {
     return this.adService.addComment(id, user.id, content);
   }

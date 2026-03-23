@@ -16,20 +16,25 @@ import {
   PayoutMethodResponseDto,
 } from '../application/dto/payout-method.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { User } from '../../domain/entities/user.entity';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @Controller('payout-methods')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PayoutMethodController {
   constructor(private readonly payoutMethodService: PayoutMethodService) {}
 
   @Get()
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_READ_SELF)
   async getPayoutMethods(@CurrentUser() user: User): Promise<PayoutMethodResponseDto[]> {
     return this.payoutMethodService.getPayoutMethods(user.id);
   }
 
   @Get('default')
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_READ_SELF)
   async getDefaultPayoutMethod(
     @CurrentUser() user: User,
   ): Promise<PayoutMethodResponseDto | null> {
@@ -37,6 +42,7 @@ export class PayoutMethodController {
   }
 
   @Get(':id')
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_READ_SELF)
   async getPayoutMethod(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -45,6 +51,7 @@ export class PayoutMethodController {
   }
 
   @Post()
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_CREATE_SELF)
   async createPayoutMethod(
     @CurrentUser() user: User,
     @Body() dto: CreatePayoutMethodDto,
@@ -53,6 +60,7 @@ export class PayoutMethodController {
   }
 
   @Put(':id')
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_UPDATE_SELF)
   async updatePayoutMethod(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -62,6 +70,7 @@ export class PayoutMethodController {
   }
 
   @Delete(':id')
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_DELETE_SELF)
   async deletePayoutMethod(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -71,6 +80,7 @@ export class PayoutMethodController {
 
   @Post(':id/set-default')
   @HttpCode(HttpStatus.OK)
+  @Permissions(PERMISSIONS.IDENTITY_PAYOUT_METHOD_SET_DEFAULT_SELF)
   async setDefaultPayoutMethod(
     @CurrentUser() user: User,
     @Param('id') id: string,

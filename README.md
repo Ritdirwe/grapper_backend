@@ -1,4 +1,4 @@
-# Gripper Marketplace Backend
+# Grapper Marketplace Backend
 
 NestJS backend with Domain-Driven Design (DDD) architecture, Fastify adapter, TypeORM, and PostgreSQL.
 
@@ -55,7 +55,7 @@ cp .env.example .env
 3. Create database:
 
 ```bash
-createdb gripper_marketplace
+createdb grapper_marketplace
 ```
 
 ### Development

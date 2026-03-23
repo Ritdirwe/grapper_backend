@@ -20,14 +20,17 @@ import {
   LikePostDto,
 } from '../application/dto/social.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Social Comments')
 @ApiBearerAuth()
 @Controller('comments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class CommentController {
   constructor(
     private readonly commentService: CommentService,
@@ -35,6 +38,7 @@ export class CommentController {
   ) {}
 
   @Put(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_UPDATE_OWN)
   @ApiOperation({ summary: 'Update an existing comment' })
   @ApiResponse({ status: 200, type: CommentResponseDto })
   async updateComment(
@@ -46,6 +50,7 @@ export class CommentController {
   }
 
   @Delete(':id')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_DELETE_OWN)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a comment' })
   @ApiResponse({ status: 204 })
@@ -57,6 +62,7 @@ export class CommentController {
   }
 
   @Post(':id/reply')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_CREATE)
   @ApiOperation({ summary: 'Reply to a comment' })
   @ApiResponse({ status: 201, type: CommentResponseDto })
   async replyToComment(
@@ -68,6 +74,7 @@ export class CommentController {
   }
 
   @Get(':id/replies')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_READ)
   @ApiOperation({ summary: 'Get replies for a comment' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -82,6 +89,7 @@ export class CommentController {
   }
 
   @Post(':commentId/like')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_INTERACT)
   @ApiOperation({ summary: 'Like a comment' })
   @ApiResponse({ status: 201 })
   async likeComment(
@@ -93,6 +101,7 @@ export class CommentController {
   }
 
   @Delete(':commentId/like')
+  @Permissions(PERMISSIONS.COMMUNITY_COMMENT_INTERACT)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Unlike a comment' })
   @ApiResponse({ status: 204 })

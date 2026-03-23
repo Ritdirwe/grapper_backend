@@ -13,15 +13,19 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { BookingFileService } from '../application/services/booking-file.service';
 import { BookingFileResponseDto } from '../application/dto/booking-file.dto';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Service Bookings')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('bookings/:id/files')
+@Permissions(PERMISSIONS.MARKETPLACE_BOOKING_FILE_MANAGE_PARTICIPANT)
 export class BookingFileController {
   constructor(private readonly bookingFileService: BookingFileService) {}
 

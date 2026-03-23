@@ -12,9 +12,8 @@ import {
 } from '@nestjs/common';
 import { AdminService } from '../application/services/admin.service';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
-import { RolesGuard } from '@common/guards/roles.guard';
-import { Roles } from '@common/decorators/roles.decorator';
-import { Role } from '@shared/types/role.type';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import {
   AdminBookingListDto,
   AdminBookingsQueryDto,
@@ -33,16 +32,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Admin Moderation')
 @ApiBearerAuth()
 @Controller('moderation')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('dashboard/stats')
+  @Permissions(PERMISSIONS.OPS_ADMIN_DASHBOARD_STATS_READ)
   @ApiOperation({ summary: 'Get global system statistics for admin dashboard' })
   @ApiResponse({ status: 200, type: SystemStatsDto })
   async getStats(): Promise<SystemStatsDto> {
@@ -50,6 +50,7 @@ export class AdminController {
   }
 
   @Get('bookings')
+  @Permissions(PERMISSIONS.OPS_ADMIN_BOOKING_LIST_READ)
   @ApiOperation({ summary: 'Get all bookings for admin monitoring' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -63,6 +64,7 @@ export class AdminController {
   }
 
   @Get('bookings/:id')
+  @Permissions(PERMISSIONS.OPS_ADMIN_BOOKING_DETAIL_READ)
   @ApiOperation({ summary: 'Get booking detail with related transactions' })
   @ApiResponse({ status: 200 })
   async getBookingDetail(@Param('id') id: string): Promise<Record<string, unknown>> {
@@ -70,6 +72,7 @@ export class AdminController {
   }
 
   @Put('bookings/:id/status')
+  @Permissions(PERMISSIONS.OPS_ADMIN_BOOKING_STATUS_UPDATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Update booking status (moderation-safe actions only)' })
   @ApiResponse({ status: 204 })
@@ -82,6 +85,7 @@ export class AdminController {
   }
 
   @Get('payments')
+  @Permissions(PERMISSIONS.OPS_ADMIN_PAYMENT_LIST_READ)
   @ApiOperation({ summary: 'Get all transactions for admin monitoring' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -94,6 +98,7 @@ export class AdminController {
   }
 
   @Get('payments/summary')
+  @Permissions(PERMISSIONS.OPS_ADMIN_PAYMENT_SUMMARY_READ)
   @ApiOperation({ summary: 'Get payment summary for selected period' })
   @ApiQuery({ name: 'period', required: false, enum: ['day', 'week', 'month'] })
   @ApiResponse({ status: 200 })
@@ -104,6 +109,7 @@ export class AdminController {
   }
 
   @Get('disputes')
+  @Permissions(PERMISSIONS.OPS_ADMIN_DISPUTE_LIST_READ)
   @ApiOperation({ summary: 'Get all booking disputes for admin management' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -118,6 +124,7 @@ export class AdminController {
   }
 
   @Get('disputes/:id')
+  @Permissions(PERMISSIONS.OPS_ADMIN_DISPUTE_DETAIL_READ)
   @ApiOperation({ summary: 'Get dispute detail with booking context' })
   @ApiResponse({ status: 200 })
   async getDisputeDetail(@Param('id') id: string): Promise<Record<string, unknown>> {
@@ -125,6 +132,7 @@ export class AdminController {
   }
 
   @Put('disputes/:id/resolve')
+  @Permissions(PERMISSIONS.OPS_ADMIN_DISPUTE_RESOLVE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Resolve a dispute as admin' })
   @ApiResponse({ status: 204 })
@@ -137,6 +145,7 @@ export class AdminController {
   }
 
   @Put('bookings/:id/force-refund')
+  @Permissions(PERMISSIONS.OPS_ADMIN_BOOKING_FORCE_REFUND)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Force refund a booking and cancel it' })
   @ApiResponse({ status: 204 })
@@ -145,6 +154,7 @@ export class AdminController {
   }
 
   @Put('services/:id/:action')
+  @Permissions(PERMISSIONS.OPS_ADMIN_SERVICE_MODERATE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Manage service status (activate, deactivate, delete)' })
   @ApiResponse({ status: 204 })
@@ -156,6 +166,7 @@ export class AdminController {
   }
 
   @Delete('content/:type/:id')
+  @Permissions(PERMISSIONS.OPS_ADMIN_CONTENT_DELETE)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete global content by type and ID' })
   @ApiResponse({ status: 204 })

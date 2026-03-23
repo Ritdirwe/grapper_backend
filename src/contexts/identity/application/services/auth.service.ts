@@ -13,12 +13,14 @@ import { User } from '@contexts/identity/domain/entities/user.entity';
 import { RefreshToken } from '@contexts/identity/domain/entities/refresh-token.entity';
 import { VerificationCode } from '@contexts/identity/domain/entities/verification-code.entity';
 import { Profile } from '@contexts/identity/user-management/domain/entities/profile.entity';
+import { PermissionsService } from '@common/authz/application/services/permissions.service';
 import { PasswordHasherService } from '@contexts/identity/domain/services/password-hasher.service';
 import { EmailService } from '@infrastructure/email/email.service';
 import { AuthActivityService } from './auth-activity.service';
 import { AuthActivityAction } from '@contexts/identity/domain/value-objects/auth-activity-action.vo';
 import {
   RegisterDto,
+  RegisterRole,
   LoginDto,
   VerifyEmailDto,
   ResendVerificationEmailDto,
@@ -31,7 +33,10 @@ import {
   UserDto,
   TokenPayload,
 } from '../dto/auth-response.dto';
-import { VerificationType } from '@contexts/identity/domain/value-objects/user-role.vo';
+import {
+  UserRole,
+  VerificationType,
+} from '@contexts/identity/domain/value-objects/user-role.vo';
 import { randomBytes } from 'crypto';
 
 export interface AuthRequestContext {
@@ -52,6 +57,7 @@ export class AuthService {
     private profileRepository: Repository<Profile>,
     private passwordHasher: PasswordHasherService,
     private authActivityService: AuthActivityService,
+    private permissionsService: PermissionsService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
@@ -77,14 +83,17 @@ export class AuthService {
       }
     }
 
+    const registrationRoles = this.resolveRegistrationRoles(dto.role);
+
     // Hash password
     const passwordHash = await this.passwordHasher.hash(dto.password);
 
     // Create user
-    const user = this.userRepository.create({
+    let user = this.userRepository.create({
       email: dto.email,
       passwordHash,
       phoneNumber: dto.phoneNumber,
+      role: registrationRoles.primaryRole,
     });
 
     try {
@@ -104,6 +113,20 @@ export class AuthService {
         throw new ConflictException('User already exists');
       }
       throw error;
+    }
+
+    for (const role of registrationRoles.rolesToAssign) {
+      await this.permissionsService.assignRoleToUser(user.id, role);
+    }
+
+    await this.permissionsService.setPrimaryRoleForUser(
+      user.id,
+      registrationRoles.primaryRole,
+    );
+
+    const refreshedUser = await this.userRepository.findOne({ where: { id: user.id } });
+    if (refreshedUser) {
+      user = refreshedUser;
     }
 
     await this.authActivityService.log({
@@ -533,5 +556,31 @@ export class AuthService {
       phoneVerified: user.phoneVerified,
       createdAt: user.createdAt,
     };
+  }
+
+  private resolveRegistrationRoles(role?: RegisterRole): {
+    rolesToAssign: UserRole[];
+    primaryRole: UserRole;
+  } {
+    switch (role) {
+      case RegisterRole.ADMIN:
+        throw new BadRequestException('Admin registration is not allowed');
+      case RegisterRole.PROVIDER:
+        return {
+          rolesToAssign: [UserRole.PROVIDER],
+          primaryRole: UserRole.PROVIDER,
+        };
+      case RegisterRole.BOTH:
+        return {
+          rolesToAssign: [UserRole.USER, UserRole.PROVIDER],
+          primaryRole: UserRole.PROVIDER,
+        };
+      case RegisterRole.USER:
+      default:
+        return {
+          rolesToAssign: [UserRole.USER],
+          primaryRole: UserRole.USER,
+        };
+    }
   }
 }

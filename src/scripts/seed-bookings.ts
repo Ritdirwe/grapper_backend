@@ -54,11 +54,11 @@ async function main() {
     const serviceRepo = queryRunner.manager.getRepository(Service);
     const bookingRepo = queryRunner.manager.getRepository(Booking);
 
-    let provider = await userRepo.findOne({ where: { email: 'seed.provider@gripper.com' } });
+    let provider = await userRepo.findOne({ where: { email: 'seed.provider@grapper.com' } });
     if (!provider) {
       provider = await userRepo.save(
         userRepo.create({
-          email: 'seed.provider@gripper.com',
+          email: 'seed.provider@grapper.com',
           passwordHash: 'seeded',
           role: UserRole.PROVIDER,
           status: UserStatus.ACTIVE,
@@ -254,7 +254,7 @@ async function main() {
     // eslint-disable-next-line no-console
     console.log(`   Customer: seed.customer@example.com`);
     // eslint-disable-next-line no-console
-    console.log(`   Provider: seed.provider@gripper.com`);
+    console.log(`   Provider: seed.provider@grapper.com`);
   } catch (err: any) {
     await queryRunner.rollbackTransaction();
     // eslint-disable-next-line no-console

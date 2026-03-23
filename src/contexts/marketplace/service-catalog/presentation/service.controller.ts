@@ -19,9 +19,12 @@ import {
   ServiceResponseDto,
 } from '../application/dto/service.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 
 class AddServiceImageDto {
@@ -47,8 +50,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get('my-services')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_READ_OWN)
   @ApiOperation({ summary: 'Get services owned by the current provider' })
   @ApiResponse({ status: 200, type: [ServiceResponseDto] })
   async getMyServices(@CurrentUser() user: AuthUser): Promise<ServiceResponseDto[]> {
@@ -72,8 +76,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post()
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_CREATE_OWN)
   @ApiOperation({ summary: 'Create a new service' })
   @ApiResponse({ status: 201, type: ServiceResponseDto })
   async create(
@@ -84,8 +89,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Put(':id')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_UPDATE_OWN)
   @ApiOperation({ summary: 'Update an existing service' })
   @ApiResponse({ status: 200, type: ServiceResponseDto })
   async update(
@@ -97,8 +103,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post(':id/publish')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_PUBLISH_OWN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Publish a service' })
   @ApiResponse({ status: 200, type: ServiceResponseDto })
@@ -110,8 +117,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post(':id/pause')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_PAUSE_OWN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Pause a service' })
   @ApiResponse({ status: 200, type: ServiceResponseDto })
@@ -123,8 +131,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete(':id')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_DELETE_OWN)
   @ApiOperation({ summary: 'Soft delete a service' })
   @ApiResponse({ status: 200 })
   async delete(
@@ -135,8 +144,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post(':id/images')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_IMAGE_ADD_OWN)
   @ApiOperation({ summary: 'Add an image to a service' })
   @ApiResponse({ status: 201, type: ServiceResponseDto })
   async addImage(
@@ -154,8 +164,9 @@ export class ServiceController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Delete('images/:imageId')
+  @Permissions(PERMISSIONS.MARKETPLACE_SERVICE_IMAGE_DELETE_OWN)
   @ApiOperation({ summary: 'Remove an image from a service' })
   @ApiResponse({ status: 200 })
   async removeImage(

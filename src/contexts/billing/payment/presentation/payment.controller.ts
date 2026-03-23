@@ -17,11 +17,14 @@ import {
   PaymentInitializationResponseDto,
 } from '../application/dto/payment.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
+import { Permissions } from '@common/decorators/permissions.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { PaymentGateway } from '../domain/value-objects/payment-enums.vo';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { PERMISSIONS } from '@common/authz/permissions.enum';
 
 @ApiTags('Payments & Transactions')
 @Controller('payments')
@@ -29,8 +32,9 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post('initialize')
+  @Permissions(PERMISSIONS.BILLING_PAYMENT_INITIALIZE_SELF)
   @ApiOperation({ summary: 'Initialize a new payment transaction' })
   @ApiResponse({ status: 201, type: PaymentInitializationResponseDto })
   async initializePayment(
@@ -41,8 +45,9 @@ export class PaymentController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Post('verify')
+  @Permissions(PERMISSIONS.BILLING_PAYMENT_VERIFY_SELF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify a payment transaction reference' })
   @ApiResponse({ status: 200, type: TransactionResponseDto })
@@ -66,8 +71,9 @@ export class PaymentController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get('transactions')
+  @Permissions(PERMISSIONS.BILLING_PAYMENT_READ_HISTORY_SELF)
   @ApiOperation({ summary: 'Get current user transaction history' })
   @ApiResponse({ status: 200, type: [TransactionResponseDto] })
   async getMyTransactions(@CurrentUser() user: AuthUser): Promise<TransactionResponseDto[]> {
@@ -75,8 +81,9 @@ export class PaymentController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get('transactions/:reference')
+  @Permissions(PERMISSIONS.BILLING_PAYMENT_READ_DETAIL_SELF)
   @ApiOperation({ summary: 'Get transaction details by reference' })
   @ApiResponse({ status: 200, type: TransactionResponseDto })
   async getTransaction(

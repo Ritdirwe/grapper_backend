@@ -6,7 +6,7 @@ export class CreateCheckoutDto {
   @IsUUID()
   serviceId: string;
 
-  @ApiProperty({ example: 'https://gripper.com/bookings' })
+  @ApiProperty({ example: 'https://grapper.com/bookings' })
   @IsUrl()
   redirectURL: string;
 

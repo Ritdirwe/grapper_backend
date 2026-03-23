@@ -9,13 +9,17 @@ import { VerificationStatus } from '../../domain/value-objects/user-enums.vo';
 import {
   AdminUpdateUserDto,
   AdminUpdateProfileDto,
+  AdminAssignRoleDto,
+  AdminSetPrimaryRoleDto,
   AdminUserListQueryDto,
   AdminUserResponseDto,
   AdminVerificationListQueryDto,
   AdminReviewVerificationDto,
   AdminVerificationResponseDto,
+  AdminUserRoleAssignmentResponseDto,
 } from '../dto/admin-user.dto';
 import { PaginatedResponseDto } from '@common/dto/pagination.dto';
+import { PermissionsService } from '@common/authz/application/services/permissions.service';
 
 @Injectable()
 export class AdminUserService {
@@ -26,7 +30,42 @@ export class AdminUserService {
     private profileRepository: Repository<Profile>,
     @InjectRepository(VerificationRequest)
     private verificationRepository: Repository<VerificationRequest>,
+    private readonly permissionsService: PermissionsService,
   ) {}
+
+  async getUserRoleAssignments(userId: string): Promise<AdminUserRoleAssignmentResponseDto[]> {
+    const assignments = await this.permissionsService.getUserRoleAssignments(userId);
+    return assignments.map((assignment) => this.mapRoleAssignmentResponseDto(assignment));
+  }
+
+  async assignRole(
+    userId: string,
+    adminId: string,
+    dto: AdminAssignRoleDto,
+  ): Promise<AdminUserRoleAssignmentResponseDto[]> {
+    const assignments = await this.permissionsService.assignRoleToUser(
+      userId,
+      dto.role,
+      adminId,
+    );
+    return assignments.map((assignment) => this.mapRoleAssignmentResponseDto(assignment));
+  }
+
+  async removeRole(
+    userId: string,
+    role: UserRole,
+  ): Promise<AdminUserRoleAssignmentResponseDto[]> {
+    const assignments = await this.permissionsService.removeRoleFromUser(userId, role);
+    return assignments.map((assignment) => this.mapRoleAssignmentResponseDto(assignment));
+  }
+
+  async setPrimaryRole(
+    userId: string,
+    dto: AdminSetPrimaryRoleDto,
+  ): Promise<AdminUserRoleAssignmentResponseDto[]> {
+    const assignments = await this.permissionsService.setPrimaryRoleForUser(userId, dto.role);
+    return assignments.map((assignment) => this.mapRoleAssignmentResponseDto(assignment));
+  }
 
   async getAllUsers(
     query: AdminUserListQueryDto,
@@ -397,6 +436,20 @@ export class AdminUserService {
       reviewNote: verification.reviewNote,
       createdAt: verification.createdAt,
       updatedAt: verification.updatedAt,
+    };
+  }
+
+  private mapRoleAssignmentResponseDto(
+    assignment: { id: string; userId: string; roleKey: string; isPrimary: boolean; assignedBy?: string; createdAt: Date; updatedAt: Date },
+  ): AdminUserRoleAssignmentResponseDto {
+    return {
+      id: assignment.id,
+      userId: assignment.userId,
+      role: assignment.roleKey as UserRole,
+      isPrimary: assignment.isPrimary,
+      assignedBy: assignment.assignedBy,
+      createdAt: assignment.createdAt,
+      updatedAt: assignment.updatedAt,
     };
   }
 }
