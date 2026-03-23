@@ -13,6 +13,7 @@
     "migration:generate": "pnpm typeorm migration:generate -d src/infrastructure/database/data-source.ts",
     "migration:create": "pnpm typeorm migration:create",
     "migration:run": "pnpm typeorm migration:run -d src/infrastructure/database/data-source.ts",
+    "deploy:prepare": "pnpm migration:run && pnpm build",
     "migration:revert": "pnpm typeorm migration:revert -d src/infrastructure/database/data-source.ts",
     "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
     "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts",
