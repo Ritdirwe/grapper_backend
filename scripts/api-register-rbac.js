@@ -1,8 +1,14 @@
+const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const DEFAULT_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3000";
+const TOKEN_CACHE_PATH =
+  process.env.API_TOKEN_CACHE_PATH || path.join(ROOT, ".api-token-cache.json");
+const TOKEN_EXPIRY_SKEW_SECONDS = Number(
+  process.env.API_TOKEN_EXPIRY_SKEW_SECONDS || "120",
+);
 const START_PORT = process.env.API_RBAC_PORT || "3000";
 const START_TIMEOUT_MS = 120000;
 const REQUEST_TIMEOUT_MS = 15000;
@@ -13,6 +19,86 @@ const DEFAULT_CREDENTIALS = {
     password: process.env.ADMIN_PASSWORD || "password123",
   },
 };
+
+function parseJwtExp(token) {
+  if (!token || typeof token !== "string") {
+    return undefined;
+  }
+
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    return undefined;
+  }
+
+  try {
+    const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const payload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+    return typeof payload.exp === "number" ? payload.exp : undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function isTokenFresh(token) {
+  if (!token) {
+    return false;
+  }
+
+  const exp = parseJwtExp(token);
+  if (!exp) {
+    return true;
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return exp > nowSeconds + TOKEN_EXPIRY_SKEW_SECONDS;
+}
+
+function readTokenCache() {
+  if (!fs.existsSync(TOKEN_CACHE_PATH)) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(TOKEN_CACHE_PATH, "utf8"));
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeTokenCache(cache) {
+  const dir = path.dirname(TOKEN_CACHE_PATH);
+  const tmpFile = `${TOKEN_CACHE_PATH}.tmp`;
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(tmpFile, `${JSON.stringify(cache, null, 2)}\n`, {
+    mode: 0o600,
+  });
+  fs.renameSync(tmpFile, TOKEN_CACHE_PATH);
+}
+
+function getCachedAdminToken(baseUrl) {
+  const cache = readTokenCache();
+  const token = cache[baseUrl]?.admin?.token;
+  return isTokenFresh(token) ? token : undefined;
+}
+
+function persistAdminToken(baseUrl, token) {
+  if (!token) {
+    return;
+  }
+
+  const cache = readTokenCache();
+  const scoped = cache[baseUrl] || {};
+  scoped.admin = {
+    token,
+    savedAt: new Date().toISOString(),
+    exp: parseJwtExp(token) || null,
+  };
+  cache[baseUrl] = scoped;
+  writeTokenCache(cache);
+}
 
 function parseArgs() {
   return {
@@ -118,14 +204,21 @@ async function runSuite(baseUrl) {
   const results = [];
   const runId = Date.now();
 
-  const adminLogin = await httpRequest(baseUrl, "POST", "/api/auth/login", {
-    json: DEFAULT_CREDENTIALS.admin,
-  });
-  addResult(results, "admin_login", adminLogin.status, 200);
-  if (adminLogin.status !== 200 || !adminLogin.json?.accessToken) {
-    throw new Error("Cannot continue suite: admin login failed");
+  let adminToken = isTokenFresh(process.env.ADMIN_TOKEN)
+    ? process.env.ADMIN_TOKEN
+    : getCachedAdminToken(baseUrl);
+
+  if (!adminToken) {
+    const adminLogin = await httpRequest(baseUrl, "POST", "/api/auth/login", {
+      json: DEFAULT_CREDENTIALS.admin,
+    });
+    addResult(results, "admin_login", adminLogin.status, 200);
+    if (adminLogin.status !== 200 || !adminLogin.json?.accessToken) {
+      throw new Error("Cannot continue suite: admin login failed");
+    }
+    adminToken = adminLogin.json.accessToken;
+    persistAdminToken(baseUrl, adminToken);
   }
-  const adminToken = adminLogin.json.accessToken;
 
   const userEmail = `rbac.user.${runId}@example.com`;
   const providerEmail = `rbac.provider.${runId}@example.com`;

@@ -11,3 +11,4 @@ uploads/
 docs/
 swagger.json
 tsconfig.build.tsbuildinfo
+.api-token-cache.json

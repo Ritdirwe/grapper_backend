@@ -1,7 +1,13 @@
+const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
+const TOKEN_CACHE_PATH =
+  process.env.API_TOKEN_CACHE_PATH || path.join(ROOT, ".api-token-cache.json");
+const TOKEN_EXPIRY_SKEW_SECONDS = Number(
+  process.env.API_TOKEN_EXPIRY_SKEW_SECONDS || "120",
+);
 
 const DEFAULT_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3101";
 const START_PORT = process.env.API_SMOKE_PORT || "3101";
@@ -22,6 +28,99 @@ const DEFAULT_CREDENTIALS = {
     password: process.env.USER_PASSWORD || "password123",
   },
 };
+
+function parseJwtExp(token) {
+  if (!token || typeof token !== "string") {
+    return undefined;
+  }
+
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    return undefined;
+  }
+
+  try {
+    const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const payload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+    return typeof payload.exp === "number" ? payload.exp : undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function isTokenFresh(token) {
+  if (!token) {
+    return false;
+  }
+
+  const exp = parseJwtExp(token);
+  if (!exp) {
+    return true;
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return exp > nowSeconds + TOKEN_EXPIRY_SKEW_SECONDS;
+}
+
+function readTokenCache() {
+  if (!fs.existsSync(TOKEN_CACHE_PATH)) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(TOKEN_CACHE_PATH, "utf8"));
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeTokenCache(cache) {
+  const dir = path.dirname(TOKEN_CACHE_PATH);
+  const tmpFile = `${TOKEN_CACHE_PATH}.tmp`;
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(tmpFile, `${JSON.stringify(cache, null, 2)}\n`, {
+    mode: 0o600,
+  });
+  fs.renameSync(tmpFile, TOKEN_CACHE_PATH);
+}
+
+function loadCachedTokens(baseUrl) {
+  const cache = readTokenCache();
+  const scoped = cache[baseUrl] || {};
+
+  return {
+    admin: isTokenFresh(scoped.admin?.token) ? scoped.admin.token : undefined,
+    provider: isTokenFresh(scoped.provider?.token)
+      ? scoped.provider.token
+      : undefined,
+    user: isTokenFresh(scoped.user?.token) ? scoped.user.token : undefined,
+  };
+}
+
+function persistTokens(baseUrl, tokens) {
+  const cache = readTokenCache();
+  const scoped = cache[baseUrl] || {};
+  const nowIso = new Date().toISOString();
+
+  for (const role of ["admin", "provider", "user"]) {
+    const token = tokens[role];
+    if (!token) {
+      continue;
+    }
+
+    scoped[role] = {
+      token,
+      savedAt: nowIso,
+      exp: parseJwtExp(token) || null,
+    };
+  }
+
+  cache[baseUrl] = scoped;
+  writeTokenCache(cache);
+}
 
 function parseArgs() {
   return {
@@ -242,50 +341,53 @@ async function login(baseUrl, email, password) {
   };
 }
 
+async function resolveTokens(baseUrl) {
+  const cachedTokens = loadCachedTokens(baseUrl);
+  const tokens = {
+    admin: isTokenFresh(process.env.ADMIN_TOKEN)
+      ? process.env.ADMIN_TOKEN
+      : cachedTokens.admin,
+    provider: isTokenFresh(process.env.PROVIDER_TOKEN)
+      ? process.env.PROVIDER_TOKEN
+      : cachedTokens.provider,
+    user: isTokenFresh(process.env.USER_TOKEN)
+      ? process.env.USER_TOKEN
+      : cachedTokens.user,
+  };
+
+  if (!tokens.admin) {
+    const auth = await login(
+      baseUrl,
+      DEFAULT_CREDENTIALS.admin.email,
+      DEFAULT_CREDENTIALS.admin.password,
+    );
+    tokens.admin = auth.token;
+  }
+
+  if (!tokens.provider) {
+    const auth = await login(
+      baseUrl,
+      DEFAULT_CREDENTIALS.provider.email,
+      DEFAULT_CREDENTIALS.provider.password,
+    );
+    tokens.provider = auth.token;
+  }
+
+  if (!tokens.user) {
+    const auth = await login(
+      baseUrl,
+      DEFAULT_CREDENTIALS.user.email,
+      DEFAULT_CREDENTIALS.user.password,
+    );
+    tokens.user = auth.token;
+  }
+
+  persistTokens(baseUrl, tokens);
+  return tokens;
+}
+
 async function runIdentityFlow(baseUrl, report, context) {
   const flow = "Identity";
-
-  const adminLogin = await runStep(report, {
-    flow,
-    name: "login admin",
-    method: "POST",
-    route: "/api/auth/login",
-    expect: statusIs(200),
-    action: () =>
-      httpRequest(baseUrl, "POST", "/api/auth/login", {
-        json: DEFAULT_CREDENTIALS.admin,
-      }),
-  });
-  context.adminToken = adminLogin.json.accessToken;
-  context.adminUser = adminLogin.json.user;
-
-  const providerLogin = await runStep(report, {
-    flow,
-    name: "login provider",
-    method: "POST",
-    route: "/api/auth/login",
-    expect: statusIs(200),
-    action: () =>
-      httpRequest(baseUrl, "POST", "/api/auth/login", {
-        json: DEFAULT_CREDENTIALS.provider,
-      }),
-  });
-  context.providerToken = providerLogin.json.accessToken;
-  context.providerUser = providerLogin.json.user;
-
-  const userLogin = await runStep(report, {
-    flow,
-    name: "login user",
-    method: "POST",
-    route: "/api/auth/login",
-    expect: statusIs(200),
-    action: () =>
-      httpRequest(baseUrl, "POST", "/api/auth/login", {
-        json: DEFAULT_CREDENTIALS.user,
-      }),
-  });
-  context.userToken = userLogin.json.accessToken;
-  context.userUser = userLogin.json.user;
 
   await runStep(report, {
     flow,
@@ -713,7 +815,12 @@ async function runPassB(baseUrl) {
     steps: [],
   };
 
-  const context = {};
+  const tokens = await resolveTokens(baseUrl);
+  const context = {
+    adminToken: tokens.admin,
+    providerToken: tokens.provider,
+    userToken: tokens.user,
+  };
   const flowRunners = [
     runIdentityFlow,
     runProfileAndPreferencesFlow,

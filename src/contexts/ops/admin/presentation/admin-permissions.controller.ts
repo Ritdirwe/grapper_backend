@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseEnumPipe,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -51,7 +52,7 @@ export class AdminPermissionsController {
   @Permissions(PERMISSIONS.OPS_PERMISSION_MATRIX_READ)
   @ApiOperation({ summary: 'Get permissions for a role' })
   @ApiResponse({ status: 200 })
-  async getRolePermissions(@Param('role') role: UserRole) {
+  async getRolePermissions(@Param('role', new ParseEnumPipe(UserRole)) role: UserRole) {
     return this.permissionsService.getRolePermissions(role);
   }
 
@@ -60,7 +61,7 @@ export class AdminPermissionsController {
   @ApiOperation({ summary: 'Set single permission for a role' })
   @ApiResponse({ status: 200 })
   async setRolePermission(
-    @Param('role') role: UserRole,
+    @Param('role', new ParseEnumPipe(UserRole)) role: UserRole,
     @Param('permissionKey') permissionKey: PermissionKey,
     @Body() dto: SetRolePermissionDto,
   ) {
@@ -72,7 +73,7 @@ export class AdminPermissionsController {
   @ApiOperation({ summary: 'Bulk set permissions for a role' })
   @ApiResponse({ status: 200 })
   async bulkSetRolePermissions(
-    @Param('role') role: UserRole,
+    @Param('role', new ParseEnumPipe(UserRole)) role: UserRole,
     @Body() dto: RolePermissionBulkUpdateDto,
   ) {
     return this.permissionsService.bulkSetRolePermissions(role, dto.permissions);

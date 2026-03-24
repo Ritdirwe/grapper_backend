@@ -4,6 +4,11 @@ const { spawn } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
 const SWAGGER_PATH = path.join(ROOT, "swagger.json");
+const TOKEN_CACHE_PATH =
+  process.env.API_TOKEN_CACHE_PATH || path.join(ROOT, ".api-token-cache.json");
+const TOKEN_EXPIRY_SKEW_SECONDS = Number(
+  process.env.API_TOKEN_EXPIRY_SKEW_SECONDS || "120",
+);
 
 const DEFAULT_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3101";
 const START_PORT = process.env.API_SMOKE_PORT || "3101";
@@ -36,10 +41,105 @@ const SAMPLE_VALUES = {
   index: "0",
   type: "post",
   action: "approve",
+  role: "user",
+  permissionKey: "ops.permission-matrix.read",
   reference: "ref_test_001",
   slug: "sample-slug",
   tag: "sample-tag",
 };
+
+function parseJwtExp(token) {
+  if (!token || typeof token !== "string") {
+    return undefined;
+  }
+
+  const parts = token.split(".");
+  if (parts.length < 2) {
+    return undefined;
+  }
+
+  try {
+    const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const payload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+    return typeof payload.exp === "number" ? payload.exp : undefined;
+  } catch (_) {
+    return undefined;
+  }
+}
+
+function isTokenFresh(token) {
+  if (!token) {
+    return false;
+  }
+
+  const exp = parseJwtExp(token);
+  if (!exp) {
+    return true;
+  }
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return exp > nowSeconds + TOKEN_EXPIRY_SKEW_SECONDS;
+}
+
+function readTokenCache() {
+  if (!fs.existsSync(TOKEN_CACHE_PATH)) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(TOKEN_CACHE_PATH, "utf8"));
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeTokenCache(cache) {
+  const dir = path.dirname(TOKEN_CACHE_PATH);
+  const tmpFile = `${TOKEN_CACHE_PATH}.tmp`;
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(tmpFile, `${JSON.stringify(cache, null, 2)}\n`, {
+    mode: 0o600,
+  });
+  fs.renameSync(tmpFile, TOKEN_CACHE_PATH);
+}
+
+function loadCachedTokens(baseUrl) {
+  const cache = readTokenCache();
+  const scoped = cache[baseUrl] || {};
+
+  return {
+    admin: isTokenFresh(scoped.admin?.token) ? scoped.admin.token : undefined,
+    provider: isTokenFresh(scoped.provider?.token)
+      ? scoped.provider.token
+      : undefined,
+    user: isTokenFresh(scoped.user?.token) ? scoped.user.token : undefined,
+  };
+}
+
+function persistTokens(baseUrl, tokens) {
+  const cache = readTokenCache();
+  const scoped = cache[baseUrl] || {};
+  const nowIso = new Date().toISOString();
+
+  for (const role of ["admin", "provider", "user"]) {
+    const token = tokens[role];
+    if (!token) {
+      continue;
+    }
+
+    scoped[role] = {
+      token,
+      savedAt: nowIso,
+      exp: parseJwtExp(token) || null,
+    };
+  }
+
+  cache[baseUrl] = scoped;
+  writeTokenCache(cache);
+}
 
 function parseArgs() {
   return {
@@ -47,7 +147,29 @@ function parseArgs() {
   };
 }
 
-function readSwagger() {
+async function readSwagger(baseUrl) {
+  if (process.env.API_BASE_URL) {
+    try {
+      const response = await requestWithTimeout(`${baseUrl}/api/docs-json`, {
+        method: "GET",
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+
+      console.warn(
+        `Could not load swagger from ${baseUrl}/api/docs-json (status ${response.status}); falling back to local swagger.json`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message ? error.message : "unknown error";
+      console.warn(
+        `Could not load swagger from ${baseUrl}/api/docs-json (${message}); falling back to local swagger.json`,
+      );
+    }
+  }
+
   if (!fs.existsSync(SWAGGER_PATH)) {
     throw new Error(
       `swagger.json not found at ${SWAGGER_PATH}. Start the app once to generate it.`,
@@ -173,10 +295,17 @@ async function loginAndGetToken(baseUrl, email, password) {
 }
 
 async function resolveTokens(baseUrl) {
+  const cachedTokens = loadCachedTokens(baseUrl);
   const tokens = {
-    admin: process.env.ADMIN_TOKEN,
-    provider: process.env.PROVIDER_TOKEN,
-    user: process.env.USER_TOKEN,
+    admin: isTokenFresh(process.env.ADMIN_TOKEN)
+      ? process.env.ADMIN_TOKEN
+      : cachedTokens.admin,
+    provider: isTokenFresh(process.env.PROVIDER_TOKEN)
+      ? process.env.PROVIDER_TOKEN
+      : cachedTokens.provider,
+    user: isTokenFresh(process.env.USER_TOKEN)
+      ? process.env.USER_TOKEN
+      : cachedTokens.user,
   };
 
   if (!tokens.admin) {
@@ -202,6 +331,8 @@ async function resolveTokens(baseUrl) {
       DEFAULT_CREDENTIALS.user.password,
     );
   }
+
+  persistTokens(baseUrl, tokens);
 
   return tokens;
 }
@@ -376,7 +507,7 @@ async function main() {
     ? `http://127.0.0.1:${targetPort}`
     : DEFAULT_BASE_URL;
 
-  const swagger = readSwagger();
+  const swagger = await readSwagger(baseUrl);
   let server;
 
   try {
