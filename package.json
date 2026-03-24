@@ -17,6 +17,8 @@
     "migration:revert": "pnpm typeorm migration:revert -d src/infrastructure/database/data-source.ts",
     "schema:sync": "pnpm typeorm schema:sync -d src/infrastructure/database/data-source.ts",
     "schema:drop": "pnpm typeorm schema:drop -d src/infrastructure/database/data-source.ts",
+    "db:reset": "bash scripts/db-reset.sh",
+    "db:refresh": "bash scripts/db-reset.sh",
     "seed": "ts-node -r tsconfig-paths/register src/database/seeder.ts",
     "seed:payments": "ts-node -r tsconfig-paths/register src/scripts/seed-payments.ts",
     "seed:bookings": "ts-node -r tsconfig-paths/register src/scripts/seed-bookings.ts",
