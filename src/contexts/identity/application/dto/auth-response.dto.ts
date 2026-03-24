@@ -45,6 +45,9 @@ export class TokenPayload {
   @ApiProperty({ enum: UserRole })
   role: UserRole;
 
+  @ApiProperty({ required: false, description: 'Session version' })
+  sv?: number;
+
   @ApiProperty({ required: false })
   iat?: number;
 

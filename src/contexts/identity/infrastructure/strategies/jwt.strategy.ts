@@ -30,6 +30,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('User not found or inactive');
     }
 
+    const tokenSessionVersion = typeof payload.sv === 'number' ? payload.sv : 1;
+    if (tokenSessionVersion !== user.sessionVersion) {
+      throw new UnauthorizedException('Session has been invalidated');
+    }
+
     return user;
   }
 }

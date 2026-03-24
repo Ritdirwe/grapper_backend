@@ -59,6 +59,9 @@ export class User extends BaseEntity {
   @Column({ default: 0 })
   strikes: number;
 
+  @Column({ name: 'session_version', type: 'int', default: 1 })
+  sessionVersion: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

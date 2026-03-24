@@ -27,6 +27,7 @@ import {
   RefreshTokenDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
+  SwitchRoleDto,
 } from '../dto/auth.dto';
 import {
   AuthResponseDto,
@@ -473,12 +474,47 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
+  async switchRole(userId: string, dto: SwitchRoleDto): Promise<AuthResponseDto> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const assignedRoles = await this.permissionsService.getUserRoles(userId, user.role);
+    if (!assignedRoles.includes(dto.switchTo)) {
+      throw new UnauthorizedException('Requested role is not assigned to this account');
+    }
+
+    await this.permissionsService.setPrimaryRoleForUser(userId, dto.switchTo);
+
+    const activeRefreshTokens = await this.refreshTokenRepository.find({
+      where: { user: { id: userId }, isRevoked: false },
+    });
+
+    if (activeRefreshTokens.length > 0) {
+      for (const token of activeRefreshTokens) {
+        token.revoke();
+      }
+      await this.refreshTokenRepository.save(activeRefreshTokens);
+    }
+
+    await this.userRepository.increment({ id: userId }, 'sessionVersion', 1);
+
+    const refreshedUser = await this.userRepository.findOne({ where: { id: userId } });
+    if (!refreshedUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.generateAuthResponse(refreshedUser);
+  }
+
   // Helper methods
   private async generateAuthResponse(user: User): Promise<AuthResponseDto> {
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
+      sv: user.sessionVersion,
     };
 
     const accessToken = this.jwtService.sign(payload);

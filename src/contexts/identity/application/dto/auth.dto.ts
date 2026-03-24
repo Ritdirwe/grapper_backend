@@ -7,6 +7,8 @@ import {
   IsEnum,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { UserRole } from '@contexts/identity/domain/value-objects/user-role.vo';
 
 export enum RegisterRole {
   USER = 'user',
@@ -121,4 +123,13 @@ export class RefreshTokenDto {
   @ApiProperty()
   @IsString()
   refreshToken: string;
+}
+
+export class SwitchRoleDto {
+  @ApiProperty({ enum: UserRole, example: 'USER' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  )
+  @IsEnum(UserRole)
+  switchTo: UserRole;
 }

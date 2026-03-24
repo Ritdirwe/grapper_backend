@@ -18,6 +18,7 @@ import {
   RefreshTokenDto,
   ResetPasswordDto,
   ConfirmResetPasswordDto,
+  SwitchRoleDto,
 } from '../application/dto/auth.dto';
 import { AuthResponseDto, UserDto } from '../application/dto/auth-response.dto';
 import { Public } from '@common/decorators/public.decorator';
@@ -175,5 +176,18 @@ export class AuthController {
       phoneVerified: user.phoneVerified,
       createdAt: user.createdAt,
     };
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('switch-role')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Switch session role and return updated tokens' })
+  @ApiResponse({ status: 200, type: AuthResponseDto })
+  async switchRole(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: SwitchRoleDto,
+  ): Promise<AuthResponseDto> {
+    return this.authService.switchRole(user.id, dto);
   }
 }
