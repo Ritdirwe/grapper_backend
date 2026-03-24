@@ -229,9 +229,24 @@ export class AuthService {
     dto: VerifyEmailDto,
     context?: AuthRequestContext,
   ): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      await this.authActivityService.log({
+        action: AuthActivityAction.VERIFY_EMAIL_FAILED,
+        email: dto.email,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
+        metadata: { reason: 'user_not_found' },
+      });
+      throw new BadRequestException('Invalid verification code');
+    }
+
     const code = await this.verificationCodeRepository.findOne({
       where: {
-        userId: dto.userId,
+        userId: user.id,
         code: dto.code,
         type: VerificationType.EMAIL,
       },
@@ -240,7 +255,7 @@ export class AuthService {
     if (!code) {
       await this.authActivityService.log({
         action: AuthActivityAction.VERIFY_EMAIL_FAILED,
-        userId: dto.userId,
+        userId: user.id,
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
         metadata: { reason: 'code_not_found' },
@@ -251,7 +266,7 @@ export class AuthService {
     if (!code.isValid()) {
       await this.authActivityService.log({
         action: AuthActivityAction.VERIFY_EMAIL_FAILED,
-        userId: dto.userId,
+        userId: user.id,
         ipAddress: context?.ipAddress,
         userAgent: context?.userAgent,
         metadata: { reason: 'code_expired_or_used' },
@@ -264,11 +279,11 @@ export class AuthService {
     await this.verificationCodeRepository.save(code);
 
     // Update user
-    await this.userRepository.update(dto.userId, { emailVerified: true });
+    await this.userRepository.update(user.id, { emailVerified: true });
 
     await this.authActivityService.log({
       action: AuthActivityAction.VERIFY_EMAIL,
-      userId: dto.userId,
+      userId: user.id,
       ipAddress: context?.ipAddress,
       userAgent: context?.userAgent,
     });
@@ -480,9 +495,19 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const assignedRoles = await this.permissionsService.getUserRoles(userId, user.role);
+    let assignedRoles = await this.permissionsService.getUserRoles(userId, user.role);
+
     if (!assignedRoles.includes(dto.switchTo)) {
-      throw new UnauthorizedException('Requested role is not assigned to this account');
+      if (dto.switchTo === UserRole.ADMIN) {
+        throw new UnauthorizedException('Requested role is not assigned to this account');
+      }
+
+      await this.permissionsService.assignRoleToUser(userId, dto.switchTo);
+      assignedRoles = await this.permissionsService.getUserRoles(userId, user.role);
+
+      if (!assignedRoles.includes(dto.switchTo)) {
+        throw new UnauthorizedException('Requested role is not assigned to this account');
+      }
     }
 
     await this.permissionsService.setPrimaryRoleForUser(userId, dto.switchTo);

@@ -66,9 +66,9 @@ export class LoginDto {
 }
 
 export class VerifyEmailDto {
-  @ApiProperty()
-  @IsString()
-  userId: string;
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
 
   @ApiProperty({ example: '123456' })
   @IsString()
