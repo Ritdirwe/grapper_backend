@@ -6,15 +6,32 @@ import { Payout } from './domain/entities/payout.entity';
 import { PayoutMethod } from '@contexts/identity/user-management/domain/entities/payout-method.entity';
 import { PaymentService } from './application/services/payment.service';
 import { PayoutService } from './application/services/payout.service';
+import { PayoutReleaseService } from './application/services/payout-release.service';
 import { PaystackService } from './infrastructure/gateways/paystack.service';
 import { StripeService } from './infrastructure/gateways/stripe.service';
+import { FlutterwaveService } from './infrastructure/gateways/flutterwave.service';
 import { PaymentController } from './presentation/payment.controller';
 import { PayoutController } from './presentation/payout.controller';
+import { PayoutRelease } from './domain/entities/payout-release.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, Payout, PayoutMethod]), HttpModule],
+  imports: [TypeOrmModule.forFeature([Transaction, Payout, PayoutMethod, PayoutRelease]), HttpModule],
   controllers: [PaymentController, PayoutController],
-  providers: [PaymentService, PayoutService, PaystackService, StripeService],
-  exports: [PaymentService, PayoutService, PaystackService, StripeService],
+  providers: [
+    PaymentService,
+    PayoutService,
+    PayoutReleaseService,
+    PaystackService,
+    StripeService,
+    FlutterwaveService,
+  ],
+  exports: [
+    PaymentService,
+    PayoutService,
+    PayoutReleaseService,
+    PaystackService,
+    StripeService,
+    FlutterwaveService,
+  ],
 })
 export class PaymentModule {}

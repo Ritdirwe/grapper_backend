@@ -28,6 +28,8 @@
     "api:pass:b:start": "node scripts/api-happy-path.js --start",
     "api:pass:register-rbac": "node scripts/api-register-rbac.js",
     "api:pass:register-rbac:start": "node scripts/api-register-rbac.js --start",
+    "api:pass:payout-release": "node scripts/api-payout-release-flow.js",
+    "api:pass:payout-release:start": "node scripts/api-payout-release-flow.js --start",
     "arch:check": "node scripts/check-boundaries.js",
     "arch:status": "node scripts/migration-status.js"
   },

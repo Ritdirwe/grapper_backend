@@ -8,11 +8,14 @@ import { DataSource, Repository } from 'typeorm';
 import { Payout, PayoutStatus } from '../../domain/entities/payout.entity';
 import { PayoutMethod } from '@contexts/identity/user-management/domain/entities/payout-method.entity';
 import { PaystackService } from '../../infrastructure/gateways/paystack.service';
+import { FlutterwaveService } from '../../infrastructure/gateways/flutterwave.service';
 import {
   CreatePayoutDto,
   PayoutResponseDto,
   ProviderBalanceDto,
 } from '../dto/payout.dto';
+import { PayoutProvider } from '@contexts/identity/user-management/domain/value-objects/user-enums.vo';
+import { PayoutReleaseService } from './payout-release.service';
 
 @Injectable()
 export class PayoutService {
@@ -22,19 +25,13 @@ export class PayoutService {
     @InjectRepository(PayoutMethod)
     private payoutMethodRepository: Repository<PayoutMethod>,
     private paystackService: PaystackService,
+    private flutterwaveService: FlutterwaveService,
+    private payoutReleaseService: PayoutReleaseService,
     private dataSource: DataSource,
   ) {}
 
   async getProviderBalance(providerId: string): Promise<ProviderBalanceDto> {
-    const completedOrders = await this.dataSource
-      .createQueryBuilder()
-      .from('orders', 'order')
-      .where('order.provider_id = :providerId', { providerId })
-      .andWhere('order.status = :status', { status: 'completed' })
-      .select('SUM(order.provider_earnings)', 'total')
-      .getRawOne();
-
-    const totalEarnings = parseFloat(completedOrders?.total || '0');
+    const totalReleased = await this.payoutReleaseService.getReleasedTotalForProvider(providerId);
 
     const completedPayouts = await this.payoutRepository
       .createQueryBuilder('payout')
@@ -57,10 +54,11 @@ export class PayoutService {
     const totalPending = parseFloat(pendingPayouts?.total || '0');
 
     return {
-      totalEarnings,
-      availableBalance: totalEarnings - totalPaidOut - totalPending,
+      totalEarnings: totalReleased,
+      availableBalance: totalReleased - totalPaidOut - totalPending,
       pendingPayouts: totalPending,
       completedPayouts: totalPaidOut,
+      releasedAmount: totalReleased,
       currency: 'NGN',
     };
   }
@@ -109,7 +107,29 @@ export class PayoutService {
 
     await this.payoutRepository.save(payout);
 
-    return this.mapToResponseDto(payout, payoutMethod);
+    const reloadedPayout = await this.payoutRepository.findOne({
+      where: { id: payout.id },
+      relations: ['payoutMethod'],
+    });
+
+    if (!reloadedPayout) {
+      throw new NotFoundException('Created payout could not be reloaded');
+    }
+
+    if (
+      reloadedPayout.payoutMethod &&
+      [PayoutProvider.PAYSTACK, PayoutProvider.FLUTTERWAVE].includes(
+        reloadedPayout.payoutMethod.provider,
+      )
+    ) {
+      try {
+        await this.processPayoutInternal(reloadedPayout);
+      } catch {
+        // Keep payout request record with failed status if processing fails.
+      }
+    }
+
+    return this.mapToResponseDto(reloadedPayout, reloadedPayout.payoutMethod || payoutMethod);
   }
 
   async getProviderPayouts(providerId: string): Promise<PayoutResponseDto[]> {
@@ -157,10 +177,49 @@ export class PayoutService {
       throw new BadRequestException('Payout method not found');
     }
 
+    await this.processPayoutInternal(payout);
+
+    return this.mapToResponseDto(payout, payout.payoutMethod);
+  }
+
+  private async processPayoutInternal(payout: Payout): Promise<void> {
     payout.markAsProcessing();
     await this.payoutRepository.save(payout);
 
     try {
+      const transfer = await this.initiateGatewayTransfer(payout);
+
+      payout.markAsCompleted(transfer.transferCode, {
+        transferId: transfer.transferId,
+        recipientCode: transfer.recipientCode,
+        gateway: payout.payoutMethod.provider,
+      });
+      await this.payoutRepository.save(payout);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Transfer failed';
+      payout.markAsFailed(errorMessage);
+      await this.payoutRepository.save(payout);
+      throw error;
+    }
+  }
+
+  private async initiateGatewayTransfer(payout: Payout): Promise<{
+    transferCode: string;
+    transferId?: number | string;
+    recipientCode?: string;
+  }> {
+    if (!payout.payoutMethod) {
+      throw new BadRequestException('Payout method not found');
+    }
+
+    if (payout.payoutMethod.provider === PayoutProvider.PAYSTACK) {
+      if (!payout.payoutMethod.accountNumber || !payout.payoutMethod.bankCode) {
+        throw new BadRequestException('Paystack payout method is missing bank account details');
+      }
+
       if (!payout.payoutMethod.paystackRecipientCode) {
         const recipient = await this.paystackService.createTransferRecipient({
           type: 'nuban',
@@ -184,18 +243,38 @@ export class PayoutService {
         reason: `Payout for provider ${payout.providerId}`,
       });
 
-      payout.markAsCompleted(transfer.transferCode, {
+      return {
+        transferCode: transfer.transferCode,
         transferId: transfer.transferId,
         recipientCode: payout.payoutMethod.paystackRecipientCode,
-      });
-      await this.payoutRepository.save(payout);
-
-      return this.mapToResponseDto(payout, payout.payoutMethod);
-    } catch (error) {
-      payout.markAsFailed(error.message || 'Transfer failed');
-      await this.payoutRepository.save(payout);
-      throw error;
+      };
     }
+
+    if (payout.payoutMethod.provider === PayoutProvider.FLUTTERWAVE) {
+      if (!payout.payoutMethod.accountNumber || !payout.payoutMethod.bankCode) {
+        throw new BadRequestException('Flutterwave payout method is missing bank account details');
+      }
+
+      const transfer = await this.flutterwaveService.initiateTransfer({
+        amount: payout.amount,
+        accountNumber: payout.payoutMethod.accountNumber,
+        bankCode: payout.payoutMethod.bankCode,
+        accountName: payout.payoutMethod.accountName,
+        reference: payout.reference,
+        currency: payout.currency,
+        reason: `Payout for provider ${payout.providerId}`,
+      });
+
+      return {
+        transferCode: transfer.transferCode,
+        transferId: transfer.transferId,
+        recipientCode: transfer.recipientCode,
+      };
+    }
+
+    throw new BadRequestException(
+      `Unsupported payout provider: ${payout.payoutMethod.provider}`,
+    );
   }
 
   async cancelPayout(id: string, providerId: string): Promise<PayoutResponseDto> {
@@ -220,6 +299,51 @@ export class PayoutService {
     await this.payoutRepository.save(payout);
 
     return this.mapToResponseDto(payout, payout.payoutMethod);
+  }
+
+  async handleFlutterwavePayoutWebhook(payload: any, signature?: string): Promise<void> {
+    this.flutterwaveService.verifyWebhookSignature(payload, signature);
+
+    if (!payload || typeof payload !== 'object') {
+      return;
+    }
+
+    const eventType = String(payload.type || '').toLowerCase();
+    const data = payload.data || {};
+
+    const reference =
+      data.reference ||
+      data.tx_ref ||
+      data.transfer_reference ||
+      data.id;
+
+    if (!reference) {
+      return;
+    }
+
+    const payout = await this.payoutRepository.findOne({
+      where: { reference },
+      relations: ['payoutMethod'],
+    });
+
+    if (!payout || [PayoutStatus.COMPLETED, PayoutStatus.CANCELLED].includes(payout.status)) {
+      return;
+    }
+
+    if (eventType && !eventType.includes('transfer') && !eventType.includes('payout')) {
+      return;
+    }
+
+    const verify = await this.flutterwaveService.verifyTransfer(reference);
+
+    if (verify.success) {
+      payout.markAsCompleted(reference, verify.gatewayResponse);
+      await this.payoutRepository.save(payout);
+      return;
+    }
+
+    payout.markAsFailed(`Flutterwave transfer verification failed: ${verify.status}`);
+    await this.payoutRepository.save(payout);
   }
 
   private generateReference(): string {

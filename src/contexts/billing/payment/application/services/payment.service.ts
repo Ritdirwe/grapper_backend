@@ -8,6 +8,7 @@ import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Transaction } from '../../domain/entities/transaction.entity';
 import { PaystackService } from '../../infrastructure/gateways/paystack.service';
+import { FlutterwaveService } from '../../infrastructure/gateways/flutterwave.service';
 import {
   TransactionType,
   TransactionStatus,
@@ -26,6 +27,7 @@ export class PaymentService {
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
     private paystackService: PaystackService,
+    private flutterwaveService: FlutterwaveService,
     private configService: ConfigService,
     private dataSource: DataSource,
   ) {}
@@ -127,7 +129,11 @@ export class PaymentService {
     return this.mapToResponseDto(transaction);
   }
 
-  async handleWebhook(payload: any, gateway: PaymentGateway): Promise<void> {
+  async handleWebhook(
+    payload: any,
+    gateway: PaymentGateway,
+    signature?: string,
+  ): Promise<void> {
     if (gateway === PaymentGateway.PAYSTACK) {
       if (!payload || typeof payload !== 'object') {
         return;
@@ -161,6 +167,65 @@ export class PaymentService {
         if (!transaction) {
           await this.handleBookingPaymentByReference(data.reference);
         }
+      }
+      return;
+    }
+
+    if (gateway === PaymentGateway.FLUTTERWAVE) {
+      this.flutterwaveService.verifyWebhookSignature(payload, signature);
+
+      if (!payload || typeof payload !== 'object') {
+        return;
+      }
+
+      const eventType = String(payload.type || '').toLowerCase();
+      const chargeData = payload.data || {};
+      const txRef = chargeData.tx_ref || chargeData.reference;
+
+      if (eventType !== 'charge.completed' || !txRef) {
+        return;
+      }
+
+      const transaction = await this.transactionRepository.findOne({
+        where: { reference: txRef },
+      });
+
+      if (!transaction || transaction.status === TransactionStatus.COMPLETED) {
+        return;
+      }
+
+      try {
+        const verifyResult = await this.flutterwaveService.verifyPayment(txRef);
+        const expectedAmount = Number(transaction.amount);
+        const expectedCurrency = transaction.currency;
+
+        const amountMatches = Number(verifyResult.amount) === Number(expectedAmount);
+        const currencyMatches =
+          String(verifyResult.currency || '').toUpperCase() ===
+          String(expectedCurrency || '').toUpperCase();
+
+        if (verifyResult.success && amountMatches && currencyMatches) {
+          transaction.markAsCompleted(
+            verifyResult.gatewayReference,
+            verifyResult.gatewayResponse,
+          );
+          await this.transactionRepository.save(transaction);
+
+          if (transaction.orderId) {
+            await this.markOrderAsPaid(transaction.orderId, txRef);
+          }
+
+          if (transaction.bookingId) {
+            await this.handleBookingPaymentByType(transaction.bookingId, transaction.type, txRef);
+          }
+          return;
+        }
+
+        transaction.markAsFailed('Flutterwave verification failed or mismatched amount/currency');
+        await this.transactionRepository.save(transaction);
+      } catch {
+        transaction.markAsFailed('Flutterwave verification failed');
+        await this.transactionRepository.save(transaction);
       }
     }
   }
@@ -303,6 +368,8 @@ export class PaymentService {
     switch (gateway) {
       case PaymentGateway.PAYSTACK:
         return this.paystackService;
+      case PaymentGateway.FLUTTERWAVE:
+        return this.flutterwaveService;
       default:
         throw new BadRequestException('Unsupported payment gateway');
     }

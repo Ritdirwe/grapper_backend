@@ -169,8 +169,17 @@ export class PayoutMethodService {
         }
         break;
       case PayoutProvider.PAYSTACK:
-        if (!dto.paystackRecipientCode) {
-          throw new BadRequestException('Paystack requires paystackRecipientCode');
+        if (!dto.accountNumber || !dto.bankName || !dto.bankCode) {
+          throw new BadRequestException(
+            'Paystack requires accountNumber, bankName, and bankCode',
+          );
+        }
+        break;
+      case PayoutProvider.FLUTTERWAVE:
+        if (!dto.accountNumber || !dto.bankName || !dto.bankCode) {
+          throw new BadRequestException(
+            'Flutterwave requires accountNumber, bankName, and bankCode',
+          );
         }
         break;
     }

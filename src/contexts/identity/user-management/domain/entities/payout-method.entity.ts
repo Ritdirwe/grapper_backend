@@ -36,6 +36,9 @@ export class PayoutMethod extends BaseEntity {
   @Column({ name: 'paystack_recipient_code', nullable: true })
   paystackRecipientCode?: string;
 
+  @Column({ name: 'flutterwave_recipient_id', nullable: true })
+  flutterwaveRecipientId?: string;
+
   @Column({ nullable: true })
   currency?: string;
 
@@ -59,5 +62,9 @@ export class PayoutMethod extends BaseEntity {
 
   setPaystackRecipient(recipientCode: string): void {
     this.paystackRecipientCode = recipientCode;
+  }
+
+  setFlutterwaveRecipient(recipientId: string): void {
+    this.flutterwaveRecipientId = recipientId;
   }
 }

@@ -36,6 +36,10 @@ export class CreatePayoutMethodDto {
 
   @IsString()
   @IsOptional()
+  flutterwaveRecipientId?: string;
+
+  @IsString()
+  @IsOptional()
   currency?: string;
 
   @IsBoolean()

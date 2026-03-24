@@ -70,6 +70,23 @@ export class PaymentController {
     return { message: 'Webhook processed' };
   }
 
+  @Public()
+  @Post('webhook/flutterwave')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Flutterwave webhook listener' })
+  @ApiResponse({ status: 200 })
+  async flutterwaveWebhook(
+    @Body() payload: any,
+    @Headers('flutterwave-signature') signature: string,
+  ): Promise<{ message: string }> {
+    await this.paymentService.handleWebhook(
+      payload,
+      PaymentGateway.FLUTTERWAVE,
+      signature,
+    );
+    return { message: 'Webhook processed' };
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Get('transactions')

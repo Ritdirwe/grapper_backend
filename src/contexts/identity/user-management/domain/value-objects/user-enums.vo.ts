@@ -8,6 +8,7 @@ export enum VerificationStatus {
 export enum PayoutProvider {
   STRIPE = 'stripe',
   PAYSTACK = 'paystack',
+  FLUTTERWAVE = 'flutterwave',
   BANK_TRANSFER = 'bank_transfer',
 }
 
