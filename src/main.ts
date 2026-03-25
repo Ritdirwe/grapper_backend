@@ -27,10 +27,12 @@ async function bootstrap() {
           process.env.FRONTEND_URL,
           process.env.BACKEND_URL,
           'http://localhost:4000',
+          'http://localhost:3300',
           'http://localhost:19006',
           'http://localhost:8081',
           'http://localhost:8082',
           'http://127.0.0.1:19006',
+          'http://127.0.0.1:3300',
           'http://127.0.0.1:8081',
           'http://127.0.0.1:8082',
         ].filter(Boolean),
@@ -41,7 +43,7 @@ async function bootstrap() {
       }
 
       // Allow localhost/127.0.0.1 with Expo ports (19000-19999) or React Native ports (8080-8089)
-      if (/^https?:\/\/(localhost|127\.0\.0\.1):(19\d{3}|808\d)$/.test(origin)) {
+      if (/^http?:\/\/(localhost|127\.0\.0\.1):(19\d{3}|808\d)$/.test(origin)) {
         return callback(null, true);
       }
 
