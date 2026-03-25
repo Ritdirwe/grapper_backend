@@ -20,6 +20,12 @@ import { JoinTable, ManyToMany } from 'typeorm';
 @Index(['visibility'])
 @Index(['createdAt'])
 export class Post extends BaseEntity {
+  static readonly TRENDING_WEIGHTS = {
+    likes: 1,
+    comments: 2,
+    shares: 3,
+  } as const;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
@@ -49,6 +55,12 @@ export class Post extends BaseEntity {
   @Column({ name: 'shares_count', default: 0 })
   sharesCount: number;
 
+  @Column({ name: 'trending_score', type: 'numeric', precision: 10, scale: 2, default: 0 })
+  trendingScore: number;
+
+  @Column({ name: 'last_engaged_at', nullable: true })
+  lastEngagedAt?: Date;
+
   // Relations
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
@@ -70,31 +82,45 @@ export class Post extends BaseEntity {
   // Helper methods
   incrementLikes(): void {
     this.likesCount++;
+    this.refreshTrendingMetrics();
   }
 
   decrementLikes(): void {
     if (this.likesCount > 0) {
       this.likesCount--;
+      this.refreshTrendingMetrics();
     }
   }
 
   incrementComments(): void {
     this.commentsCount++;
+    this.refreshTrendingMetrics();
   }
 
   decrementComments(): void {
     if (this.commentsCount > 0) {
       this.commentsCount--;
+      this.refreshTrendingMetrics();
     }
   }
 
   incrementShares(): void {
     this.sharesCount++;
+    this.refreshTrendingMetrics();
   }
 
   decrementShares(): void {
     if (this.sharesCount > 0) {
       this.sharesCount--;
+      this.refreshTrendingMetrics();
     }
+  }
+
+  refreshTrendingMetrics(engagedAt = new Date()): void {
+    this.trendingScore =
+      this.likesCount * Post.TRENDING_WEIGHTS.likes +
+      this.commentsCount * Post.TRENDING_WEIGHTS.comments +
+      this.sharesCount * Post.TRENDING_WEIGHTS.shares;
+    this.lastEngagedAt = engagedAt;
   }
 }

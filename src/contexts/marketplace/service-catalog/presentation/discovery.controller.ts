@@ -9,6 +9,7 @@ import { ProviderProfileService } from '@contexts/identity/user-management/appli
 import { Public } from '@common/decorators/public.decorator';
 import { Permissions } from '@common/decorators/permissions.decorator';
 import { PERMISSIONS } from '@common/authz/permissions.enum';
+import { PostService } from '@contexts/community/social/application/services/post.service';
 
 @ApiTags('Discovery')
 @Controller()
@@ -16,6 +17,7 @@ export class DiscoveryController {
   constructor(
     private readonly serviceService: ServiceService,
     private readonly providerProfileService: ProviderProfileService,
+    private readonly postService: PostService,
   ) {}
 
   @ApiBearerAuth()
@@ -60,7 +62,15 @@ export class DiscoveryController {
   @Get('trending')
   @ApiOperation({ summary: 'Get trending services or posts' })
   @ApiQuery({ name: 'type', enum: ['services', 'posts'], default: 'services' })
-  async getTrending(@Query('type') type: string = 'services') {
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'windowDays', required: false })
+  async getTrending(
+    @Query('type') type: string = 'services',
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('windowDays') windowDays?: number,
+  ) {
     if (type === 'services') {
       return this.serviceService.search({
         limit: 10,
@@ -68,8 +78,12 @@ export class DiscoveryController {
         sortOrder: 'desc',
       });
     }
-    // TODO: Implement trending posts
-    return [];
+
+    return this.postService.getTrendingPosts({
+      page,
+      limit,
+      windowDays,
+    });
   }
 
   @Public()

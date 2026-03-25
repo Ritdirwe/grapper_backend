@@ -9,9 +9,14 @@ import { ServiceService } from './application/services/service.service';
 import { CategoryController } from './presentation/category.controller';
 import { ServiceController } from './presentation/service.controller';
 import { DiscoveryController } from './presentation/discovery.controller';
+import { SocialModule } from '@contexts/community/social/social.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Category, Service, ServiceImage]), UserManagementModule],
+  imports: [
+    TypeOrmModule.forFeature([Category, Service, ServiceImage]),
+    UserManagementModule,
+    SocialModule,
+  ],
   controllers: [CategoryController, ServiceController, DiscoveryController],
   providers: [CategoryService, ServiceService],
   exports: [CategoryService, ServiceService],

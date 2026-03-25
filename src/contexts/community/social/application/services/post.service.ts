@@ -17,6 +17,12 @@ import {
 } from '../dto/social.dto';
 import { PostVisibility } from '../../domain/value-objects/social-enums.vo';
 
+const parsedTrendingWindowDays = Number(process.env.TRENDING_WINDOW_DAYS || 30);
+const DEFAULT_TRENDING_WINDOW_DAYS =
+  Number.isFinite(parsedTrendingWindowDays) && parsedTrendingWindowDays > 0
+    ? parsedTrendingWindowDays
+    : 30;
+
 @Injectable()
 export class PostService {
   constructor(
@@ -153,20 +159,40 @@ export class PostService {
   }
 
   async getDiscover(userId: string, page = 1, limit = 20): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    return this.getTrendingPosts({
+      currentUserId: userId,
+      page,
+      limit,
+    });
+  }
+
+  async getTrendingPosts(options?: {
+    currentUserId?: string;
+    page?: number;
+    limit?: number;
+    windowDays?: number;
+  }): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    const page = options?.page ?? 1;
+    const limit = options?.limit ?? 20;
+    const windowDays = options?.windowDays ?? DEFAULT_TRENDING_WINDOW_DAYS;
+    const currentUserId = options?.currentUserId;
+    const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
     const [posts, total] = await this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
       .leftJoinAndSelect('user.profile', 'profile')
       .where('post.visibility = :public', { public: PostVisibility.PUBLIC })
-      .orderBy('post.likesCount', 'DESC')
-      .addOrderBy('post.commentsCount', 'DESC')
-      .addOrderBy('post.sharesCount', 'DESC')
+      .andWhere('post.createdAt >= :windowStart', { windowStart })
+      .orderBy('post.trendingScore', 'DESC')
       .addOrderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    const data = await Promise.all(posts.map(post => this.mapToResponseDto(post, userId)));
+    const data = await Promise.all(
+      posts.map((post) => this.mapToResponseDto(post, currentUserId)),
+    );
     const totalPages = Math.ceil(total / limit);
 
     return {
