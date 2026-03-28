@@ -6,9 +6,13 @@ export interface PaymentGatewayInterface {
     currency?: string;
     metadata?: Record<string, any>;
     callbackUrl?: string;
+    customer?: Record<string, any>;
+    paymentMethod?: Record<string, any>;
   }): Promise<{
-    authorizationUrl: string;
+    authorizationUrl?: string;
+    clientSecret?: string;
     accessCode?: string;
+    gatewayReference?: string;
     reference: string;
   }>;
 

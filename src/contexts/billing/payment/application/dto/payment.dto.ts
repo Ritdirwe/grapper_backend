@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsEmail,
   Min,
+  IsObject,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { TransactionType, PaymentGateway } from '../../domain/value-objects/payment-enums.vo';
@@ -47,6 +48,11 @@ export class InitializePaymentDto {
   @IsEnum(PaymentGateway)
   @IsOptional()
   gateway?: PaymentGateway;
+
+  @ApiProperty({ required: false, description: 'Gateway-specific initialization payload' })
+  @IsObject()
+  @IsOptional()
+  gatewayData?: Record<string, any>;
 }
 
 export class VerifyPaymentDto {
@@ -112,9 +118,21 @@ export class PaymentInitializationResponseDto {
   @ApiProperty()
   reference: string;
 
-  @ApiProperty()
-  authorizationUrl: string;
+  @ApiProperty({ required: false })
+  authorizationUrl?: string;
+
+  @ApiProperty({ required: false })
+  clientSecret?: string;
 
   @ApiProperty({ required: false })
   accessCode?: string;
+
+  @ApiProperty({ required: false, enum: PaymentGateway })
+  processor?: PaymentGateway;
+
+  @ApiProperty({ required: false, enum: ['redirect', 'sdk', 'embedded'] })
+  mode?: 'redirect' | 'sdk' | 'embedded';
+
+  @ApiProperty({ required: false, description: 'Public/publishable key for active gateway SDK' })
+  publicKey?: string;
 }

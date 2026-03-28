@@ -10,6 +10,7 @@ import { PayoutReleaseService } from './application/services/payout-release.serv
 import { PaystackService } from './infrastructure/gateways/paystack.service';
 import { StripeService } from './infrastructure/gateways/stripe.service';
 import { FlutterwaveService } from './infrastructure/gateways/flutterwave.service';
+import { StripeMobileGatewayService } from './infrastructure/gateways/stripe-mobile-gateway.service';
 import { PaymentController } from './presentation/payment.controller';
 import { PayoutController } from './presentation/payout.controller';
 import { PayoutRelease } from './domain/entities/payout-release.entity';
@@ -23,6 +24,7 @@ import { PayoutRelease } from './domain/entities/payout-release.entity';
     PayoutReleaseService,
     PaystackService,
     StripeService,
+    StripeMobileGatewayService,
     FlutterwaveService,
   ],
   exports: [
@@ -31,6 +33,7 @@ import { PayoutRelease } from './domain/entities/payout-release.entity';
     PayoutReleaseService,
     PaystackService,
     StripeService,
+    StripeMobileGatewayService,
     FlutterwaveService,
   ],
 })

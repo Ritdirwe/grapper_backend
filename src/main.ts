@@ -7,6 +7,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
+import {
+  buildAudienceSwaggerDocument,
+  enrichSwaggerDocument,
+  withSwaggerInfo,
+} from '@common/swagger/swagger-docs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -93,27 +98,65 @@ async function bootstrap() {
   
   const config = new DocumentBuilder()
     .setTitle('Grapper API')
-    .setDescription('The comprehensive API for the Grapper platform backend.')
+    .setDescription(
+      'Comprehensive API reference for Grapper, including client, provider, and admin platform capabilities.',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .addServer('/', 'Current Host')
     .build();
-  
-  const document = SwaggerModule.createDocument(app, config);
-  
+
+  const rawDocument = SwaggerModule.createDocument(app, config);
+  const fullDocument = enrichSwaggerDocument(rawDocument);
+  const clientDocument = withSwaggerInfo(
+    buildAudienceSwaggerDocument(fullDocument, 'client'),
+    'Grapper API - Client',
+    'Client-facing endpoints for end users, including shared user-facing platform flows.',
+  );
+  const providerDocument = withSwaggerInfo(
+    buildAudienceSwaggerDocument(fullDocument, 'provider'),
+    'Grapper API - Provider',
+    'Provider-facing endpoints for service providers, including shared marketplace and account flows.',
+  );
+  const adminDocument = withSwaggerInfo(
+    buildAudienceSwaggerDocument(fullDocument, 'admin'),
+    'Grapper API - Admin',
+    'Administrative god-eye documentation with full endpoint visibility, including internal operations.',
+  );
+  const allDocument = withSwaggerInfo(
+    buildAudienceSwaggerDocument(fullDocument, 'all'),
+    'Grapper API - All Endpoints',
+    'Complete internal API documentation across client, provider, admin, shared, and internal operations.',
+  );
+
   // Write swagger.json file for Postman import (root in dev, dist in prod)
   const isProduction = process.env.NODE_ENV === 'production';
-  const outputDir = isProduction && process.cwd().includes('dist') 
-    ? process.cwd() 
+  const outputDir = isProduction && process.cwd().includes('dist')
+    ? process.cwd()
     : join(process.cwd(), isProduction ? 'dist' : '');
-  const outputPath = join(outputDir, 'swagger.json');
-  writeFileSync(outputPath, JSON.stringify(document, null, 2));
-  console.log(`📄 Swagger JSON written to: ${outputPath}`);
-  
-  // Setup Swagger UI with JSON endpoint
-  // This automatically creates /api/docs-json endpoint
-  SwaggerModule.setup('api/docs', app, document, {
+  const writeSwaggerFile = (fileName: string, content: unknown) => {
+    const outputPath = join(outputDir, fileName);
+    writeFileSync(outputPath, JSON.stringify(content, null, 2));
+    console.log(`Swagger JSON written to: ${outputPath}`);
+  };
+
+  writeSwaggerFile('swagger.json', allDocument);
+  writeSwaggerFile('swagger-client.json', clientDocument);
+  writeSwaggerFile('swagger-provider.json', providerDocument);
+  writeSwaggerFile('swagger-admin.json', adminDocument);
+
+  // Setup Swagger UIs with dedicated JSON endpoints
+  SwaggerModule.setup('api/docs', app, allDocument as any, {
     jsonDocumentUrl: 'api/docs-json',
+  });
+  SwaggerModule.setup('api/docs/client', app, clientDocument as any, {
+    jsonDocumentUrl: 'api/docs/client-json',
+  });
+  SwaggerModule.setup('api/docs/provider', app, providerDocument as any, {
+    jsonDocumentUrl: 'api/docs/provider-json',
+  });
+  SwaggerModule.setup('api/docs/admin', app, adminDocument as any, {
+    jsonDocumentUrl: 'api/docs/admin-json',
   });
 
   const port = process.env.PORT || 3001;

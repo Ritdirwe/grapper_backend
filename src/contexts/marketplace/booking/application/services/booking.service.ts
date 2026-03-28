@@ -25,8 +25,9 @@ import {
   RequestCorrectionDto,
 } from '../dto/booking.dto';
 import { CreateCheckoutDto, CheckoutResponseDto } from '../dto/checkout.dto';
-import { StripeService } from '@contexts/billing/payment/infrastructure/gateways/stripe.service';
-import { PaystackService } from '@contexts/billing/payment/infrastructure/gateways/paystack.service';
+import { PaymentService } from '@contexts/billing/payment/application/services/payment.service';
+import { TransactionType } from '@contexts/billing/payment/domain/value-objects/payment-enums.vo';
+import { VerifyPaymentDto } from '@contexts/billing/payment/application/dto/payment.dto';
 
 const DEPOSIT_RATIO = 0.2;
 const PLATFORM_FEE_RATIO = 0.15;
@@ -42,12 +43,11 @@ export class BookingService {
     private serviceRepository: Repository<Service>,
     @InjectRepository(Profile)
     private profileRepository: Repository<Profile>,
-    private stripeService: StripeService,
-    private paystackService: PaystackService,
+    private paymentService: PaymentService,
     private configService: ConfigService,
   ) {}
 
-  async createStripeCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
+  async createCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
     const service = await this.serviceRepository.findOne({
       where: { id: dto.serviceId },
     });
@@ -69,147 +69,61 @@ export class BookingService {
       depositAmount,
       platformFee,
       correctionFee: this.getDefaultCorrectionFee(),
-      currency: service.currency || 'USD',
+      currency: service.currency || 'NGN',
       status: BookingStatus.PENDING_DEPOSIT,
       referenceCode,
       metadata: {
         redirectURL: dto.redirectURL,
+        flutterwave: dto.flutterwave,
       },
     });
 
-    const session = await this.stripeService.createCheckoutSession({
-      customerEmail: dto.email || (await this.getUserEmail(userId)),
-      lineItems: [
-        {
-          price_data: {
-            currency: (service.currency || 'USD').toLowerCase(),
-            product_data: {
-              name: `${service.title} - 20% Deposit`,
-              description: `Booking reference: ${referenceCode}`,
-            },
-            unit_amount: Math.round(depositAmount * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      successUrl: `${dto.redirectURL}?status=success&reference=${referenceCode}`,
-      cancelUrl: `${dto.redirectURL}?status=cancelled&reference=${referenceCode}`,
-      metadata: {
+    await this.bookingRepository.save(booking);
+
+    const email = dto.email || (await this.getUserEmail(userId));
+    const init = await this.paymentService.initializePayment(
+      userId,
+      {
+        amount: depositAmount,
+        currency: booking.currency,
+        type: TransactionType.BOOKING_PAYMENT,
         bookingId: booking.id,
-        referenceCode,
-        userId,
-        type: 'deposit_payment',
+        description: `${service.title} - 20% Deposit`,
+        email,
+        gatewayData: dto.flutterwave,
       },
-    });
+      {
+        reference: referenceCode,
+        callbackUrl: dto.redirectURL,
+      },
+    );
 
-    booking.stripeSessionId = session.id;
+    booking.paystackReference = init.reference;
     await this.bookingRepository.save(booking);
 
     return {
-      url: session.url,
-      processor: 'stripe',
-      reference: referenceCode,
+      url: init.authorizationUrl,
+      authorizationUrl: init.authorizationUrl,
+      clientSecret: init.clientSecret,
+      accessCode: init.accessCode,
+      mode: init.mode,
+      publicKey: init.publicKey,
+      processor: String(init.processor || ''),
+      reference: init.reference,
     };
+  }
+
+  async createStripeCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
+    return this.createCheckout(userId, dto);
   }
 
   async createPaystackCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
-    const service = await this.serviceRepository.findOne({
-      where: { id: dto.serviceId },
-    });
-
-    if (!service) {
-      throw new NotFoundException('Service not found');
-    }
-
-    const price = Number(service.price);
-    const depositAmount = price * DEPOSIT_RATIO;
-    const platformFee = price * PLATFORM_FEE_RATIO;
-    const referenceCode = this.generateReference();
-
-    const booking = this.bookingRepository.create({
-      customerId: userId,
-      providerId: service.providerId,
-      serviceId: service.id,
-      amount: price,
-      depositAmount,
-      platformFee,
-      correctionFee: this.getDefaultCorrectionFee(),
-      currency: service.currency || 'NGN',
-      status: BookingStatus.PENDING_DEPOSIT,
-      referenceCode,
-      metadata: {
-        redirectURL: dto.redirectURL,
-      },
-    });
-
-    const initResult = await this.paystackService.initializePayment({
-      amount: depositAmount,
-      email: dto.email || (await this.getUserEmail(userId)),
-      reference: referenceCode,
-      currency: service.currency || 'NGN',
-      metadata: {
-        bookingId: booking.id,
-        userId,
-        type: 'deposit_payment',
-      },
-      callbackUrl: dto.redirectURL,
-    });
-
-    booking.paystackReference = initResult.reference;
-    await this.bookingRepository.save(booking);
-
-    return {
-      url: initResult.authorizationUrl,
-      processor: 'paystack',
-      reference: referenceCode,
-    };
+    return this.createCheckout(userId, dto);
   }
 
   async verifyPaystackPayment(reference: string) {
-    const booking = await this.findBookingByPaymentReference(reference);
-    if (!booking) {
-      throw new NotFoundException('Booking not found');
-    }
-
-    const verification = await this.paystackService.verifyPayment(reference);
-
-    if (!verification.success) {
-      return verification;
-    }
-
-    if (reference.endsWith('-completion')) {
-      if (!booking.finalPaymentPaid) {
-        booking.finalPaymentPaid = true;
-        booking.complete();
-        await this.bookingRepository.save(booking);
-        await this.serviceRepository.increment({ id: booking.serviceId }, 'totalOrders', 1);
-      }
-      return verification;
-    }
-
-    if (reference.includes('-correction-')) {
-      const correction = await this.bookingCorrectionRepository.findOne({
-        where: { paymentReference: reference },
-      });
-
-      if (correction && !correction.isPaid) {
-        correction.isPaid = true;
-        correction.status = CorrectionStatus.PENDING;
-        await this.bookingCorrectionRepository.save(correction);
-      }
-
-      booking.status = BookingStatus.REVISION_REQUESTED;
-      await this.bookingRepository.save(booking);
-      return verification;
-    }
-
-    if (!booking.depositPaid) {
-      booking.depositPaid = true;
-      booking.status = BookingStatus.PENDING;
-      await this.bookingRepository.save(booking);
-    }
-
-    return verification;
+    const dto: VerifyPaymentDto = { reference };
+    return this.paymentService.verifyPayment(dto);
   }
 
   async createFinalPaymentSession(userId: string, bookingId: string): Promise<CheckoutResponseDto> {
@@ -233,78 +147,41 @@ export class BookingService {
     const remainingAmount = booking.amount - (booking.depositAmount || 0);
     const referenceCode = `${booking.referenceCode}-completion`;
 
-    const session = await this.stripeService.createCheckoutSession({
-      customerEmail: await this.getUserEmail(userId),
-      lineItems: [
-        {
-          price_data: {
-            currency: (booking.currency || 'USD').toLowerCase(),
-            product_data: {
-              name: `${booking.service.title} - Completion Payment`,
-              description: `Remaining 80% for booking: ${booking.referenceCode}`,
-            },
-            unit_amount: Math.round(remainingAmount * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      successUrl: `${booking.metadata?.redirectURL || ''}?status=success&reference=${referenceCode}`,
-      cancelUrl: `${booking.metadata?.redirectURL || ''}?status=cancelled&reference=${referenceCode}`,
-      metadata: {
+    const email = await this.getUserEmail(userId);
+    const init = await this.paymentService.initializePayment(
+      userId,
+      {
+        amount: remainingAmount,
+        currency: booking.currency || 'NGN',
+        type: TransactionType.BOOKING_PAYMENT,
         bookingId: booking.id,
-        type: 'final_payment',
+        description: `${booking.service.title} - Completion Payment`,
+        email,
+        gatewayData: booking.metadata?.flutterwave,
       },
-    });
+      {
+        reference: referenceCode,
+        callbackUrl: booking.metadata?.redirectURL,
+      },
+    );
+
+    booking.paystackReference = init.reference;
+    await this.bookingRepository.save(booking);
 
     return {
-      url: session.url,
-      processor: 'stripe',
-      reference: referenceCode,
+      url: init.authorizationUrl,
+      authorizationUrl: init.authorizationUrl,
+      clientSecret: init.clientSecret,
+      accessCode: init.accessCode,
+      mode: init.mode,
+      publicKey: init.publicKey,
+      processor: String(init.processor || ''),
+      reference: init.reference,
     };
   }
 
   async createPaystackCompletionPayment(userId: string, bookingId: string): Promise<CheckoutResponseDto> {
-    const booking = await this.bookingRepository.findOne({
-      where: { id: bookingId },
-      relations: ['service'],
-    });
-
-    if (!booking || booking.customerId !== userId) {
-      throw new ForbiddenException('Not authorized');
-    }
-
-    if (!booking.depositPaid) {
-      throw new BadRequestException('Deposit must be paid first');
-    }
-
-    if (!booking.customerApproved) {
-      throw new BadRequestException('Customer approval is required before completion payment');
-    }
-
-    const amount = booking.amount - (booking.depositAmount || 0);
-    const reference = `${booking.referenceCode}-completion`;
-
-    const result = await this.paystackService.initializePayment({
-      amount,
-      email: await this.getUserEmail(userId),
-      reference,
-      currency: booking.currency || 'NGN',
-      metadata: {
-        bookingId: booking.id,
-        userId,
-        type: 'completion_payment',
-      },
-      callbackUrl: booking.metadata?.redirectURL,
-    });
-
-    booking.paystackReference = result.reference;
-    await this.bookingRepository.save(booking);
-
-    return {
-      url: result.authorizationUrl,
-      processor: 'paystack',
-      reference,
-    };
+    return this.createFinalPaymentSession(userId, bookingId);
   }
 
   async createPaystackCorrectionPayment(userId: string, bookingId: string): Promise<CheckoutResponseDto> {
@@ -334,27 +211,36 @@ export class BookingService {
     }
 
     const reference = `${booking.referenceCode}-correction-${pendingCorrection.correctionNumber}`;
-    const result = await this.paystackService.initializePayment({
-      amount: correctionFee,
-      email: await this.getUserEmail(userId),
-      reference,
-      currency: booking.currency || 'NGN',
-      metadata: {
-        bookingId: booking.id,
-        userId,
-        correctionId: pendingCorrection.id,
-        type: 'correction_payment',
-      },
-      callbackUrl: booking.metadata?.redirectURL,
-    });
 
-    pendingCorrection.paymentReference = result.reference;
+    const init = await this.paymentService.initializePayment(
+      userId,
+      {
+        amount: correctionFee,
+        currency: booking.currency || 'NGN',
+        type: TransactionType.BOOKING_PAYMENT,
+        bookingId: booking.id,
+        description: `Correction payment for booking: ${booking.referenceCode}`,
+        email: await this.getUserEmail(userId),
+        gatewayData: booking.metadata?.flutterwave,
+      },
+      {
+        reference,
+        callbackUrl: booking.metadata?.redirectURL,
+      },
+    );
+
+    pendingCorrection.paymentReference = init.reference;
     await this.bookingCorrectionRepository.save(pendingCorrection);
 
     return {
-      url: result.authorizationUrl,
-      processor: 'paystack',
-      reference,
+      url: init.authorizationUrl,
+      authorizationUrl: init.authorizationUrl,
+      clientSecret: init.clientSecret,
+      accessCode: init.accessCode,
+      mode: init.mode,
+      publicKey: init.publicKey,
+      processor: String(init.processor || ''),
+      reference: init.reference,
     };
   }
 
@@ -370,33 +256,32 @@ export class BookingService {
     const commissionAmount = booking.platformFee || 0;
     const referenceCode = `${booking.referenceCode}-commission`;
 
-    const session = await this.stripeService.createCheckoutSession({
-      customerEmail: await this.getUserEmail(userId),
-      lineItems: [
-        {
-          price_data: {
-            currency: (booking.currency || 'USD').toLowerCase(),
-            product_data: {
-              name: 'Platform Commission',
-              description: `Commission for booking: ${booking.referenceCode}`,
-            },
-            unit_amount: Math.round(commissionAmount * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      successUrl: `?status=success&reference=${referenceCode}`,
-      cancelUrl: `?status=cancelled&reference=${referenceCode}`,
-      metadata: {
+    const init = await this.paymentService.initializePayment(
+      userId,
+      {
+        amount: commissionAmount,
+        currency: booking.currency || 'NGN',
+        type: TransactionType.ORDER_PAYMENT,
         bookingId: booking.id,
-        type: 'commission',
+        description: `Commission for booking: ${booking.referenceCode}`, 
+        email: await this.getUserEmail(userId),
+        gatewayData: booking.metadata?.flutterwave,
       },
-    });
+      {
+        reference: referenceCode,
+        callbackUrl: booking.metadata?.redirectURL,
+      },
+    );
 
     return {
-      url: session.url,
-      processor: 'stripe',
-      reference: referenceCode,
+      url: init.authorizationUrl,
+      authorizationUrl: init.authorizationUrl,
+      clientSecret: init.clientSecret,
+      accessCode: init.accessCode,
+      mode: init.mode,
+      publicKey: init.publicKey,
+      processor: String(init.processor || ''),
+      reference: init.reference,
     };
   }
 

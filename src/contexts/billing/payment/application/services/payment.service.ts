@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Transaction } from '../../domain/entities/transaction.entity';
 import { PaystackService } from '../../infrastructure/gateways/paystack.service';
 import { FlutterwaveService } from '../../infrastructure/gateways/flutterwave.service';
+import { StripeMobileGatewayService } from '../../infrastructure/gateways/stripe-mobile-gateway.service';
 import {
   TransactionType,
   TransactionStatus,
@@ -28,6 +29,7 @@ export class PaymentService {
     private transactionRepository: Repository<Transaction>,
     private paystackService: PaystackService,
     private flutterwaveService: FlutterwaveService,
+    private stripeMobileGatewayService: StripeMobileGatewayService,
     private configService: ConfigService,
     private dataSource: DataSource,
   ) {}
@@ -35,6 +37,7 @@ export class PaymentService {
   async initializePayment(
     userId: string,
     dto: InitializePaymentDto,
+    options?: { reference?: string; callbackUrl?: string },
   ): Promise<PaymentInitializationResponseDto> {
     if (dto.orderId) {
       const [order] = await this.dataSource.query(
@@ -55,7 +58,14 @@ export class PaymentService {
       }
     }
 
-    const reference = this.generateReference();
+    const activeGateway = this.getActiveGateway();
+    if (dto.gateway && dto.gateway !== activeGateway) {
+      throw new BadRequestException(
+        `Payment gateway ${dto.gateway} is not active. Active gateway is ${activeGateway}`,
+      );
+    }
+
+    const reference = options?.reference || this.generateReference();
 
     const transaction = this.transactionRepository.create({
       reference,
@@ -72,6 +82,8 @@ export class PaymentService {
       },
     });
 
+    transaction.gateway = activeGateway;
+
     await this.transactionRepository.save(transaction);
 
     const gateway = this.getGateway(transaction.gateway);
@@ -86,8 +98,15 @@ export class PaymentService {
         bookingId: dto.bookingId,
         type: dto.type,
       },
-      callbackUrl: this.configService.get('payment.callbackUrl'),
+      callbackUrl: options?.callbackUrl || this.configService.get('payment.callbackUrl'),
+      customer: dto.gatewayData?.customer,
+      paymentMethod: dto.gatewayData?.paymentMethod,
     });
+
+    if (initResult.gatewayReference) {
+      transaction.gatewayReference = initResult.gatewayReference;
+      await this.transactionRepository.save(transaction);
+    }
 
     transaction.markAsProcessing();
     await this.transactionRepository.save(transaction);
@@ -95,7 +114,11 @@ export class PaymentService {
     return {
       reference: initResult.reference,
       authorizationUrl: initResult.authorizationUrl,
+      clientSecret: initResult.clientSecret,
       accessCode: initResult.accessCode,
+      processor: activeGateway,
+      mode: initResult.clientSecret ? 'sdk' : 'redirect',
+      publicKey: this.getGatewayPublicKey(activeGateway),
     };
   }
 
@@ -109,7 +132,12 @@ export class PaymentService {
     }
 
     const gateway = this.getGateway(transaction.gateway);
-    const verifyResult = await gateway.verifyPayment(dto.reference);
+    const referenceForGateway =
+      transaction.gateway === PaymentGateway.STRIPE && transaction.gatewayReference
+        ? transaction.gatewayReference
+        : dto.reference;
+
+    const verifyResult = await gateway.verifyPayment(referenceForGateway);
 
     if (verifyResult.success) {
       transaction.markAsCompleted(
@@ -236,6 +264,11 @@ export class PaymentService {
     reference: string,
   ): Promise<void> {
     if (type === TransactionType.BOOKING_PAYMENT) {
+      if (reference.endsWith('-completion') || reference.includes('-correction-')) {
+        await this.handleBookingPaymentByReference(reference);
+        return;
+      }
+
       await this.markBookingDepositAsPaid(bookingId, reference);
     }
   }
@@ -370,8 +403,40 @@ export class PaymentService {
         return this.paystackService;
       case PaymentGateway.FLUTTERWAVE:
         return this.flutterwaveService;
+      case PaymentGateway.STRIPE:
+        return this.stripeMobileGatewayService;
       default:
         throw new BadRequestException('Unsupported payment gateway');
+    }
+  }
+
+  private getActiveGateway(): PaymentGateway {
+    const configured = String(
+      this.configService.get('payment.defaultGateway') || 'flutterwave',
+    ).toLowerCase();
+
+    switch (configured) {
+      case PaymentGateway.FLUTTERWAVE:
+        return PaymentGateway.FLUTTERWAVE;
+      case PaymentGateway.PAYSTACK:
+        return PaymentGateway.PAYSTACK;
+      case PaymentGateway.STRIPE:
+        return PaymentGateway.STRIPE;
+      default:
+        return PaymentGateway.FLUTTERWAVE;
+    }
+  }
+
+  private getGatewayPublicKey(gateway: PaymentGateway): string | undefined {
+    switch (gateway) {
+      case PaymentGateway.PAYSTACK:
+        return this.configService.get<string>('payment.paystack.publicKey');
+      case PaymentGateway.FLUTTERWAVE:
+        return this.configService.get<string>('payment.flutterwave.publicKey');
+      case PaymentGateway.STRIPE:
+        return this.configService.get<string>('payment.stripe.publishableKey');
+      default:
+        return undefined;
     }
   }
 

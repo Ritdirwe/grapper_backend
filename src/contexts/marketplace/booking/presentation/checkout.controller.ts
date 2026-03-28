@@ -17,30 +17,29 @@ export class CheckoutController {
   constructor(private readonly bookingService: BookingService) {}
 
   @Post('checkout')
-  @ApiOperation({ summary: 'Create a Stripe checkout session for a service' })
+  @ApiOperation({ summary: 'Create a checkout for a service (active gateway)' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
   async createCheckout(
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateCheckoutDto,
   ): Promise<CheckoutResponseDto> {
-    // This will be implemented in BookingService
-    return this.bookingService.createStripeCheckout(user.id, dto);
+    return this.bookingService.createCheckout(user.id, dto);
   }
 
   @Post('checkout-paystack')
-  @ApiOperation({ summary: 'Create a Paystack checkout for a service' })
+  @ApiOperation({ summary: 'Legacy alias: create a checkout for a service (active gateway)' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
   async createPaystackCheckout(
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateCheckoutDto,
   ): Promise<CheckoutResponseDto> {
-    return this.bookingService.createPaystackCheckout(user.id, dto);
+    return this.bookingService.createCheckout(user.id, dto);
   }
 
   @Post(':id/final-payment')
-  @ApiOperation({ summary: 'Initiate Stripe completion payment (remaining 80%) for a booking' })
+  @ApiOperation({ summary: 'Initiate completion payment (remaining 80%) for a booking (active gateway)' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
   async createFinalPayment(
@@ -51,18 +50,18 @@ export class CheckoutController {
   }
 
   @Post(':id/completion-payment-paystack')
-  @ApiOperation({ summary: 'Initiate Paystack completion payment (remaining 80%) for a booking' })
+  @ApiOperation({ summary: 'Legacy alias: initiate completion payment (active gateway)' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
   async createCompletionPaymentPaystack(
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,
   ): Promise<CheckoutResponseDto> {
-    return this.bookingService.createPaystackCompletionPayment(user.id, id);
+    return this.bookingService.createFinalPaymentSession(user.id, id);
   }
 
   @Post(':id/pay-correction')
-  @ApiOperation({ summary: 'Pay for a paid correction request' })
+  @ApiOperation({ summary: 'Pay for a paid correction request (active gateway)' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
   async payCorrection(
@@ -84,7 +83,7 @@ export class CheckoutController {
   }
 
   @Post('verify-paystack')
-  @ApiOperation({ summary: 'Verify a Paystack payment reference' })
+  @ApiOperation({ summary: 'Legacy alias: verify a payment reference (active gateway)' })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_PARTICIPANT_VERIFY_PAYMENT)
   async verifyPaystack(@Body() dto: VerifyPaystackDto) {
     return this.bookingService.verifyPaystackPayment(dto.reference);

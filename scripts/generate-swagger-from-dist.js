@@ -5,7 +5,13 @@ const { spawn } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const DIST_MAIN = path.join(ROOT, 'dist', 'main.js');
 const DIST_SWAGGER = path.join(ROOT, 'dist', 'swagger.json');
+const DIST_SWAGGER_CLIENT = path.join(ROOT, 'dist', 'swagger-client.json');
+const DIST_SWAGGER_PROVIDER = path.join(ROOT, 'dist', 'swagger-provider.json');
+const DIST_SWAGGER_ADMIN = path.join(ROOT, 'dist', 'swagger-admin.json');
 const ROOT_SWAGGER = path.join(ROOT, 'swagger.json');
+const ROOT_SWAGGER_CLIENT = path.join(ROOT, 'swagger-client.json');
+const ROOT_SWAGGER_PROVIDER = path.join(ROOT, 'swagger-provider.json');
+const ROOT_SWAGGER_ADMIN = path.join(ROOT, 'swagger-admin.json');
 const HOST = '127.0.0.1';
 const PORT = process.env.SWAGGER_GEN_PORT || '3111';
 const BASE_URL = `http://${HOST}:${PORT}`;
@@ -15,12 +21,12 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForDocsJson() {
+async function waitForDocsJson(endpointPath) {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < TIMEOUT_MS) {
     try {
-      const response = await fetch(`${BASE_URL}/api/docs-json`);
+      const response = await fetch(`${BASE_URL}${endpointPath}`);
       if (response.ok) {
         return response.text();
       }
@@ -31,7 +37,7 @@ async function waitForDocsJson() {
     await sleep(1000);
   }
 
-  throw new Error(`Timed out waiting for ${BASE_URL}/api/docs-json`);
+  throw new Error(`Timed out waiting for ${BASE_URL}${endpointPath}`);
 }
 
 function startServer() {
@@ -66,11 +72,25 @@ async function main() {
     server.stdout.on('data', (chunk) => process.stdout.write(`[swagger-gen] ${chunk}`));
     server.stderr.on('data', (chunk) => process.stderr.write(`[swagger-gen] ${chunk}`));
 
-    const docsJsonText = await waitForDocsJson();
-    fs.writeFileSync(DIST_SWAGGER, docsJsonText);
-    fs.writeFileSync(ROOT_SWAGGER, docsJsonText);
+    const [allDocsJsonText, clientDocsJsonText, providerDocsJsonText, adminDocsJsonText] =
+      await Promise.all([
+        waitForDocsJson('/api/docs-json'),
+        waitForDocsJson('/api/docs/client-json'),
+        waitForDocsJson('/api/docs/provider-json'),
+        waitForDocsJson('/api/docs/admin-json'),
+      ]);
 
-    console.log(`Swagger docs generated at ${DIST_SWAGGER}`);
+    fs.writeFileSync(DIST_SWAGGER, allDocsJsonText);
+    fs.writeFileSync(DIST_SWAGGER_CLIENT, clientDocsJsonText);
+    fs.writeFileSync(DIST_SWAGGER_PROVIDER, providerDocsJsonText);
+    fs.writeFileSync(DIST_SWAGGER_ADMIN, adminDocsJsonText);
+
+    fs.writeFileSync(ROOT_SWAGGER, allDocsJsonText);
+    fs.writeFileSync(ROOT_SWAGGER_CLIENT, clientDocsJsonText);
+    fs.writeFileSync(ROOT_SWAGGER_PROVIDER, providerDocsJsonText);
+    fs.writeFileSync(ROOT_SWAGGER_ADMIN, adminDocsJsonText);
+
+    console.log(`Swagger docs generated at ${DIST_SWAGGER}, ${DIST_SWAGGER_CLIENT}, ${DIST_SWAGGER_PROVIDER}, and ${DIST_SWAGGER_ADMIN}`);
   } finally {
     stopServer(server);
   }

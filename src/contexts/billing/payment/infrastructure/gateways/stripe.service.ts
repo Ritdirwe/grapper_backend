@@ -46,6 +46,32 @@ export class StripeService {
     }
   }
 
+  async createPaymentIntent(options: {
+    amount: number;
+    currency: string;
+    receiptEmail?: string;
+    metadata?: Record<string, string>;
+    description?: string;
+  }): Promise<Stripe.PaymentIntent> {
+    try {
+      return await this.stripe.paymentIntents.create({
+        amount: Math.round(options.amount),
+        currency: options.currency,
+        receipt_email: options.receiptEmail,
+        metadata: options.metadata,
+        description: options.description,
+        automatic_payment_methods: { enabled: true },
+      });
+    } catch (error) {
+      this.logger.error(`Stripe PaymentIntent Error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    return this.stripe.paymentIntents.retrieve(paymentIntentId);
+  }
+
   async createConnectAccount(userId: string, email: string) {
     try {
       const account = await this.stripe.accounts.create({

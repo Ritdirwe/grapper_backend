@@ -33,6 +33,8 @@ export class FlutterwaveService implements PaymentGatewayInterface {
 
   private tokenExpiresAt = 0;
 
+  private readonly secretKey?: string;
+
   private readonly clientId?: string;
 
   private readonly clientSecret?: string;
@@ -48,13 +50,14 @@ export class FlutterwaveService implements PaymentGatewayInterface {
   constructor(private readonly configService: ConfigService) {
     this.clientId = this.configService.get<string>('payment.flutterwave.clientId');
     this.clientSecret = this.configService.get<string>('payment.flutterwave.clientSecret');
+    this.secretKey = this.configService.get<string>('payment.flutterwave.secretKey');
     this.authUrl = this.configService.get<string>(
       'payment.flutterwave.authUrl',
       'https://idp.flutterwave.com/realms/flutterwave/protocol/openid-connect/token',
     );
     this.baseUrl = this.configService.get<string>(
       'payment.flutterwave.baseUrl',
-      'https://developersandbox-api.flutterwave.com',
+      'https://api.flutterwave.com',
     );
     this.callbackUrl = this.configService.get<string>('payment.flutterwave.callbackUrl');
     this.webhookSecret = this.configService.get<string>('payment.flutterwave.webhookSecret');
@@ -67,44 +70,143 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     currency?: string;
     metadata?: Record<string, any>;
     callbackUrl?: string;
+    customer?: Record<string, any>;
+    paymentMethod?: Record<string, any>;
   }): Promise<{
-    authorizationUrl: string;
+    authorizationUrl?: string;
+    clientSecret?: string;
     accessCode?: string;
+    gatewayReference?: string;
     reference: string;
   }> {
-    const token = await this.getAccessToken();
+    const authHeader = await this.getAuthorizationHeaderValue();
+
+    const redirectUrl = params.callbackUrl || this.callbackUrl;
+    if (!redirectUrl) {
+      throw new BadRequestException('Flutterwave callbackUrl is not configured');
+    }
+
+    if (!params.paymentMethod) {
+      return this.initializeRedirectPayment(params, authHeader, redirectUrl);
+    }
 
     const payload = {
+      reference: params.reference,
       amount: params.amount,
       currency: params.currency || 'NGN',
-      tx_ref: params.reference,
-      redirect_url: params.callbackUrl || this.callbackUrl,
+      redirect_url: redirectUrl,
       customer: {
         email: params.email,
+        ...(params.customer || {}),
+      },
+      payment_method: params.paymentMethod,
+      meta: params.metadata,
+      title: 'Grapper',
+      description: params.metadata?.description || `Payment ${params.reference}`,
+      x_trace_id: params.reference,
+      x_idempotency_key: `${params.reference}-${Date.now()}`,
+      // Keep the legacy field in case the API surface expects it in some environments.
+      tx_ref: params.reference,
+      customizations: {
+        title: 'Grapper',
+        description: `Payment ${params.reference}`,
+      },
+    };
+
+    const base = this.baseUrl.replace(/\/+$/, '');
+    const url = `${base}/orchestration/direct-charges`;
+
+    try {
+      const response = await axios.post(url, payload, {
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+          'X-Trace-Id': params.reference,
+          'X-Idempotency-Key': `${params.reference}-${Date.now()}`,
+        },
+      });
+
+      const data = response.data?.data || {};
+      const authorizationUrl =
+        data?.next_action?.redirect_url?.url ||
+        data?.redirect_url ||
+        data?.link ||
+        data?.authorization_url;
+
+      if (!authorizationUrl) {
+        throw new BadRequestException('Flutterwave did not return a redirect URL');
+      }
+
+      return {
+        authorizationUrl,
+        gatewayReference: data.id || data.reference,
+        reference: data.reference || params.reference,
+      };
+    } catch (error) {
+      this.handleGatewayError(error, 'Flutterwave payment initialization failed');
+    }
+  }
+
+  private async initializeRedirectPayment(
+    params: {
+      amount: number;
+      email: string;
+      reference: string;
+      currency?: string;
+      metadata?: Record<string, any>;
+      customer?: Record<string, any>;
+    },
+    authHeader: string,
+    redirectUrl: string,
+  ): Promise<{
+    authorizationUrl?: string;
+    clientSecret?: string;
+    accessCode?: string;
+    gatewayReference?: string;
+    reference: string;
+  }> {
+    const payload = {
+      tx_ref: params.reference,
+      amount: params.amount,
+      currency: params.currency || 'NGN',
+      redirect_url: redirectUrl,
+      customer: {
+        email: params.email,
+        ...(params.customer || {}),
       },
       meta: params.metadata,
+      customizations: {
+        title: 'Grapper',
+        description: params.metadata?.description || `Payment ${params.reference}`,
+      },
     };
 
     try {
-      const response = await axios.post(`${this.baseUrl}/charges`, payload, {
+      const base = this.baseUrl.replace(/\/+$/, '');
+      const url = base.endsWith('/v3') ? `${base}/payments` : `${base}/v3/payments`;
+
+      const response = await axios.post(url, payload, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: authHeader,
           'Content-Type': 'application/json',
         },
       });
 
       const data = response.data?.data || {};
       const authorizationUrl =
-        data.link || data.authorization_url || data.checkout_url || data.redirect_url;
+        data?.link ||
+        data?.checkout_url ||
+        data?.authorization_url ||
+        data?.payment_link;
 
       if (!authorizationUrl) {
-        throw new BadRequestException('Flutterwave charge response missing authorization URL');
+        throw new BadRequestException('Flutterwave did not return a checkout URL');
       }
 
       return {
         authorizationUrl,
-        accessCode: data.id || data.flw_ref,
-        reference: data.tx_ref || params.reference,
+        gatewayReference: String(data.id || data.flw_ref || data.tx_ref || params.reference),
+        reference: String(data.tx_ref || params.reference),
       };
     } catch (error) {
       this.handleGatewayError(error, 'Flutterwave payment initialization failed');
@@ -119,14 +221,14 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     gatewayReference: string;
     gatewayResponse: Record<string, any>;
   }> {
-    const token = await this.getAccessToken();
-    const charge = await this.getChargeByReference(reference, token);
+    const authHeader = await this.getAuthorizationHeaderValue();
+    const charge = await this.getChargeByReference(reference, authHeader);
 
     if (!charge) {
       throw new NotFoundException('Flutterwave charge not found for reference');
     }
 
-    const status = (charge.status || '').toLowerCase();
+    const status = String(charge.status || '').toLowerCase().toLowerCase();
     const amount = Number(charge.amount || 0);
     const normalizedAmount = Number.isFinite(amount) ? amount : 0;
 
@@ -145,17 +247,19 @@ export class FlutterwaveService implements PaymentGatewayInterface {
   }
 
   async listBanks(country: string = 'NG') {
-    const token = await this.getAccessToken();
+    const authHeader = await this.getAuthorizationHeaderValue();
 
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/banks?country=${encodeURIComponent(country)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const base = this.baseUrl.replace(/\/+$/, '');
+      const url = base.endsWith('/v3')
+        ? `${base}/banks/${encodeURIComponent(country)}`
+        : `${base}/v3/banks/${encodeURIComponent(country)}`;
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: authHeader,
         },
-      );
+      });
       return response.data?.data || [];
     } catch (error) {
       this.handleGatewayError(error, 'Flutterwave bank list request failed');
@@ -163,17 +267,22 @@ export class FlutterwaveService implements PaymentGatewayInterface {
   }
 
   async verifyBankAccount(accountNumber: string, bankCode: string) {
-    const token = await this.getAccessToken();
+    const authHeader = await this.getAuthorizationHeaderValue();
+
+    const base = this.baseUrl.replace(/\/+$/, '');
+    const resolveEndpoint = base.endsWith('/v3')
+      ? `${base}/accounts/resolve`
+      : `${base}/v3/accounts/resolve`;
 
     const endpoints = [
       {
         method: 'POST' as const,
-        url: `${this.baseUrl}/banks/resolve-account`,
-        body: { account_number: accountNumber, bank_code: bankCode },
+        url: resolveEndpoint,
+        body: { account_number: accountNumber, account_bank: bankCode },
       },
       {
         method: 'GET' as const,
-        url: `${this.baseUrl}/banks/resolve-account?account_number=${encodeURIComponent(accountNumber)}&bank_code=${encodeURIComponent(bankCode)}`,
+        url: `${resolveEndpoint}?account_number=${encodeURIComponent(accountNumber)}&account_bank=${encodeURIComponent(bankCode)}`,
       },
     ];
 
@@ -184,7 +293,7 @@ export class FlutterwaveService implements PaymentGatewayInterface {
           url: endpoint.url,
           data: endpoint.body,
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: authHeader,
             'Content-Type': 'application/json',
           },
         });
@@ -210,7 +319,7 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     reason?: string;
     currency?: string;
   }): Promise<{ success: boolean; transferCode: string; transferId?: string | number; recipientCode?: string }> {
-    const token = await this.getAccessToken();
+    const authHeader = await this.getAuthorizationHeaderValue();
 
     if (!params.accountNumber || !params.bankCode) {
       throw new BadRequestException('accountNumber and bankCode are required for Flutterwave transfer');
@@ -229,9 +338,12 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     };
 
     try {
-      const response = await axios.post(`${this.baseUrl}/transfers`, payload, {
+      const base = this.baseUrl.replace(/\/+$/, '');
+      const url = base.endsWith('/v3') ? `${base}/transfers` : `${base}/v3/transfers`;
+
+      const response = await axios.post(url, payload, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: authHeader,
           'Content-Type': 'application/json',
         },
       });
@@ -253,8 +365,8 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     status: string;
     gatewayResponse: Record<string, any>;
   }> {
-    const token = await this.getAccessToken();
-    const transfer = await this.getTransferByReference(reference, token);
+    const authHeader = await this.getAuthorizationHeaderValue();
+    const transfer = await this.getTransferByReference(reference, authHeader);
 
     if (!transfer) {
       throw new NotFoundException('Flutterwave transfer not found for reference');
@@ -332,32 +444,31 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     }
   }
 
+  private async getAuthorizationHeaderValue(): Promise<string> {
+    if (this.secretKey) {
+      return `Bearer ${this.secretKey}`;
+    }
+    const token = await this.getAccessToken();
+    return `Bearer ${token}`;
+  }
+
   private async getChargeByReference(
     reference: string,
-    token: string,
+    authHeader: string,
   ): Promise<FlutterwaveCharge | null> {
+    const base = this.baseUrl.replace(/\/+$/, '');
     const endpoints = [
-      {
-        method: 'GET' as const,
-        url: `${this.baseUrl}/charges?tx_ref=${encodeURIComponent(reference)}`,
-      },
-      {
-        method: 'GET' as const,
-        url: `${this.baseUrl}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
-      },
-      {
-        method: 'GET' as const,
-        url: `${this.baseUrl}/transactions/verify/${encodeURIComponent(reference)}`,
-      },
+      `${base}/charges/${encodeURIComponent(reference)}`,
+      `${base}/charges?reference=${encodeURIComponent(reference)}`,
     ];
 
-    for (const endpoint of endpoints) {
+    for (const url of endpoints) {
       try {
         const response = await axios.request({
-          method: endpoint.method,
-          url: endpoint.url,
+          method: 'GET',
+          url,
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: authHeader,
             'Content-Type': 'application/json',
           },
         });
@@ -383,18 +494,20 @@ export class FlutterwaveService implements PaymentGatewayInterface {
 
   private async getTransferByReference(
     reference: string,
-    token: string,
+    authHeader: string,
   ): Promise<FlutterwaveTransfer | null> {
+    const base = this.baseUrl.replace(/\/+$/, '');
+    const transfersBase = base.endsWith('/v3') ? `${base}/transfers` : `${base}/v3/transfers`;
     const endpoints = [
-      `${this.baseUrl}/transfers?reference=${encodeURIComponent(reference)}`,
-      `${this.baseUrl}/transfers/${encodeURIComponent(reference)}`,
+      `${transfersBase}?reference=${encodeURIComponent(reference)}`,
+      `${transfersBase}/${encodeURIComponent(reference)}`,
     ];
 
     for (const endpoint of endpoints) {
       try {
         const response = await axios.get(endpoint, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: authHeader,
             'Content-Type': 'application/json',
           },
         });
