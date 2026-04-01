@@ -30,6 +30,7 @@ async function bootstrap() {
       const allowedOrigins = new Set(
         [
           process.env.FRONTEND_URL,
+          process.env.FRONTEND_URL1,
           process.env.BACKEND_URL,
           'http://localhost:4000',
           'http://localhost:3300',
