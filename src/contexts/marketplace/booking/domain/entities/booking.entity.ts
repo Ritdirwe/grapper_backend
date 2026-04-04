@@ -200,7 +200,8 @@ export class Booking extends BaseEntity {
   approveWork(): void {
     this.customerApproved = true;
     this.customerApprovedAt = new Date();
-    this.status = BookingStatus.PENDING_COMPLETION_PAYMENT;
+    this.status = BookingStatus.COMPLETED;
+    this.completedAt = new Date();
   }
 
   canRequestCorrection(): boolean {

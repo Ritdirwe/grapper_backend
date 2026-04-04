@@ -10411,6 +10411,195 @@
           "serviceId"
         ]
       },
+      "BookingPaymentMetaDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 250000
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "bookingId": {
+            "type": "string",
+            "example": "uuid-of-booking"
+          },
+          "description": {
+            "type": "string",
+            "example": "Payment for Logo Design"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "gatewayData": {
+            "type": "object",
+            "description": "Gateway-specific initialization payload"
+          },
+          "referenceCode": {
+            "type": "string",
+            "example": "GRP-AB12CD34"
+          }
+        },
+        "required": [
+          "amount",
+          "bookingId",
+          "description",
+          "email"
+        ]
+      },
+      "BookingCreateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "pending_deposit",
+              "confirmed",
+              "in_progress",
+              "delivered",
+              "revision_requested",
+              "pending_completion_payment",
+              "completed",
+              "cancelled",
+              "disputed"
+            ]
+          },
+          "scheduledDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "scheduledTime": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "requirements": {
+            "type": "object"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "confirmedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string"
+          },
+          "cancelledBy": {
+            "type": "string"
+          },
+          "service": {
+            "type": "object"
+          },
+          "customer": {
+            "type": "object"
+          },
+          "provider": {
+            "type": "object"
+          },
+          "referenceCode": {
+            "type": "string"
+          },
+          "depositAmount": {
+            "type": "number"
+          },
+          "platformFee": {
+            "type": "number"
+          },
+          "depositPaid": {
+            "type": "boolean"
+          },
+          "finalPaymentPaid": {
+            "type": "boolean"
+          },
+          "correctionsUsed": {
+            "type": "number"
+          },
+          "correctionsLimit": {
+            "type": "number"
+          },
+          "correctionFee": {
+            "type": "number"
+          },
+          "customerApproved": {
+            "type": "boolean"
+          },
+          "customerApprovedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "paymentMeta": {
+            "$ref": "#/components/schemas/BookingPaymentMetaDto"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "example": "https://grapper.com/bookings"
+          }
+        },
+        "required": [
+          "id",
+          "customerId",
+          "providerId",
+          "serviceId",
+          "status",
+          "amount",
+          "currency",
+          "depositPaid",
+          "finalPaymentPaid",
+          "correctionsUsed",
+          "correctionsLimit",
+          "correctionFee",
+          "customerApproved",
+          "createdAt",
+          "updatedAt",
+          "paymentMeta",
+          "callbackUrl"
+        ]
+      },
       "UpdateBookingDto": {
         "type": "object",
         "properties": {
@@ -10676,69 +10865,20 @@
           "reason"
         ]
       },
-      "FlutterwaveCheckoutDto": {
-        "type": "object",
-        "properties": {
-          "customer": {
-            "type": "object",
-            "description": "Flutterwave orchestrator customer payload",
-            "example": {
-              "email": "user@example.com",
-              "name": {
-                "first": "Jane",
-                "last": "Doe"
-              }
-            }
-          },
-          "paymentMethod": {
-            "type": "object",
-            "description": "Flutterwave orchestrator payment_method payload",
-            "example": {
-              "type": "card",
-              "card": {
-                "nonce": "w2zQDGCf1QXA",
-                "encrypted_card_number": "...",
-                "encrypted_expiry_month": "...",
-                "encrypted_expiry_year": "...",
-                "encrypted_cvv": "..."
-              }
-            }
-          }
-        },
-        "required": [
-          "paymentMethod"
-        ]
-      },
       "CreateCheckoutDto": {
         "type": "object",
         "properties": {
-          "serviceId": {
-            "type": "string",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+          "paymentMeta": {
+            "$ref": "#/components/schemas/BookingPaymentMetaDto"
           },
-          "redirectURL": {
+          "callbackUrl": {
             "type": "string",
             "example": "https://grapper.com/bookings"
-          },
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "paymentMethod": {
-            "type": "string",
-            "example": "card",
-            "enum": [
-              "card",
-              "bank_transfer"
-            ]
-          },
-          "flutterwave": {
-            "$ref": "#/components/schemas/FlutterwaveCheckoutDto"
           }
         },
         "required": [
-          "serviceId",
-          "redirectURL"
+          "paymentMeta",
+          "callbackUrl"
         ]
       },
       "CheckoutResponseDto": {

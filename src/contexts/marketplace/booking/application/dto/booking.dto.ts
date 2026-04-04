@@ -4,10 +4,45 @@ import {
   IsDate,
   IsObject,
   IsArray,
+  IsNumber,
+  IsEmail,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { BookingStatus } from '../../domain/value-objects/booking-enums.vo';
+
+export class BookingPaymentMetaDto {
+  @ApiProperty({ example: 250000 })
+  @IsNumber()
+  amount: number;
+
+  @ApiProperty({ example: 'NGN', required: false })
+  @IsString()
+  @IsOptional()
+  currency?: string;
+
+  @ApiProperty({ example: 'uuid-of-booking' })
+  @IsString()
+  bookingId: string;
+
+  @ApiProperty({ example: 'Payment for Logo Design' })
+  @IsString()
+  description: string;
+
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ required: false, description: 'Gateway-specific initialization payload' })
+  @IsObject()
+  @IsOptional()
+  gatewayData?: Record<string, any>;
+
+  @ApiProperty({ required: false, example: 'GRP-AB12CD34' })
+  @IsString()
+  @IsOptional()
+  referenceCode?: string;
+}
 
 export class CreateBookingDto {
   @ApiProperty({ example: 'uuid-of-service' })
@@ -204,4 +239,12 @@ export class BookingResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+}
+
+export class BookingCreateResponseDto extends BookingResponseDto {
+  @ApiProperty({ type: BookingPaymentMetaDto })
+  paymentMeta: BookingPaymentMetaDto;
+
+  @ApiProperty({ example: 'https://grapper.com/bookings' })
+  callbackUrl: string;
 }

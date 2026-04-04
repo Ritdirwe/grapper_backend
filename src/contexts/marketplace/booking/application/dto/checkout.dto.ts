@@ -1,59 +1,16 @@
-import { IsUUID, IsUrl, IsEmail, IsOptional, IsEnum, IsString, IsObject } from 'class-validator';
+import { IsObject, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
-export class FlutterwaveCheckoutDto {
-  @ApiProperty({
-    description: 'Flutterwave orchestrator customer payload',
-    required: false,
-    example: {
-      email: 'user@example.com',
-      name: { first: 'Jane', last: 'Doe' },
-    },
-  })
-  @IsObject()
-  @IsOptional()
-  customer?: Record<string, any>;
-
-  @ApiProperty({
-    description: 'Flutterwave orchestrator payment_method payload',
-    example: {
-      type: 'card',
-      card: {
-        nonce: 'w2zQDGCf1QXA',
-        encrypted_card_number: '...',
-        encrypted_expiry_month: '...',
-        encrypted_expiry_year: '...',
-        encrypted_cvv: '...',
-      },
-    },
-  })
-  @IsObject()
-  paymentMethod: Record<string, any>;
-}
+import { BookingPaymentMetaDto } from './booking.dto';
 
 export class CreateCheckoutDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @IsUUID()
-  serviceId: string;
+  @ApiProperty({ type: BookingPaymentMetaDto })
+  @IsObject()
+  paymentMeta: BookingPaymentMetaDto;
 
   @ApiProperty({ example: 'https://grapper.com/bookings' })
-  @IsUrl()
-  redirectURL: string;
-
-  @ApiProperty({ example: 'user@example.com', required: false })
-  @IsEmail()
+  @IsString()
   @IsOptional()
-  email?: string;
-
-  @ApiProperty({ example: 'card', required: false, enum: ['card', 'bank_transfer'] })
-  @IsOptional()
-  @IsEnum(['card', 'bank_transfer'])
-  paymentMethod?: string;
-
-  @ApiProperty({ required: false, type: FlutterwaveCheckoutDto })
-  @IsOptional()
-  @IsObject()
-  flutterwave?: FlutterwaveCheckoutDto;
+  callbackUrl?: string;
 }
 
 export class CheckoutResponseDto {

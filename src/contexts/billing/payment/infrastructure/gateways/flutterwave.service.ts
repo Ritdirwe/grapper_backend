@@ -86,31 +86,21 @@ export class FlutterwaveService implements PaymentGatewayInterface {
       throw new BadRequestException('Flutterwave callbackUrl is not configured');
     }
 
-    if (!params.paymentMethod) {
-      return this.initializeRedirectPayment(params, authHeader, redirectUrl);
-    }
-
     const payload = {
-      reference: params.reference,
       amount: params.amount,
       currency: params.currency || 'NGN',
       redirect_url: redirectUrl,
+      reference: params.reference,
       customer: {
         email: params.email,
         ...(params.customer || {}),
       },
-      payment_method: params.paymentMethod,
+      payment_method: params.paymentMethod || { type: 'opay' },
       meta: params.metadata,
       title: 'Grapper',
       description: params.metadata?.description || `Payment ${params.reference}`,
       x_trace_id: params.reference,
       x_idempotency_key: `${params.reference}-${Date.now()}`,
-      // Keep the legacy field in case the API surface expects it in some environments.
-      tx_ref: params.reference,
-      customizations: {
-        title: 'Grapper',
-        description: `Payment ${params.reference}`,
-      },
     };
 
     const base = this.baseUrl.replace(/\/+$/, '');
@@ -139,74 +129,8 @@ export class FlutterwaveService implements PaymentGatewayInterface {
 
       return {
         authorizationUrl,
-        gatewayReference: data.id || data.reference,
-        reference: data.reference || params.reference,
-      };
-    } catch (error) {
-      this.handleGatewayError(error, 'Flutterwave payment initialization failed');
-    }
-  }
-
-  private async initializeRedirectPayment(
-    params: {
-      amount: number;
-      email: string;
-      reference: string;
-      currency?: string;
-      metadata?: Record<string, any>;
-      customer?: Record<string, any>;
-    },
-    authHeader: string,
-    redirectUrl: string,
-  ): Promise<{
-    authorizationUrl?: string;
-    clientSecret?: string;
-    accessCode?: string;
-    gatewayReference?: string;
-    reference: string;
-  }> {
-    const payload = {
-      tx_ref: params.reference,
-      amount: params.amount,
-      currency: params.currency || 'NGN',
-      redirect_url: redirectUrl,
-      customer: {
-        email: params.email,
-        ...(params.customer || {}),
-      },
-      meta: params.metadata,
-      customizations: {
-        title: 'Grapper',
-        description: params.metadata?.description || `Payment ${params.reference}`,
-      },
-    };
-
-    try {
-      const base = this.baseUrl.replace(/\/+$/, '');
-      const url = base.endsWith('/v3') ? `${base}/payments` : `${base}/v3/payments`;
-
-      const response = await axios.post(url, payload, {
-        headers: {
-          Authorization: authHeader,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = response.data?.data || {};
-      const authorizationUrl =
-        data?.link ||
-        data?.checkout_url ||
-        data?.authorization_url ||
-        data?.payment_link;
-
-      if (!authorizationUrl) {
-        throw new BadRequestException('Flutterwave did not return a checkout URL');
-      }
-
-      return {
-        authorizationUrl,
-        gatewayReference: String(data.id || data.flw_ref || data.tx_ref || params.reference),
-        reference: String(data.tx_ref || params.reference),
+        gatewayReference: String(data.id || data.reference || params.reference),
+        reference: String(data.reference || params.reference),
       };
     } catch (error) {
       this.handleGatewayError(error, 'Flutterwave payment initialization failed');

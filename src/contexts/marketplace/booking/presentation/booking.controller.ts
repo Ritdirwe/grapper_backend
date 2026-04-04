@@ -15,6 +15,7 @@ import {
   UpdateBookingDto,
   CancelBookingDto,
   BookingResponseDto,
+  BookingCreateResponseDto,
   DeliverBookingDto,
   RequestCorrectionDto,
 } from '../application/dto/booking.dto';
@@ -62,12 +63,12 @@ export class BookingController {
 
   @Post()
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_CREATE)
-  @ApiOperation({ summary: 'Create a new booking' })
-  @ApiResponse({ status: 201, type: BookingResponseDto })
+  @ApiOperation({ summary: 'Create a new booking and return payment metadata' })
+  @ApiResponse({ status: 201, type: BookingCreateResponseDto })
   async createBooking(
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateBookingDto,
-  ): Promise<BookingResponseDto> {
+  ): Promise<BookingCreateResponseDto> {
     return this.bookingService.create(user.id, dto);
   }
 
@@ -135,7 +136,7 @@ export class BookingController {
   @Post(':id/approve')
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_APPROVE)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Approve delivered work and unlock completion payment' })
+  @ApiOperation({ summary: 'Approve delivered work' })
   @ApiResponse({ status: 200, type: BookingResponseDto })
   async approveDelivery(
     @CurrentUser() user: AuthUser,

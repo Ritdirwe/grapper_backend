@@ -16,48 +16,16 @@ import { PERMISSIONS } from '@common/authz/permissions.enum';
 export class CheckoutController {
   constructor(private readonly bookingService: BookingService) {}
 
-  @Post('checkout')
-  @ApiOperation({ summary: 'Create a checkout for a service (active gateway)' })
+  @Post(':id/checkout')
+  @ApiOperation({ summary: 'Initialize checkout for a confirmed booking' })
   @ApiResponse({ status: 201, type: CheckoutResponseDto })
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
   async createCheckout(
+    @Param('id') id: string,
     @CurrentUser() user: AuthUser,
     @Body() dto: CreateCheckoutDto,
   ): Promise<CheckoutResponseDto> {
-    return this.bookingService.createCheckout(user.id, dto);
-  }
-
-  @Post('checkout-paystack')
-  @ApiOperation({ summary: 'Legacy alias: create a checkout for a service (active gateway)' })
-  @ApiResponse({ status: 201, type: CheckoutResponseDto })
-  @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
-  async createPaystackCheckout(
-    @CurrentUser() user: AuthUser,
-    @Body() dto: CreateCheckoutDto,
-  ): Promise<CheckoutResponseDto> {
-    return this.bookingService.createCheckout(user.id, dto);
-  }
-
-  @Post(':id/final-payment')
-  @ApiOperation({ summary: 'Initiate completion payment (remaining 80%) for a booking (active gateway)' })
-  @ApiResponse({ status: 201, type: CheckoutResponseDto })
-  @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
-  async createFinalPayment(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser,
-  ): Promise<CheckoutResponseDto> {
-    return this.bookingService.createFinalPaymentSession(user.id, id);
-  }
-
-  @Post(':id/completion-payment-paystack')
-  @ApiOperation({ summary: 'Legacy alias: initiate completion payment (active gateway)' })
-  @ApiResponse({ status: 201, type: CheckoutResponseDto })
-  @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_PAY)
-  async createCompletionPaymentPaystack(
-    @Param('id') id: string,
-    @CurrentUser() user: AuthUser,
-  ): Promise<CheckoutResponseDto> {
-    return this.bookingService.createFinalPaymentSession(user.id, id);
+    return this.bookingService.createBookingCheckout(user.id, id, dto);
   }
 
   @Post(':id/pay-correction')

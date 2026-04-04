@@ -5650,7 +5650,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BookingResponseDto"
+                  "$ref": "#/components/schemas/BookingCreateResponseDto"
                 }
               }
             }
@@ -5661,11 +5661,11 @@
             "bearer": []
           }
         ],
-        "summary": "Create a new booking",
+        "summary": "Create a new booking and return payment metadata",
         "tags": [
           "Admin Service Bookings"
         ],
-        "description": "Create a new booking. Audience: client. Owner: client.",
+        "description": "Create a new booking and return payment metadata. Audience: client. Owner: client.",
         "x-owner": "client",
         "x-audience": [
           "client"
@@ -5876,11 +5876,11 @@
             "bearer": []
           }
         ],
-        "summary": "Approve delivered work and unlock completion payment",
+        "summary": "Approve delivered work",
         "tags": [
           "Admin Service Bookings"
         ],
-        "description": "Approve delivered work and unlock completion payment. Audience: client. Owner: client.",
+        "description": "Approve delivered work. Audience: client. Owner: client.",
         "x-owner": "client",
         "x-audience": [
           "client"
@@ -6365,10 +6365,19 @@
         ]
       }
     },
-    "/api/bookings/checkout": {
+    "/api/bookings/{id}/checkout": {
       "post": {
         "operationId": "CheckoutController_createCheckout",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -6396,135 +6405,11 @@
             "bearer": []
           }
         ],
-        "summary": "Create a checkout for a service (active gateway)",
+        "summary": "Initialize checkout for a confirmed booking",
         "tags": [
           "Admin Service Bookings"
         ],
-        "description": "Create a checkout for a service (active gateway). Audience: client. Owner: client.",
-        "x-owner": "client",
-        "x-audience": [
-          "client"
-        ]
-      }
-    },
-    "/api/bookings/checkout-paystack": {
-      "post": {
-        "operationId": "CheckoutController_createPaystackCheckout",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCheckoutDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Resource created successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckoutResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Legacy alias: create a checkout for a service (active gateway)",
-        "tags": [
-          "Admin Service Bookings"
-        ],
-        "description": "Legacy alias: create a checkout for a service (active gateway). Audience: client. Owner: client.",
-        "x-owner": "client",
-        "x-audience": [
-          "client"
-        ]
-      }
-    },
-    "/api/bookings/{id}/final-payment": {
-      "post": {
-        "operationId": "CheckoutController_createFinalPayment",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Resource created successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckoutResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Initiate completion payment (remaining 80%) for a booking (active gateway)",
-        "tags": [
-          "Admin Service Bookings"
-        ],
-        "description": "Initiate completion payment (remaining 80%) for a booking (active gateway). Audience: client. Owner: client.",
-        "x-owner": "client",
-        "x-audience": [
-          "client"
-        ]
-      }
-    },
-    "/api/bookings/{id}/completion-payment-paystack": {
-      "post": {
-        "operationId": "CheckoutController_createCompletionPaymentPaystack",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Resource created successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckoutResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Legacy alias: initiate completion payment (active gateway)",
-        "tags": [
-          "Admin Service Bookings"
-        ],
-        "description": "Legacy alias: initiate completion payment (active gateway). Audience: client. Owner: client.",
+        "description": "Initialize checkout for a confirmed booking. Audience: client. Owner: client.",
         "x-owner": "client",
         "x-audience": [
           "client"
@@ -13816,6 +13701,195 @@
           "serviceId"
         ]
       },
+      "BookingPaymentMetaDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "example": 250000
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "bookingId": {
+            "type": "string",
+            "example": "uuid-of-booking"
+          },
+          "description": {
+            "type": "string",
+            "example": "Payment for Logo Design"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "gatewayData": {
+            "type": "object",
+            "description": "Gateway-specific initialization payload"
+          },
+          "referenceCode": {
+            "type": "string",
+            "example": "GRP-AB12CD34"
+          }
+        },
+        "required": [
+          "amount",
+          "bookingId",
+          "description",
+          "email"
+        ]
+      },
+      "BookingCreateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "pending_deposit",
+              "confirmed",
+              "in_progress",
+              "delivered",
+              "revision_requested",
+              "pending_completion_payment",
+              "completed",
+              "cancelled",
+              "disputed"
+            ]
+          },
+          "scheduledDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "scheduledTime": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "requirements": {
+            "type": "object"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "confirmedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "completedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancellationReason": {
+            "type": "string"
+          },
+          "cancelledBy": {
+            "type": "string"
+          },
+          "service": {
+            "type": "object"
+          },
+          "customer": {
+            "type": "object"
+          },
+          "provider": {
+            "type": "object"
+          },
+          "referenceCode": {
+            "type": "string"
+          },
+          "depositAmount": {
+            "type": "number"
+          },
+          "platformFee": {
+            "type": "number"
+          },
+          "depositPaid": {
+            "type": "boolean"
+          },
+          "finalPaymentPaid": {
+            "type": "boolean"
+          },
+          "correctionsUsed": {
+            "type": "number"
+          },
+          "correctionsLimit": {
+            "type": "number"
+          },
+          "correctionFee": {
+            "type": "number"
+          },
+          "customerApproved": {
+            "type": "boolean"
+          },
+          "customerApprovedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "paymentMeta": {
+            "$ref": "#/components/schemas/BookingPaymentMetaDto"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "example": "https://grapper.com/bookings"
+          }
+        },
+        "required": [
+          "id",
+          "customerId",
+          "providerId",
+          "serviceId",
+          "status",
+          "amount",
+          "currency",
+          "depositPaid",
+          "finalPaymentPaid",
+          "correctionsUsed",
+          "correctionsLimit",
+          "correctionFee",
+          "customerApproved",
+          "createdAt",
+          "updatedAt",
+          "paymentMeta",
+          "callbackUrl"
+        ]
+      },
       "UpdateBookingDto": {
         "type": "object",
         "properties": {
@@ -14081,69 +14155,20 @@
           "reason"
         ]
       },
-      "FlutterwaveCheckoutDto": {
-        "type": "object",
-        "properties": {
-          "customer": {
-            "type": "object",
-            "description": "Flutterwave orchestrator customer payload",
-            "example": {
-              "email": "user@example.com",
-              "name": {
-                "first": "Jane",
-                "last": "Doe"
-              }
-            }
-          },
-          "paymentMethod": {
-            "type": "object",
-            "description": "Flutterwave orchestrator payment_method payload",
-            "example": {
-              "type": "card",
-              "card": {
-                "nonce": "w2zQDGCf1QXA",
-                "encrypted_card_number": "...",
-                "encrypted_expiry_month": "...",
-                "encrypted_expiry_year": "...",
-                "encrypted_cvv": "..."
-              }
-            }
-          }
-        },
-        "required": [
-          "paymentMethod"
-        ]
-      },
       "CreateCheckoutDto": {
         "type": "object",
         "properties": {
-          "serviceId": {
-            "type": "string",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
+          "paymentMeta": {
+            "$ref": "#/components/schemas/BookingPaymentMetaDto"
           },
-          "redirectURL": {
+          "callbackUrl": {
             "type": "string",
             "example": "https://grapper.com/bookings"
-          },
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "paymentMethod": {
-            "type": "string",
-            "example": "card",
-            "enum": [
-              "card",
-              "bank_transfer"
-            ]
-          },
-          "flutterwave": {
-            "$ref": "#/components/schemas/FlutterwaveCheckoutDto"
           }
         },
         "required": [
-          "serviceId",
-          "redirectURL"
+          "paymentMeta",
+          "callbackUrl"
         ]
       },
       "CheckoutResponseDto": {

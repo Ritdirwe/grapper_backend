@@ -66,21 +66,36 @@ export class PaymentService {
     }
 
     const reference = options?.reference || this.generateReference();
-
-    const transaction = this.transactionRepository.create({
-      reference,
-      userId,
-      type: dto.type,
-      amount: dto.amount,
-      currency: dto.currency || 'NGN',
-      gateway: dto.gateway || PaymentGateway.PAYSTACK,
-      orderId: dto.orderId,
-      bookingId: dto.bookingId,
-      description: dto.description,
-      metadata: {
+    let transaction = await this.transactionRepository.findOne({ where: { reference } });
+    if (!transaction) {
+      transaction = this.transactionRepository.create({
+        reference,
+        userId,
+        type: dto.type,
+        amount: dto.amount,
+        currency: dto.currency || 'NGN',
+        gateway: dto.gateway || PaymentGateway.PAYSTACK,
+        orderId: dto.orderId,
+        bookingId: dto.bookingId,
+        description: dto.description,
+        metadata: {
+          email: dto.email,
+        },
+      });
+    } else {
+      transaction.userId = userId;
+      transaction.type = dto.type;
+      transaction.amount = dto.amount;
+      transaction.currency = dto.currency || 'NGN';
+      transaction.gateway = dto.gateway || PaymentGateway.PAYSTACK;
+      transaction.orderId = dto.orderId;
+      transaction.bookingId = dto.bookingId;
+      transaction.description = dto.description;
+      transaction.metadata = {
+        ...(transaction.metadata || {}),
         email: dto.email,
-      },
-    });
+      };
+    }
 
     transaction.gateway = activeGateway;
 
@@ -133,7 +148,8 @@ export class PaymentService {
 
     const gateway = this.getGateway(transaction.gateway);
     const referenceForGateway =
-      transaction.gateway === PaymentGateway.STRIPE && transaction.gatewayReference
+      transaction.gatewayReference &&
+      (transaction.gateway === PaymentGateway.STRIPE || transaction.gateway === PaymentGateway.FLUTTERWAVE)
         ? transaction.gatewayReference
         : dto.reference;
 
@@ -293,9 +309,10 @@ export class PaymentService {
     await this.dataSource.query(
       `UPDATE bookings
        SET deposit_paid = true,
-           status = 'pending',
-           paystack_reference = $2,
-           updated_at = NOW()
+           final_payment_paid = true,
+            status = 'confirmed',
+            paystack_reference = $2,
+            updated_at = NOW()
        WHERE id = $1`,
       [bookingId, paymentReference],
     );
@@ -305,9 +322,10 @@ export class PaymentService {
     await this.dataSource.query(
       `UPDATE bookings
        SET deposit_paid = true,
-           status = 'pending',
-           paystack_reference = $2,
-           updated_at = NOW()
+           final_payment_paid = true,
+            status = 'confirmed',
+            paystack_reference = $2,
+            updated_at = NOW()
        WHERE reference_code = $1`,
       [paymentReference, paymentReference],
     );

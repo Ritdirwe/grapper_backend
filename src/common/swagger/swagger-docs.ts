@@ -301,10 +301,8 @@ function isClientAction(path: string, method: string): boolean {
     loweredPath === '/api/orders/my-orders' ||
     loweredPath.endsWith('/approve') ||
     loweredPath.endsWith('/correction') ||
-    loweredPath.endsWith('/final-payment') ||
-    loweredPath.endsWith('/completion-payment-paystack') ||
     loweredPath.endsWith('/pay-correction') ||
-    loweredPath.startsWith('/api/bookings/checkout')
+    (loweredPath.startsWith('/api/bookings/') && loweredPath.endsWith('/checkout'))
   ) {
     return true;
   }

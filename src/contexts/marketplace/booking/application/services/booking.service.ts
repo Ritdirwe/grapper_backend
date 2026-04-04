@@ -21,6 +21,8 @@ import {
   UpdateBookingDto,
   CancelBookingDto,
   BookingResponseDto,
+  BookingCreateResponseDto,
+  BookingPaymentMetaDto,
   DeliverBookingDto,
   RequestCorrectionDto,
 } from '../dto/booking.dto';
@@ -28,8 +30,8 @@ import { CreateCheckoutDto, CheckoutResponseDto } from '../dto/checkout.dto';
 import { PaymentService } from '@contexts/billing/payment/application/services/payment.service';
 import { TransactionType } from '@contexts/billing/payment/domain/value-objects/payment-enums.vo';
 import { VerifyPaymentDto } from '@contexts/billing/payment/application/dto/payment.dto';
+import { EmailService } from '@infrastructure/email/email.service';
 
-const DEPOSIT_RATIO = 0.2;
 const PLATFORM_FEE_RATIO = 0.15;
 
 @Injectable()
@@ -45,9 +47,10 @@ export class BookingService {
     private profileRepository: Repository<Profile>,
     private paymentService: PaymentService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
-  async createCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
+  async create(userId: string, dto: CreateBookingDto): Promise<BookingCreateResponseDto> {
     const service = await this.serviceRepository.findOne({
       where: { id: dto.serviceId },
     });
@@ -56,77 +59,60 @@ export class BookingService {
       throw new NotFoundException('Service not found');
     }
 
+    if (service.providerId === userId) {
+      throw new BadRequestException('Cannot book your own service');
+    }
+
     const price = Number(service.price);
-    const depositAmount = price * DEPOSIT_RATIO;
     const platformFee = price * PLATFORM_FEE_RATIO;
     const referenceCode = this.generateReference();
+    const callbackUrl =
+      this.configService.get<string>('payment.flutterwave.callbackUrl') ||
+      this.configService.get<string>('payment.callbackUrl') ||
+      this.configService.get<string>('app.frontendUrl') ||
+      '';
 
     const booking = this.bookingRepository.create({
+      ...dto,
       customerId: userId,
       providerId: service.providerId,
       serviceId: service.id,
       amount: price,
-      depositAmount,
       platformFee,
+      depositAmount: price,
       correctionFee: this.getDefaultCorrectionFee(),
       currency: service.currency || 'NGN',
-      status: BookingStatus.PENDING_DEPOSIT,
+      status: BookingStatus.PENDING,
       referenceCode,
       metadata: {
-        redirectURL: dto.redirectURL,
-        flutterwave: dto.flutterwave,
+        callbackUrl,
       },
     });
 
     await this.bookingRepository.save(booking);
 
-    const email = dto.email || (await this.getUserEmail(userId));
-    const init = await this.paymentService.initializePayment(
-      userId,
-      {
-        amount: depositAmount,
-        currency: booking.currency,
-        type: TransactionType.BOOKING_PAYMENT,
-        bookingId: booking.id,
-        description: `${service.title} - 20% Deposit`,
-        email,
-        gatewayData: dto.flutterwave,
-      },
-      {
-        reference: referenceCode,
-        callbackUrl: dto.redirectURL,
-      },
-    );
-
-    booking.paystackReference = init.reference;
-    await this.bookingRepository.save(booking);
+    const email = await this.getUserEmail(userId);
+    const paymentMeta: BookingPaymentMetaDto = {
+      amount: Number(booking.amount),
+      currency: booking.currency || 'NGN',
+      bookingId: booking.id,
+      description: `${service.title} - Booking Payment`,
+      email,
+      referenceCode,
+    };
 
     return {
-      url: init.authorizationUrl,
-      authorizationUrl: init.authorizationUrl,
-      clientSecret: init.clientSecret,
-      accessCode: init.accessCode,
-      mode: init.mode,
-      publicKey: init.publicKey,
-      processor: String(init.processor || ''),
-      reference: init.reference,
+      ...this.mapToResponseDto(booking),
+      paymentMeta,
+      callbackUrl,
     };
   }
 
-  async createStripeCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
-    return this.createCheckout(userId, dto);
-  }
-
-  async createPaystackCheckout(userId: string, dto: CreateCheckoutDto): Promise<CheckoutResponseDto> {
-    return this.createCheckout(userId, dto);
-  }
-
-  async verifyPaystackPayment(reference: string) {
-    const dto: VerifyPaymentDto = { reference };
-    return this.paymentService.verifyPayment(dto);
-  }
-
-  async createFinalPaymentSession(userId: string, bookingId: string): Promise<CheckoutResponseDto> {
+  async createBookingCheckout(
+    userId: string,
+    bookingId: string,
+    dto: CreateCheckoutDto,
+  ): Promise<CheckoutResponseDto> {
     const booking = await this.bookingRepository.findOne({
       where: { id: bookingId },
       relations: ['service'],
@@ -136,32 +122,44 @@ export class BookingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    if (!booking.depositPaid) {
-      throw new BadRequestException('Deposit must be paid first');
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException('Booking must be confirmed before checkout');
     }
 
-    if (!booking.customerApproved) {
-      throw new BadRequestException('Customer approval is required before completion payment');
+    if (dto.paymentMeta.bookingId !== booking.id) {
+      throw new BadRequestException('Payment metadata does not match booking');
     }
 
-    const remainingAmount = booking.amount - (booking.depositAmount || 0);
-    const referenceCode = `${booking.referenceCode}-completion`;
+    const callbackUrl =
+      dto.callbackUrl ||
+      booking.metadata?.callbackUrl ||
+      this.configService.get<string>('payment.flutterwave.callbackUrl') ||
+      this.configService.get<string>('payment.callbackUrl') ||
+      this.configService.get<string>('app.frontendUrl') ||
+      '';
+    const email = dto.paymentMeta.email || (await this.getUserEmail(userId));
+    const referenceCode = booking.referenceCode || this.generateReference();
 
-    const email = await this.getUserEmail(userId);
+    if (!booking.referenceCode) {
+      booking.referenceCode = referenceCode;
+      await this.bookingRepository.save(booking);
+    }
+
     const init = await this.paymentService.initializePayment(
       userId,
       {
-        amount: remainingAmount,
+        amount: Number(booking.amount),
         currency: booking.currency || 'NGN',
         type: TransactionType.BOOKING_PAYMENT,
         bookingId: booking.id,
-        description: `${booking.service.title} - Completion Payment`,
+        description:
+          dto.paymentMeta.description || `${booking.service.title} - Booking Payment`,
         email,
-        gatewayData: booking.metadata?.flutterwave,
+        gatewayData: dto.paymentMeta.gatewayData || booking.metadata?.flutterwave,
       },
       {
         reference: referenceCode,
-        callbackUrl: booking.metadata?.redirectURL,
+        callbackUrl,
       },
     );
 
@@ -180,8 +178,9 @@ export class BookingService {
     };
   }
 
-  async createPaystackCompletionPayment(userId: string, bookingId: string): Promise<CheckoutResponseDto> {
-    return this.createFinalPaymentSession(userId, bookingId);
+  async verifyPaystackPayment(reference: string) {
+    const dto: VerifyPaymentDto = { reference };
+    return this.paymentService.verifyPayment(dto);
   }
 
   async createPaystackCorrectionPayment(userId: string, bookingId: string): Promise<CheckoutResponseDto> {
@@ -225,7 +224,12 @@ export class BookingService {
       },
       {
         reference,
-        callbackUrl: booking.metadata?.redirectURL,
+        callbackUrl:
+          booking.metadata?.callbackUrl ||
+          this.configService.get<string>('payment.flutterwave.callbackUrl') ||
+          this.configService.get<string>('payment.callbackUrl') ||
+          this.configService.get<string>('app.frontendUrl') ||
+          '',
       },
     );
 
@@ -269,7 +273,12 @@ export class BookingService {
       },
       {
         reference: referenceCode,
-        callbackUrl: booking.metadata?.redirectURL,
+        callbackUrl:
+          booking.metadata?.callbackUrl ||
+          this.configService.get<string>('payment.flutterwave.callbackUrl') ||
+          this.configService.get<string>('payment.callbackUrl') ||
+          this.configService.get<string>('app.frontendUrl') ||
+          '',
       },
     );
 
@@ -283,32 +292,6 @@ export class BookingService {
       processor: String(init.processor || ''),
       reference: init.reference,
     };
-  }
-
-  async create(customerId: string, dto: CreateBookingDto): Promise<BookingResponseDto> {
-    const service = await this.serviceRepository.findOne({
-      where: { id: dto.serviceId },
-    });
-
-    if (!service) {
-      throw new NotFoundException('Service not found');
-    }
-
-    if (service.providerId === customerId) {
-      throw new BadRequestException('Cannot book your own service');
-    }
-
-    const booking = this.bookingRepository.create({
-      ...dto,
-      customerId,
-      providerId: service.providerId,
-      amount: service.price,
-      currency: service.currency,
-      correctionFee: this.getDefaultCorrectionFee(),
-    });
-
-    await this.bookingRepository.save(booking);
-    return this.mapToResponseDto(booking);
   }
 
   async findById(id: string, userId: string): Promise<BookingResponseDto> {
@@ -376,6 +359,8 @@ export class BookingService {
 
     booking.confirm();
     await this.bookingRepository.save(booking);
+
+    await this.notifyCustomerToCheckout(booking.id);
 
     return this.mapToResponseDto(booking);
   }
@@ -559,6 +544,42 @@ export class BookingService {
 
   private getDefaultCorrectionFee(): number {
     return Number(this.configService.get('booking.correctionFee', 0));
+  }
+
+  private async notifyCustomerToCheckout(bookingId: string): Promise<void> {
+    const booking = await this.bookingRepository.findOne({
+      where: { id: bookingId },
+      relations: ['service'],
+    });
+
+    if (!booking) {
+      return;
+    }
+
+    const customerEmail = await this.getUserEmail(booking.customerId);
+    if (!customerEmail) {
+      return;
+    }
+
+    const frontendUrl = this.configService.get<string>('app.frontendUrl') || '';
+    const bookingUrl = frontendUrl ? `${frontendUrl}/bookings/${booking.id}` : '';
+
+    await this.emailService.sendEmail({
+      to: customerEmail,
+      subject: `Your booking is confirmed${booking.service?.title ? `: ${booking.service.title}` : ''}`,
+      text: [
+        'Your booking has been confirmed and is ready for payment.',
+        `Amount: ${booking.currency || 'NGN'} ${Number(booking.amount).toFixed(2)}`,
+        bookingUrl ? `Open booking: ${bookingUrl}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      html: `
+        <p>Your booking has been confirmed and is ready for payment.</p>
+        <p><strong>Amount:</strong> ${booking.currency || 'NGN'} ${Number(booking.amount).toFixed(2)}</p>
+        ${bookingUrl ? `<p><a href="${bookingUrl}">Open booking</a></p>` : ''}
+      `,
+    });
   }
 
   private generateReference(): string {
