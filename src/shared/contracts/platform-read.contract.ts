@@ -1,5 +1,35 @@
 export type ExportEntity = 'users' | 'bookings' | 'services';
 
+export type MobileDashboardRole = 'provider' | 'client';
+
+export type MobileDashboardCardKind = 'currency' | 'count';
+
+export interface MobileDashboardCard {
+  key: string;
+  label: string;
+  value: number;
+  kind: MobileDashboardCardKind;
+  currency?: string;
+  formattedValue?: string;
+}
+
+export interface MobileDashboardActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string;
+  amount?: number;
+  status?: string;
+  createdAt: Date;
+  timeLabel: string;
+}
+
+export interface MobileDashboardResult {
+  role: MobileDashboardRole;
+  cards: MobileDashboardCard[];
+  recentActivity: MobileDashboardActivityItem[];
+}
+
 export interface DashboardSnapshot {
   totalUsers: number;
   activeUsers: number;
@@ -106,6 +136,8 @@ export interface PlatformReadContract {
     completedStatus: string,
   ): Promise<Record<string, unknown>[]>;
   getProviderPendingClearance(userId: string, completedStatus: string): Promise<number>;
+
+  getMobileDashboard(userId: string, role: MobileDashboardRole): Promise<MobileDashboardResult>;
 
   getAdminBookings(
     page: number,

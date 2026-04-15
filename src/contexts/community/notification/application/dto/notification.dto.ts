@@ -1,15 +1,19 @@
-import { IsString, IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PushTokenPlatform } from '../../domain/value-objects/push-token-platform.vo';
 
 export class RegisterTokenDto {
-  @ApiProperty({ example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]' })
+  @ApiProperty({
+    example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]',
+    description: 'Expo push token for React Native apps or FCM token for web push',
+  })
   @IsString()
   token: string;
 
-  @ApiProperty({ example: 'expo', enum: ['expo', 'fcm', 'apns'], default: 'expo' })
-  @IsEnum(['expo', 'fcm', 'apns'])
+  @ApiProperty({ example: 'expo', enum: PushTokenPlatform, default: PushTokenPlatform.EXPO })
+  @IsEnum(PushTokenPlatform)
   @IsOptional()
-  platform?: string;
+  platform?: PushTokenPlatform;
 
   @ApiProperty({ required: false })
   @IsString()

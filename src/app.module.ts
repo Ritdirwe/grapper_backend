@@ -14,6 +14,7 @@ import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import paymentConfig from './config/payment.config';
 import mailConfig from './config/mail.config';
+import firebaseConfig from './config/firebase.config';
 import storageConfig from './config/storage.config';
 import { AuthorizationModule } from '@common/authz/authorization.module';
 
@@ -22,7 +23,7 @@ import { AuthorizationModule } from '@common/authz/authorization.module';
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, paymentConfig, mailConfig, storageConfig],
+      load: [appConfig, databaseConfig, jwtConfig, paymentConfig, mailConfig, firebaseConfig, storageConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 

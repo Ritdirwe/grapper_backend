@@ -1,5 +1,5 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -7,6 +7,7 @@ import { AuthUser } from '@shared/types/auth-user.type';
 import { ReportingService } from '../application/services/reporting.service';
 import { Permissions } from '@common/decorators/permissions.decorator';
 import { PERMISSIONS } from '@common/authz/permissions.enum';
+import { MobileDashboardResponseDto } from '../application/dto/mobile-dashboard.dto';
 
 @ApiTags('User Analytics')
 @ApiBearerAuth()
@@ -32,5 +33,13 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Get provider earnings analytics' })
   async getProviderEarnings(@CurrentUser() user: AuthUser) {
     return this.reportingService.getProviderEarnings(user.id);
+  }
+
+  @Get('mobile-dashboard')
+  @ApiOperation({ summary: 'Get mobile dashboard summary for the current user' })
+  @ApiResponse({ status: 200, type: MobileDashboardResponseDto })
+  async getMobileDashboard(@CurrentUser() user: AuthUser): Promise<MobileDashboardResponseDto> {
+    const role = user.role === 'provider' ? 'provider' : 'client';
+    return this.reportingService.getMobileDashboard(user.id, role);
   }
 }

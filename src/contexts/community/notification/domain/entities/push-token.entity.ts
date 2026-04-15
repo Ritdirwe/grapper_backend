@@ -1,6 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '@common/domain/base-entity';
 import { User } from '@contexts/identity/domain/entities/user.entity';
+import { PushTokenPlatform } from '../value-objects/push-token-platform.vo';
 
 @Entity('push_tokens')
 @Index(['userId'])
@@ -16,8 +17,8 @@ export class PushToken extends BaseEntity {
   @Column()
   token: string;
 
-  @Column({ default: 'expo' })
-  platform: string;
+  @Column({ default: PushTokenPlatform.EXPO })
+  platform: PushTokenPlatform;
 
   @Column({ name: 'device_id', nullable: true })
   deviceId?: string;

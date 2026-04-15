@@ -5,6 +5,10 @@ import {
   AdminDisputeListResult,
   AdminOverviewResult,
   AdminPaymentListResult,
+  MobileDashboardActivityItem,
+  MobileDashboardCard,
+  MobileDashboardResult,
+  MobileDashboardRole,
   RecountPostCommentsResult,
   DashboardSnapshot,
   ExportEntity,
@@ -272,6 +276,324 @@ export class PlatformReadService implements PlatformReadContract {
       .select('SUM(booking.amount)', 'total')
       .getRawOne();
     return Number(total?.total || 0);
+  }
+
+  async getMobileDashboard(userId: string, role: MobileDashboardRole): Promise<MobileDashboardResult> {
+    if (role === 'provider') {
+      return this.getProviderMobileDashboard(userId);
+    }
+
+    return this.getClientMobileDashboard(userId);
+  }
+
+  private async getProviderMobileDashboard(userId: string): Promise<MobileDashboardResult> {
+    const [pendingRows, activeRows, completedRows, viewRows, activityRows] = await Promise.all([
+      this.dataSource.query(
+        `SELECT COALESCE(SUM(amount), 0) AS total
+         FROM orders
+         WHERE provider_id = $1
+           AND status IN ('paid', 'in_progress', 'delivered')`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*)::int AS count
+         FROM orders
+         WHERE provider_id = $1
+           AND status IN ('paid', 'in_progress', 'delivered')`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*)::int AS count
+         FROM orders
+         WHERE provider_id = $1
+           AND status = 'completed'`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COALESCE(SUM(view_count), 0) AS total
+         FROM services
+         WHERE provider_id = $1`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `WITH dashboard_activity AS (
+           SELECT
+             x.*,
+             ROW_NUMBER() OVER (PARTITION BY x.type ORDER BY x.event_at DESC) AS rn
+           FROM (
+             SELECT
+               o.id,
+               'order_received' AS type,
+               'New order received' AS title,
+               COALESCE(s.title, 'Service order') || ' from ' || COALESCE(cp.display_name, cp.full_name, cu.email, 'Client') AS subtitle,
+               o.amount,
+               o.status::text AS status,
+               o.created_at AS event_at
+             FROM orders o
+             LEFT JOIN services s ON s.id = o.service_id
+             LEFT JOIN users cu ON cu.id = o.customer_id
+             LEFT JOIN profiles cp ON cp.user_id = o.customer_id
+             WHERE o.provider_id = $1
+
+             UNION ALL
+
+             SELECT
+               o.id,
+               'payment_received' AS type,
+               'Payment received' AS title,
+               COALESCE(s.title, 'Order payment') || ' from ' || COALESCE(cp.display_name, cp.full_name, cu.email, 'Client') AS subtitle,
+               o.amount,
+               o.status::text AS status,
+               o.paid_at AS event_at
+             FROM orders o
+             LEFT JOIN services s ON s.id = o.service_id
+             LEFT JOIN users cu ON cu.id = o.customer_id
+             LEFT JOIN profiles cp ON cp.user_id = o.customer_id
+             WHERE o.provider_id = $1
+               AND o.paid_at IS NOT NULL
+
+             UNION ALL
+
+             SELECT
+               o.id,
+               'order_completed' AS type,
+               'Order completed' AS title,
+               COALESCE(s.title, 'Completed order') || ' from ' || COALESCE(cp.display_name, cp.full_name, cu.email, 'Client') AS subtitle,
+               o.amount,
+               o.status::text AS status,
+               o.completed_at AS event_at
+             FROM orders o
+             LEFT JOIN services s ON s.id = o.service_id
+             LEFT JOIN users cu ON cu.id = o.customer_id
+             LEFT JOIN profiles cp ON cp.user_id = o.customer_id
+             WHERE o.provider_id = $1
+               AND o.completed_at IS NOT NULL
+
+             UNION ALL
+
+             SELECT
+               r.id,
+               'review_received' AS type,
+               CASE WHEN r.rating >= 5 THEN 'New 5-star review' ELSE 'New review received' END AS title,
+               COALESCE(s.title, 'Service review') || ' from ' || COALESCE(up.display_name, up.full_name, u.email, 'Client') AS subtitle,
+               NULL::numeric AS amount,
+               NULL::text AS status,
+               r.created_at AS event_at
+             FROM reviews r
+             INNER JOIN services s ON s.id = r.service_id
+             LEFT JOIN users u ON u.id = r.user_id
+             LEFT JOIN profiles up ON up.user_id = r.user_id
+             WHERE s.provider_id = $1
+           ) x
+         )
+         SELECT id, type, title, subtitle, amount, status, event_at
+         FROM dashboard_activity
+         WHERE rn = 1
+         ORDER BY event_at DESC
+         LIMIT 4`,
+        [userId],
+      ),
+    ]);
+
+    const pendingAmount = Number(pendingRows?.[0]?.total || 0);
+    const activeOrders = Number(activeRows?.[0]?.count || 0);
+    const completedOrders = Number(completedRows?.[0]?.count || 0);
+    const profileViews = Number(viewRows?.[0]?.total || 0);
+
+    return {
+      role: 'provider',
+      cards: [
+        this.createCurrencyCard('pending', 'Pending', pendingAmount),
+        this.createCountCard('activeOrders', 'Active Orders', activeOrders),
+        this.createCountCard('completed', 'Completed', completedOrders),
+        this.createCountCard('profileViews', 'Profile Views', profileViews),
+      ],
+      recentActivity: activityRows.map((item: any) => this.mapMobileDashboardActivity(item)),
+    };
+  }
+
+  private async getClientMobileDashboard(userId: string): Promise<MobileDashboardResult> {
+    const [pendingRows, activeRows, completedRows, spentRows, activityRows] = await Promise.all([
+      this.dataSource.query(
+        `SELECT COALESCE(SUM(amount), 0) AS total
+         FROM orders
+         WHERE customer_id = $1
+           AND status = 'pending_payment'`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*)::int AS count
+         FROM orders
+         WHERE customer_id = $1
+           AND status IN ('paid', 'in_progress', 'delivered')`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*)::int AS count
+         FROM orders
+         WHERE customer_id = $1
+           AND status = 'completed'`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `SELECT COALESCE(SUM(amount), 0) AS total
+         FROM orders
+         WHERE customer_id = $1
+           AND status = 'completed'`,
+        [userId],
+      ),
+      this.dataSource.query(
+        `WITH dashboard_activity AS (
+           SELECT
+             x.*,
+             ROW_NUMBER() OVER (PARTITION BY x.type ORDER BY x.event_at DESC) AS rn
+           FROM (
+             SELECT
+               o.id,
+               'order_created' AS type,
+               'Order placed' AS title,
+               COALESCE(s.title, 'Service order') || ' with ' || COALESCE(pp.display_name, pp.full_name, pu.email, 'Provider') AS subtitle,
+               o.amount,
+               o.status::text AS status,
+               o.created_at AS event_at
+             FROM orders o
+             LEFT JOIN services s ON s.id = o.service_id
+             LEFT JOIN users pu ON pu.id = o.provider_id
+             LEFT JOIN profiles pp ON pp.user_id = o.provider_id
+             WHERE o.customer_id = $1
+
+             UNION ALL
+
+             SELECT
+               o.id,
+               'payment_made' AS type,
+               'Payment made' AS title,
+               COALESCE(s.title, 'Order payment') || ' with ' || COALESCE(pp.display_name, pp.full_name, pu.email, 'Provider') AS subtitle,
+               o.amount,
+               o.status::text AS status,
+               o.paid_at AS event_at
+             FROM orders o
+             LEFT JOIN services s ON s.id = o.service_id
+             LEFT JOIN users pu ON pu.id = o.provider_id
+             LEFT JOIN profiles pp ON pp.user_id = o.provider_id
+             WHERE o.customer_id = $1
+               AND o.paid_at IS NOT NULL
+
+             UNION ALL
+
+             SELECT
+               o.id,
+               'order_delivered' AS type,
+               'Order delivered' AS title,
+               COALESCE(s.title, 'Delivered order') || ' with ' || COALESCE(pp.display_name, pp.full_name, pu.email, 'Provider') AS subtitle,
+               o.amount,
+               o.status::text AS status,
+               o.delivered_at AS event_at
+             FROM orders o
+             LEFT JOIN services s ON s.id = o.service_id
+             LEFT JOIN users pu ON pu.id = o.provider_id
+             LEFT JOIN profiles pp ON pp.user_id = o.provider_id
+             WHERE o.customer_id = $1
+               AND o.delivered_at IS NOT NULL
+
+             UNION ALL
+
+             SELECT
+               r.id,
+               'review_submitted' AS type,
+               'Review submitted' AS title,
+               COALESCE(s.title, 'Service review') || ' with ' || COALESCE(sp.display_name, sp.full_name, u.email, 'Provider') AS subtitle,
+               NULL::numeric AS amount,
+               NULL::text AS status,
+               r.created_at AS event_at
+             FROM reviews r
+             INNER JOIN services s ON s.id = r.service_id
+             LEFT JOIN users u ON u.id = r.user_id
+             LEFT JOIN profiles sp ON sp.user_id = r.user_id
+             WHERE r.user_id = $1
+           ) x
+         )
+         SELECT id, type, title, subtitle, amount, status, event_at
+         FROM dashboard_activity
+         WHERE rn = 1
+         ORDER BY event_at DESC
+         LIMIT 4`,
+        [userId],
+      ),
+    ]);
+
+    const pendingAmount = Number(pendingRows?.[0]?.total || 0);
+    const activeOrders = Number(activeRows?.[0]?.count || 0);
+    const completedOrders = Number(completedRows?.[0]?.count || 0);
+    const spentAmount = Number(spentRows?.[0]?.total || 0);
+
+    return {
+      role: 'client',
+      cards: [
+        this.createCurrencyCard('pending', 'Pending', pendingAmount),
+        this.createCountCard('activeOrders', 'Active Orders', activeOrders),
+        this.createCountCard('completed', 'Completed', completedOrders),
+        this.createCurrencyCard('spent', 'Spent', spentAmount),
+      ],
+      recentActivity: activityRows.map((item: any) => this.mapMobileDashboardActivity(item)),
+    };
+  }
+
+  private createCurrencyCard(key: string, label: string, value: number): MobileDashboardCard {
+    return {
+      key,
+      label,
+      value,
+      kind: 'currency',
+      currency: 'NGN',
+      formattedValue: `N${new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 }).format(value)}`,
+    };
+  }
+
+  private createCountCard(key: string, label: string, value: number): MobileDashboardCard {
+    return {
+      key,
+      label,
+      value,
+      kind: 'count',
+      formattedValue: new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 }).format(value),
+    };
+  }
+
+  private mapMobileDashboardActivity(item: any): MobileDashboardActivityItem {
+    const createdAt = item.event_at ? new Date(item.event_at) : new Date();
+
+    return {
+      id: String(item.id),
+      type: String(item.type),
+      title: String(item.title),
+      subtitle: String(item.subtitle || ''),
+      amount: item.amount !== null && item.amount !== undefined ? Number(item.amount) : undefined,
+      status: item.status ? String(item.status) : undefined,
+      createdAt,
+      timeLabel: this.formatTimeLabel(createdAt),
+    };
+  }
+
+  private formatTimeLabel(date: Date): string {
+    const diffMs = Math.max(0, Date.now() - date.getTime());
+    const minutes = Math.floor(diffMs / 60000);
+
+    if (minutes < 1) {
+      return 'Just now';
+    }
+
+    if (minutes < 60) {
+      return `${minutes}m ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      return `${hours}h ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
   }
 
   async getAdminBookings(

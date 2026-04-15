@@ -14,7 +14,8 @@ backend/
 │   │   ├── app.config.ts
 │   │   ├── database.config.ts
 │   │   ├── jwt.config.ts
-│   │   └── payment.config.ts
+│   │   ├── payment.config.ts
+│   │   └── firebase.config.ts
 │   ├── infrastructure/      # Cross-cutting concerns
 │   │   └── database/
 │   │       ├── data-source.ts
@@ -94,6 +95,20 @@ pnpm migration:revert
 
 - `GET /api/health` - Check API status
 
+### Push Notifications
+
+- `POST /api/push/register` - Register an Expo or FCM token
+- `DELETE /api/push/unregister?token=...` - Unregister a token
+- `POST /api/push/test` - Send a test notification to the current user
+- `POST /api/push/broadcast` - Admin broadcast to active tokens
+
+Firebase env vars:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+- `FIREBASE_STORAGE_BUCKET` (optional)
+
 ## Tech Stack
 
 - **Framework**: NestJS 11
@@ -103,6 +118,7 @@ pnpm migration:revert
 - **Validation**: class-validator & class-transformer
 - **Password Hashing**: Argon2
 - **Payments**: Stripe & Paystack
+- **Push Notifications**: Expo + Firebase Cloud Messaging
 - **Language**: TypeScript
 
 ## Next Steps

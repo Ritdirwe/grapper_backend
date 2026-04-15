@@ -10,6 +10,8 @@ import { BookingStatus } from '@contexts/marketplace/booking/domain/value-object
 import {
   PLATFORM_READ_CONTRACT,
   PlatformReadContract,
+  MobileDashboardResult,
+  MobileDashboardRole,
 } from '@shared/contracts/platform-read.contract';
 
 @Injectable()
@@ -122,6 +124,10 @@ export class ReportingService {
         jobsPosted: 12,
       },
     };
+  }
+
+  async getMobileDashboard(userId: string, role: MobileDashboardRole): Promise<MobileDashboardResult> {
+    return this.platformReadService.getMobileDashboard(userId, role);
   }
 
   async getClientSpending(userId: string): Promise<any> {

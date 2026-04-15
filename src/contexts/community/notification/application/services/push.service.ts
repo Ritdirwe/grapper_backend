@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PushToken } from '../../domain/entities/push-token.entity';
 import { RegisterTokenDto, BroadcastDto } from '../dto/notification.dto';
+import { PushTokenPlatform } from '../../domain/value-objects/push-token-platform.vo';
 import { ConfigService } from '@nestjs/config';
+import { FirebaseMessagingService } from './firebase-messaging.service';
 
 @Injectable()
 export class PushService {
@@ -13,6 +15,7 @@ export class PushService {
     @InjectRepository(PushToken)
     private pushTokenRepository: Repository<PushToken>,
     private configService: ConfigService,
+    private firebaseMessagingService: FirebaseMessagingService,
   ) {}
 
   async registerToken(userId: string, dto: RegisterTokenDto): Promise<void> {
@@ -30,7 +33,7 @@ export class PushService {
     pushToken = this.pushTokenRepository.create({
       userId,
       token: dto.token,
-      platform: dto.platform || 'expo',
+      platform: dto.platform || PushTokenPlatform.EXPO,
       deviceId: dto.deviceId,
       active: true,
     });
@@ -56,8 +59,7 @@ export class PushService {
 
     if (tokens.length === 0) return;
 
-    const pushTokens = tokens.map(t => t.token);
-    return this.sendExpoNotifications(pushTokens, title, body, data);
+    return this.sendByPlatform(tokens, title, body, data);
   }
 
   async broadcast(dto: BroadcastDto) {
@@ -67,8 +69,22 @@ export class PushService {
 
     if (tokens.length === 0) return;
 
-    const pushTokens = tokens.map(t => t.token);
-    return this.sendExpoNotifications(pushTokens, dto.title, dto.message, dto.data);
+    return this.sendByPlatform(tokens, dto.title, dto.message, dto.data);
+  }
+
+  private async sendByPlatform(tokens: PushToken[], title: string, body: string, data?: Record<string, any>) {
+    const expoTokens = tokens.filter(token => token.platform === PushTokenPlatform.EXPO).map(token => token.token);
+    const fcmTokens = tokens.filter(token => token.platform === PushTokenPlatform.FCM).map(token => token.token);
+
+    const results = await Promise.all([
+      expoTokens.length > 0 ? this.sendExpoNotifications(expoTokens, title, body, data) : null,
+      fcmTokens.length > 0 ? this.firebaseMessagingService.sendToMany(fcmTokens, { title, body, data }) : null,
+    ]);
+
+    return {
+      expo: results[0],
+      fcm: results[1],
+    };
   }
 
   private async sendExpoNotifications(tokens: string[], title: string, body: string, data?: Record<string, any>) {

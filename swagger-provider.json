@@ -7557,6 +7557,38 @@
         ]
       }
     },
+    "/api/analytics/mobile-dashboard": {
+      "get": {
+        "operationId": "AnalyticsController_getMobileDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileDashboardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get mobile dashboard summary for the current user",
+        "tags": [
+          "User Analytics"
+        ],
+        "description": "Get mobile dashboard summary for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/storage/upload": {
       "post": {
         "operationId": "StorageController_uploadFile",
@@ -11658,15 +11690,15 @@
         "properties": {
           "token": {
             "type": "string",
-            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            "description": "Expo push token for React Native apps or FCM token for web push"
           },
           "platform": {
             "type": "string",
             "example": "expo",
             "enum": [
               "expo",
-              "fcm",
-              "apns"
+              "fcm"
             ],
             "default": "expo"
           },
@@ -12329,6 +12361,108 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "MobileDashboardCardDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "currency",
+              "count"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "formattedValue": {
+            "type": "string",
+            "example": "N42,000"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "kind"
+        ]
+      },
+      "MobileDashboardActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "timeLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "subtitle",
+          "createdAt",
+          "timeLabel"
+        ]
+      },
+      "MobileDashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "provider",
+              "client"
+            ]
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MobileDashboardCardDto"
+            }
+          },
+          "recentActivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MobileDashboardActivityDto"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "cards",
+          "recentActivity"
         ]
       }
     }
