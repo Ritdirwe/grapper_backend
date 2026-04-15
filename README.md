@@ -99,6 +99,8 @@ pnpm migration:revert
 
 - `POST /api/push/register` - Register an Expo or FCM token
 - `DELETE /api/push/unregister?token=...` - Unregister a token
+- `GET /api/push/tokens` - List current user's push tokens
+- `DELETE /api/push/tokens/:id` - Delete a specific token
 - `POST /api/push/test` - Send a test notification to the current user
 - `POST /api/push/broadcast` - Admin broadcast to active tokens
 
@@ -108,6 +110,13 @@ Firebase env vars:
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY`
 - `FIREBASE_STORAGE_BUCKET` (optional)
+- `EXPO_ACCESS_TOKEN`
+
+Notification behavior:
+
+- Booking, payment, review, and messaging actions trigger push notifications automatically.
+- User notification preferences are respected before delivery.
+- Invalid push tokens are deactivated when delivery fails with a terminal token error.
 
 ## Tech Stack
 

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentModule } from '@contexts/billing/payment/payment.module';
+import { NotificationModule } from '@contexts/community/notification/notification.module';
 import { Booking } from './domain/entities/booking.entity';
 import { BookingCorrection } from './domain/entities/booking-correction.entity';
 import { BookingFile } from './domain/entities/booking-file.entity';
@@ -34,6 +35,7 @@ import { BookingChatController } from './presentation/booking-chat.controller';
       Profile,
     ]),
     PaymentModule,
+    NotificationModule,
   ],
   controllers: [
     BookingController,

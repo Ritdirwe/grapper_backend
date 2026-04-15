@@ -31,6 +31,7 @@ import { PaymentService } from '@contexts/billing/payment/application/services/p
 import { TransactionType } from '@contexts/billing/payment/domain/value-objects/payment-enums.vo';
 import { VerifyPaymentDto } from '@contexts/billing/payment/application/dto/payment.dto';
 import { EmailService } from '@infrastructure/email/email.service';
+import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
 
 const PLATFORM_FEE_RATIO = 0.15;
 
@@ -48,6 +49,7 @@ export class BookingService {
     private paymentService: PaymentService,
     private configService: ConfigService,
     private emailService: EmailService,
+    private notificationOrchestratorService: NotificationOrchestratorService,
   ) {}
 
   async create(userId: string, dto: CreateBookingDto): Promise<BookingCreateResponseDto> {
@@ -90,6 +92,17 @@ export class BookingService {
     });
 
     await this.bookingRepository.save(booking);
+
+    await this.notificationOrchestratorService.notifyBookingConfirmed(
+      service.providerId,
+      'New booking request',
+      `${service.title} has a new booking request.`,
+      {
+        bookingId: booking.id,
+        serviceId: service.id,
+        customerId: userId,
+      },
+    );
 
     const email = await this.getUserEmail(userId);
     const paymentMeta: BookingPaymentMetaDto = {
@@ -362,11 +375,21 @@ export class BookingService {
 
     await this.notifyCustomerToCheckout(booking.id);
 
+    await this.notificationOrchestratorService.notifyBookingConfirmed(
+      booking.customerId,
+      'Booking confirmed',
+      `Your booking${booking.referenceCode ? ` ${booking.referenceCode}` : ''} was confirmed by the provider.`,
+      {
+        bookingId: booking.id,
+        providerId: booking.providerId,
+      },
+    );
+
     return this.mapToResponseDto(booking);
   }
 
   async start(id: string, userId: string): Promise<BookingResponseDto> {
-    const booking = await this.bookingRepository.findOne({ where: { id } });
+    const booking = await this.bookingRepository.findOne({ where: { id }, relations: ['service'] });
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -383,11 +406,21 @@ export class BookingService {
     booking.start();
     await this.bookingRepository.save(booking);
 
+    await this.notificationOrchestratorService.notifyBookingUpdate(
+      booking.customerId,
+      'Work started',
+      `${booking.service?.title || 'Your booking'} is now in progress.`,
+      {
+        bookingId: booking.id,
+        providerId: booking.providerId,
+      },
+    );
+
     return this.mapToResponseDto(booking);
   }
 
   async deliver(id: string, userId: string, dto: DeliverBookingDto): Promise<BookingResponseDto> {
-    const booking = await this.bookingRepository.findOne({ where: { id } });
+    const booking = await this.bookingRepository.findOne({ where: { id }, relations: ['service'] });
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -412,6 +445,16 @@ export class BookingService {
     };
     await this.bookingRepository.save(booking);
 
+    await this.notificationOrchestratorService.notifyBookingUpdate(
+      booking.customerId,
+      'Work delivered',
+      `${booking.service?.title || 'Your booking'} has been delivered and is awaiting your review.`,
+      {
+        bookingId: booking.id,
+        providerId: booking.providerId,
+      },
+    );
+
     return this.mapToResponseDto(booking);
   }
 
@@ -432,6 +475,16 @@ export class BookingService {
 
     booking.approveWork();
     await this.bookingRepository.save(booking);
+
+    await this.notificationOrchestratorService.notifyBookingUpdate(
+      booking.providerId,
+      'Delivery approved',
+      `The customer approved ${booking.referenceCode || 'the booking'}.`,
+      {
+        bookingId: booking.id,
+        customerId: booking.customerId,
+      },
+    );
 
     return this.mapToResponseDto(booking);
   }
@@ -473,18 +526,55 @@ export class BookingService {
     await this.bookingRepository.save(booking);
     await this.bookingCorrectionRepository.save(correction);
 
+    await this.notificationOrchestratorService.notifyBookingUpdate(
+      booking.providerId,
+      'Correction requested',
+      `A correction was requested for ${booking.referenceCode || 'a booking'}.`,
+      {
+        bookingId: booking.id,
+        correctionId: correction.id,
+        customerId: booking.customerId,
+      },
+    );
+
     return this.mapToResponseDto(booking);
   }
 
   async complete(id: string, userId: string): Promise<BookingResponseDto> {
-    return this.deliver(id, userId, {
-      note: 'Delivered via legacy complete endpoint',
-    });
+    const booking = await this.bookingRepository.findOne({ where: { id }, relations: ['service'] });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    if (booking.providerId !== userId) {
+      throw new ForbiddenException('Only the provider can complete the booking');
+    }
+
+    if (!booking.canComplete()) {
+      throw new BadRequestException('Booking must be delivered to complete');
+    }
+
+    booking.complete();
+    await this.bookingRepository.save(booking);
+
+    await this.notificationOrchestratorService.notifyBookingUpdate(
+      booking.customerId,
+      'Booking completed',
+      `${booking.service?.title || 'Your booking'} has been completed.`,
+      {
+        bookingId: booking.id,
+        providerId: booking.providerId,
+      },
+    );
+
+    return this.mapToResponseDto(booking);
   }
 
   async cancel(id: string, userId: string, dto: CancelBookingDto): Promise<BookingResponseDto> {
     const booking = await this.bookingRepository.findOne({
       where: { id },
+      relations: ['service'],
     });
 
     if (!booking) {
@@ -501,6 +591,16 @@ export class BookingService {
 
     booking.cancel(dto.reason, userId);
     await this.bookingRepository.save(booking);
+
+    await this.notificationOrchestratorService.notifyBookingUpdate(
+      booking.customerId === userId ? booking.providerId : booking.customerId,
+      'Booking cancelled',
+      `${booking.service?.title || 'A booking'} was cancelled.`,
+      {
+        bookingId: booking.id,
+        cancelledBy: userId,
+      },
+    );
 
     return this.mapToResponseDto(booking);
   }

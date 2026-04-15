@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { PushTokenPlatform } from '../../domain/value-objects/push-token-platform.vo';
 
@@ -33,4 +33,37 @@ export class BroadcastDto {
   @ApiProperty({ required: false })
   @IsOptional()
   data?: Record<string, any>;
+}
+
+export class PushTokenResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  token: string;
+
+  @ApiProperty({ enum: PushTokenPlatform })
+  platform: PushTokenPlatform;
+
+  @ApiProperty({ required: false })
+  deviceId?: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  active: boolean;
+
+  @ApiProperty({ required: false })
+  lastUsedAt?: Date;
+
+  @ApiProperty({ required: false })
+  lastError?: string;
+
+  @ApiProperty()
+  failureCount: number;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
 }

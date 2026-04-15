@@ -1,11 +1,11 @@
-import { Controller, Post, Body, UseGuards, Delete, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Delete, Query, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
 import { PushService } from '../application/services/push.service';
-import { RegisterTokenDto, BroadcastDto } from '../application/dto/notification.dto';
+import { RegisterTokenDto, BroadcastDto, PushTokenResponseDto } from '../application/dto/notification.dto';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Permissions } from '@common/decorators/permissions.decorator';
@@ -20,6 +20,13 @@ import { PERMISSIONS } from '@common/authz/permissions.enum';
 @Controller('push')
 export class PushController {
   constructor(private readonly pushService: PushService) {}
+
+  @Get('tokens')
+  @ApiOperation({ summary: 'List current user push tokens' })
+  @ApiResponse({ status: 200, type: [PushTokenResponseDto] })
+  async getTokens(@CurrentUser() user: AuthUser): Promise<PushTokenResponseDto[]> {
+    return this.pushService.getTokens(user.id);
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a device push token for the current user' })
@@ -37,6 +44,15 @@ export class PushController {
     @Query('token') token: string,
   ) {
     return this.pushService.unregisterToken(user.id, token);
+  }
+
+  @Delete('tokens/:id')
+  @ApiOperation({ summary: 'Remove a specific push token by id' })
+  async removeToken(
+    @CurrentUser() user: AuthUser,
+    @Param('id') tokenId: string,
+  ) {
+    return this.pushService.removeToken(user.id, tokenId);
   }
 
   @Post('broadcast')

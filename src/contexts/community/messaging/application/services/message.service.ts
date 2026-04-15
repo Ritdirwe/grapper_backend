@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Message } from '../../domain/entities/message.entity';
 import { Conversation } from '../../domain/entities/conversation.entity';
 import { ConversationParticipant } from '../../domain/entities/conversation-participant.entity';
+import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
 import {
   SendMessageDto,
   UpdateMessageDto,
@@ -24,6 +25,7 @@ export class MessageService {
     private conversationRepository: Repository<Conversation>,
     @InjectRepository(ConversationParticipant)
     private participantRepository: Repository<ConversationParticipant>,
+    private notificationOrchestratorService: NotificationOrchestratorService,
   ) {}
 
   async send(conversationId: string, userId: string, dto: SendMessageDto): Promise<MessageResponseDto> {
@@ -55,6 +57,30 @@ export class MessageService {
       conversation.updateLastMessage(message.id);
       await this.conversationRepository.save(conversation);
     }
+
+    const participants = await this.participantRepository.find({
+      where: { conversationId },
+      relations: ['user', 'user.profile'],
+    });
+    const sender = participants.find(participant => participant.userId === userId);
+    const senderName = sender?.user?.profile?.displayName || sender?.user?.profile?.fullName || 'Someone';
+
+    await Promise.all(
+      participants
+        .filter(participant => participant.userId !== userId && !participant.isMuted())
+        .map(participant =>
+          this.notificationOrchestratorService.notifyMessage(
+            participant.userId,
+            'New message',
+            `New message from ${senderName}`,
+            {
+              conversationId,
+              messageId: message.id,
+              senderId: userId,
+            },
+          ),
+        ),
+    );
 
     return this.mapToResponseDto(message);
   }

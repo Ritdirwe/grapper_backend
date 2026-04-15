@@ -5,7 +5,9 @@ import { PushTokenPlatform } from '../value-objects/push-token-platform.vo';
 
 @Entity('push_tokens')
 @Index(['userId'])
-@Index(['token'])
+@Index(['userId', 'active'])
+@Index(['platform', 'active'])
+@Index(['token'], { unique: true })
 export class PushToken extends BaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
@@ -25,4 +27,13 @@ export class PushToken extends BaseEntity {
 
   @Column({ default: true })
   active: boolean;
+
+  @Column({ name: 'last_used_at', nullable: true })
+  lastUsedAt?: Date;
+
+  @Column({ name: 'last_error', type: 'text', nullable: true })
+  lastError?: string;
+
+  @Column({ name: 'failure_count', type: 'int', default: 0 })
+  failureCount: number;
 }

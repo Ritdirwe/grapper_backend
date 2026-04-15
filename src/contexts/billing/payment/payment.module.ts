@@ -14,9 +14,10 @@ import { StripeMobileGatewayService } from './infrastructure/gateways/stripe-mob
 import { PaymentController } from './presentation/payment.controller';
 import { PayoutController } from './presentation/payout.controller';
 import { PayoutRelease } from './domain/entities/payout-release.entity';
+import { NotificationModule } from '@contexts/community/notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, Payout, PayoutMethod, PayoutRelease]), HttpModule],
+  imports: [TypeOrmModule.forFeature([Transaction, Payout, PayoutMethod, PayoutRelease]), HttpModule, NotificationModule],
   controllers: [PaymentController, PayoutController],
   providers: [
     PaymentService,

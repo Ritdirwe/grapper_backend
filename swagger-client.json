@@ -1322,6 +1322,169 @@
         ]
       }
     },
+    "/api/push/tokens": {
+      "get": {
+        "operationId": "PushController_getTokens",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PushTokenResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List current user push tokens",
+        "tags": [
+          "Push Notifications"
+        ],
+        "description": "List current user push tokens. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/push/register": {
+      "post": {
+        "operationId": "PushController_registerToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register a device push token for the current user",
+        "tags": [
+          "Push Notifications"
+        ],
+        "description": "Register a device push token for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/push/unregister": {
+      "delete": {
+        "operationId": "PushController_unregisterToken",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unregister a device push token",
+        "tags": [
+          "Push Notifications"
+        ],
+        "description": "Unregister a device push token. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/push/tokens/{id}": {
+      "delete": {
+        "operationId": "PushController_removeToken",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a specific push token by id",
+        "tags": [
+          "Push Notifications"
+        ],
+        "description": "Remove a specific push token by id. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/push/test": {
+      "post": {
+        "operationId": "PushController_testNotification",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Resource created successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a test notification to the current user",
+        "tags": [
+          "Push Notifications"
+        ],
+        "description": "Send a test notification to the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/categories": {
       "get": {
         "operationId": "CategoryController_findAll",
@@ -5600,100 +5763,6 @@
         ]
       }
     },
-    "/api/push/register": {
-      "post": {
-        "operationId": "PushController_registerToken",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterTokenDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Resource created successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Register a device push token for the current user",
-        "tags": [
-          "Push Notifications"
-        ],
-        "description": "Register a device push token for the current user. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/push/unregister": {
-      "delete": {
-        "operationId": "PushController_unregisterToken",
-        "parameters": [
-          {
-            "name": "token",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Unregister a device push token",
-        "tags": [
-          "Push Notifications"
-        ],
-        "description": "Unregister a device push token. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/push/test": {
-      "post": {
-        "operationId": "PushController_testNotification",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": "Resource created successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Send a test notification to the current user",
-        "tags": [
-          "Push Notifications"
-        ],
-        "description": "Send a test notification to the current user. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
     "/api/ads/feed": {
       "get": {
         "operationId": "AdController_getFeed",
@@ -6552,6 +6621,10 @@
       "description": "Transaction initialization, verification, and payment history endpoints."
     },
     {
+      "name": "Push Notifications",
+      "description": "Push registration and notification dispatch endpoints."
+    },
+    {
       "name": "Service Categories",
       "description": "Service category metadata and catalog classification endpoints."
     },
@@ -6610,10 +6683,6 @@
     {
       "name": "Real-time Messaging",
       "description": "Conversation and message exchange endpoints for direct communication."
-    },
-    {
-      "name": "Push Notifications",
-      "description": "Push registration and notification dispatch endpoints."
     },
     {
       "name": "Ad",
@@ -8245,6 +8314,103 @@
           "sourceId",
           "releaseMode",
           "amount"
+        ]
+      },
+      "PushTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "expo",
+              "fcm"
+            ]
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "lastUsedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "failureCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "token",
+          "platform",
+          "active",
+          "failureCount",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RegisterTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+            "description": "Expo push token for React Native apps or FCM token for web push"
+          },
+          "platform": {
+            "type": "string",
+            "example": "expo",
+            "enum": [
+              "expo",
+              "fcm"
+            ],
+            "default": "expo"
+          },
+          "deviceId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "platform"
+        ]
+      },
+      "BroadcastDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "System Update"
+          },
+          "message": {
+            "type": "string",
+            "example": "We have updated our terms of service."
+          },
+          "data": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "title",
+          "message"
         ]
       },
       "CategoryResponseDto": {
@@ -10445,52 +10611,6 @@
           "content"
         ]
       },
-      "RegisterTokenDto": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string",
-            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-            "description": "Expo push token for React Native apps or FCM token for web push"
-          },
-          "platform": {
-            "type": "string",
-            "example": "expo",
-            "enum": [
-              "expo",
-              "fcm"
-            ],
-            "default": "expo"
-          },
-          "deviceId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "token",
-          "platform"
-        ]
-      },
-      "BroadcastDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "example": "System Update"
-          },
-          "message": {
-            "type": "string",
-            "example": "We have updated our terms of service."
-          },
-          "data": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "title",
-          "message"
-        ]
-      },
       "CreateAdDto": {
         "type": "object",
         "properties": {
@@ -11254,11 +11374,11 @@
       "name": "Community",
       "tags": [
         "Social Follows",
+        "Push Notifications",
         "Social Posts",
         "Social Comments",
         "Social Shares",
         "Real-time Messaging",
-        "Push Notifications",
         "Ad",
         "AdPublic"
       ]

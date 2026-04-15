@@ -16,6 +16,7 @@ import {
   AddParticipantDto,
 } from '../dto/messaging.dto';
 import { ConversationType } from '../../domain/value-objects/messaging-enums.vo';
+import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
 
 @Injectable()
 export class ConversationService {
@@ -26,6 +27,7 @@ export class ConversationService {
     private participantRepository: Repository<ConversationParticipant>,
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
+    private notificationOrchestratorService: NotificationOrchestratorService,
   ) {}
 
   async create(userId: string, dto: CreateConversationDto): Promise<ConversationResponseDto> {
@@ -72,6 +74,30 @@ export class ConversationService {
       await this.messageRepository.save(message);
       conversation.updateLastMessage(message.id);
       await this.conversationRepository.save(conversation);
+
+      const participants = await this.participantRepository.find({
+        where: { conversationId: conversation.id },
+        relations: ['user', 'user.profile'],
+      });
+      const sender = participants.find(participant => participant.userId === userId);
+      const senderName = sender?.user?.profile?.displayName || sender?.user?.profile?.fullName || 'Someone';
+
+      await Promise.all(
+        participants
+          .filter(participant => participant.userId !== userId && !participant.isMuted())
+          .map(participant =>
+            this.notificationOrchestratorService.notifyMessage(
+              participant.userId,
+              'New message',
+              `New message from ${senderName}`,
+              {
+                conversationId: conversation.id,
+                messageId: message.id,
+                senderId: userId,
+              },
+            ),
+          ),
+      );
     }
 
     return this.findById(conversation.id, userId);

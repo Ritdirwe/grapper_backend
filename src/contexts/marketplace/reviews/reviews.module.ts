@@ -5,9 +5,10 @@ import { Service } from '@contexts/marketplace/service-catalog/domain/entities/s
 import { Booking } from '@contexts/marketplace/booking/domain/entities/booking.entity';
 import { ReviewController } from './presentation/reviews.controller';
 import { ReviewService } from './application/services/review.service';
+import { NotificationModule } from '@contexts/community/notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Review, Service, Booking])],
+  imports: [TypeOrmModule.forFeature([Review, Service, Booking]), NotificationModule],
   controllers: [ReviewController],
   providers: [ReviewService],
   exports: [ReviewService],

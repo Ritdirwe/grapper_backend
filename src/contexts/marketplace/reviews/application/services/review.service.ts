@@ -7,6 +7,7 @@ import { Service } from '@contexts/marketplace/service-catalog/domain/entities/s
 import { Booking } from '@contexts/marketplace/booking/domain/entities/booking.entity';
 import { BookingStatus } from '@contexts/marketplace/booking/domain/value-objects/booking-enums.vo';
 import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto';
+import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
 
 @Injectable()
 export class ReviewService {
@@ -17,6 +18,7 @@ export class ReviewService {
     private serviceRepository: Repository<Service>,
     @InjectRepository(Booking)
     private bookingRepository: Repository<Booking>,
+    private notificationOrchestratorService: NotificationOrchestratorService,
   ) {}
 
   async create(userId: string, dto: CreateReviewDto): Promise<Review> {
@@ -60,6 +62,18 @@ export class ReviewService {
 
     // Update service average rating
     await this.updateServiceRating(dto.serviceId);
+
+    await this.notificationOrchestratorService.notifyReview(
+      service.providerId,
+      dto.rating >= 5 ? 'New 5-star review' : 'New review received',
+      `${service.title} received a new review.`,
+      {
+        reviewId: review.id,
+        serviceId: service.id,
+        bookingId: completedBooking.id,
+        rating: dto.rating,
+      },
+    );
 
     return this.findOne(review.id);
   }
@@ -141,7 +155,19 @@ export class ReviewService {
     }
 
     review.response = response;
-    return this.reviewRepository.save(review);
+    const saved = await this.reviewRepository.save(review);
+
+    await this.notificationOrchestratorService.notifyReview(
+      review.userId,
+      'Provider responded to your review',
+      `The provider responded to your review for ${service.title}.`,
+      {
+        reviewId: review.id,
+        serviceId: review.serviceId,
+      },
+    );
+
+    return saved;
   }
 
   async markHelpful(id: string, userId: string): Promise<Review> {

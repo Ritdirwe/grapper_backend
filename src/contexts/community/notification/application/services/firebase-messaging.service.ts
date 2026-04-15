@@ -8,6 +8,13 @@ type NotificationPayload = {
   data?: Record<string, any>;
 };
 
+export type FirebaseSendResult = {
+  token: string;
+  success: boolean;
+  messageId?: string | null;
+  error?: string;
+};
+
 @Injectable()
 export class FirebaseMessagingService {
   private readonly logger = new Logger(FirebaseMessagingService.name);
@@ -17,10 +24,10 @@ export class FirebaseMessagingService {
     this.app = this.initializeApp();
   }
 
-  async sendToToken(token: string, payload: NotificationPayload): Promise<string | null> {
+  async sendToToken(token: string, payload: NotificationPayload): Promise<FirebaseSendResult> {
     if (!this.app) {
       this.logger.warn('Firebase app is not configured, skipping FCM notification');
-      return null;
+      return { token, success: false, error: 'Firebase app is not configured' };
     }
 
     try {
@@ -34,14 +41,14 @@ export class FirebaseMessagingService {
       });
 
       this.logger.log(`Firebase notification sent: ${response}`);
-      return response;
+      return { token, success: true, messageId: response };
     } catch (error: any) {
       this.logger.error(`Error sending Firebase notification: ${error?.message || error}`);
-      return null;
+      return { token, success: false, error: error?.message || String(error) };
     }
   }
 
-  async sendToMany(tokens: string[], payload: NotificationPayload): Promise<(string | null)[]> {
+  async sendToMany(tokens: string[], payload: NotificationPayload): Promise<FirebaseSendResult[]> {
     return Promise.all(tokens.map(token => this.sendToToken(token, payload)));
   }
 

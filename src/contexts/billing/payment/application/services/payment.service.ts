@@ -10,6 +10,7 @@ import { Transaction } from '../../domain/entities/transaction.entity';
 import { PaystackService } from '../../infrastructure/gateways/paystack.service';
 import { FlutterwaveService } from '../../infrastructure/gateways/flutterwave.service';
 import { StripeMobileGatewayService } from '../../infrastructure/gateways/stripe-mobile-gateway.service';
+import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
 import {
   TransactionType,
   TransactionStatus,
@@ -32,6 +33,7 @@ export class PaymentService {
     private stripeMobileGatewayService: StripeMobileGatewayService,
     private configService: ConfigService,
     private dataSource: DataSource,
+    private notificationOrchestratorService: NotificationOrchestratorService,
   ) {}
 
   async initializePayment(
@@ -164,10 +166,18 @@ export class PaymentService {
 
       if (transaction.orderId) {
         await this.markOrderAsPaid(transaction.orderId, dto.reference);
+        await this.notifyOrderPaid(transaction.orderId, transaction.userId, dto.reference);
       }
     } else {
       transaction.markAsFailed('Payment verification failed');
       await this.transactionRepository.save(transaction);
+
+      await this.notificationOrchestratorService.notifyPayment(
+        transaction.userId,
+        'Payment verification failed',
+        'We could not verify your payment. Please try again or contact support.',
+        { reference: transaction.reference, transactionId: transaction.id },
+      );
     }
 
     return this.mapToResponseDto(transaction);
@@ -201,6 +211,7 @@ export class PaymentService {
 
           if (transaction.orderId) {
             await this.markOrderAsPaid(transaction.orderId, data.reference);
+            await this.notifyOrderPaid(transaction.orderId, transaction.userId, data.reference);
           }
 
           if (transaction.bookingId) {
@@ -257,6 +268,7 @@ export class PaymentService {
 
           if (transaction.orderId) {
             await this.markOrderAsPaid(transaction.orderId, txRef);
+            await this.notifyOrderPaid(transaction.orderId, transaction.userId, txRef);
           }
 
           if (transaction.bookingId) {
@@ -267,9 +279,23 @@ export class PaymentService {
 
         transaction.markAsFailed('Flutterwave verification failed or mismatched amount/currency');
         await this.transactionRepository.save(transaction);
+
+        await this.notificationOrchestratorService.notifyPayment(
+          transaction.userId,
+          'Payment verification failed',
+          'We could not verify your payment. Please try again or contact support.',
+          { reference: transaction.reference, transactionId: transaction.id },
+        );
       } catch {
         transaction.markAsFailed('Flutterwave verification failed');
         await this.transactionRepository.save(transaction);
+
+        await this.notificationOrchestratorService.notifyPayment(
+          transaction.userId,
+          'Payment verification failed',
+          'We could not verify your payment. Please try again or contact support.',
+          { reference: transaction.reference, transactionId: transaction.id },
+        );
       }
     }
   }
@@ -306,6 +332,7 @@ export class PaymentService {
   }
 
   private async markBookingDepositAsPaid(bookingId: string, paymentReference: string): Promise<void> {
+    const booking = await this.getBookingContextById(bookingId);
     await this.dataSource.query(
       `UPDATE bookings
        SET deposit_paid = true,
@@ -316,9 +343,12 @@ export class PaymentService {
        WHERE id = $1`,
       [bookingId, paymentReference],
     );
+
+    await this.notifyBookingDepositPaid(booking, paymentReference);
   }
 
   private async markBookingDepositAsPaidByReference(paymentReference: string): Promise<void> {
+    const booking = await this.getBookingContextByReference(paymentReference);
     await this.dataSource.query(
       `UPDATE bookings
        SET deposit_paid = true,
@@ -329,12 +359,15 @@ export class PaymentService {
        WHERE reference_code = $1`,
       [paymentReference, paymentReference],
     );
+
+    await this.notifyBookingDepositPaid(booking, paymentReference);
   }
 
   private async markBookingCompletionAsPaid(
     bookingReference: string,
     paymentReference: string,
   ): Promise<void> {
+    const booking = await this.getBookingContextByReference(bookingReference);
     await this.dataSource.query(
       `UPDATE bookings
        SET final_payment_paid = true,
@@ -346,12 +379,29 @@ export class PaymentService {
        WHERE reference_code = $1`,
       [bookingReference, paymentReference],
     );
+
+    if (booking) {
+      await this.notificationOrchestratorService.notifyPayment(
+        booking.customerId,
+        'Final payment completed',
+        `Final payment for ${booking.serviceTitle || 'your booking'} has been completed.`,
+        { bookingId: booking.id, reference: paymentReference },
+      );
+
+      await this.notificationOrchestratorService.notifyPayment(
+        booking.providerId,
+        'Final payment received',
+        `Final payment for ${booking.serviceTitle || 'a booking'} has been received.`,
+        { bookingId: booking.id, reference: paymentReference },
+      );
+    }
   }
 
   private async markCorrectionAsPaid(
     bookingReference: string,
     paymentReference: string,
   ): Promise<void> {
+    const booking = await this.getBookingContextByReference(bookingReference);
     await this.dataSource.query(
       `UPDATE booking_corrections
        SET is_paid = true,
@@ -370,6 +420,15 @@ export class PaymentService {
        WHERE reference_code = $1`,
       [bookingReference],
     );
+
+    if (booking) {
+      await this.notificationOrchestratorService.notifyPayment(
+        booking.providerId,
+        'Correction payment received',
+        `A correction payment for ${booking.serviceTitle || 'a booking'} was received.`,
+        { bookingId: booking.id, reference: paymentReference },
+      );
+    }
   }
 
   private async markOrderAsPaid(orderId: string, paymentReference: string): Promise<void> {
@@ -388,6 +447,91 @@ export class PaymentService {
     if (!result.affected) {
       throw new NotFoundException('Order not found');
     }
+  }
+
+  private async notifyOrderPaid(orderId: string, payerId: string, reference: string): Promise<void> {
+    const order = await this.getOrderContext(orderId);
+    if (!order) {
+      return;
+    }
+
+    if (order.customerId === payerId) {
+      await this.notificationOrchestratorService.notifyPayment(
+        order.customerId,
+        'Payment successful',
+        `Your payment for ${order.serviceTitle || 'your order'} was successful.`,
+        { orderId: order.id, reference },
+      );
+    }
+
+    await this.notificationOrchestratorService.notifyPayment(
+      order.providerId,
+      'New order payment received',
+      `A payment for ${order.serviceTitle || 'an order'} was received.`,
+      { orderId: order.id, reference },
+    );
+  }
+
+  private async notifyBookingDepositPaid(
+    booking: { id: string; customerId: string; providerId: string; serviceTitle?: string } | null,
+    reference: string,
+  ): Promise<void> {
+    if (!booking) {
+      return;
+    }
+
+    await this.notificationOrchestratorService.notifyPayment(
+      booking.customerId,
+      'Booking payment successful',
+      `Your payment for ${booking.serviceTitle || 'your booking'} was successful.`,
+      { bookingId: booking.id, reference },
+    );
+
+    await this.notificationOrchestratorService.notifyBookingConfirmed(
+      booking.providerId,
+      'Booking paid',
+      `${booking.serviceTitle || 'A booking'} has been paid and is ready for fulfillment.`,
+      { bookingId: booking.id, reference },
+    );
+  }
+
+  private async getOrderContext(orderId: string): Promise<{ id: string; customerId: string; providerId: string; serviceTitle?: string } | null> {
+    const [order] = await this.dataSource.query(
+      `SELECT o.id, o.customer_id AS "customerId", o.provider_id AS "providerId", s.title AS "serviceTitle"
+       FROM orders o
+       LEFT JOIN services s ON s.id = o.service_id
+       WHERE o.id = $1
+       LIMIT 1`,
+      [orderId],
+    );
+
+    return order || null;
+  }
+
+  private async getBookingContextById(bookingId: string): Promise<{ id: string; customerId: string; providerId: string; serviceTitle?: string } | null> {
+    const [booking] = await this.dataSource.query(
+      `SELECT b.id, b.customer_id AS "customerId", b.provider_id AS "providerId", s.title AS "serviceTitle"
+       FROM bookings b
+       LEFT JOIN services s ON s.id = b.service_id
+       WHERE b.id = $1
+       LIMIT 1`,
+      [bookingId],
+    );
+
+    return booking || null;
+  }
+
+  private async getBookingContextByReference(reference: string): Promise<{ id: string; customerId: string; providerId: string; serviceTitle?: string } | null> {
+    const [booking] = await this.dataSource.query(
+      `SELECT b.id, b.customer_id AS "customerId", b.provider_id AS "providerId", s.title AS "serviceTitle"
+       FROM bookings b
+       LEFT JOIN services s ON s.id = b.service_id
+       WHERE b.reference_code = $1
+       LIMIT 1`,
+      [reference],
+    );
+
+    return booking || null;
   }
 
   async getTransaction(reference: string, userId: string): Promise<TransactionResponseDto> {
