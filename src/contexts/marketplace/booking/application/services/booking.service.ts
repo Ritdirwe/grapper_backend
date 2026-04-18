@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
 import { Booking } from '../../domain/entities/booking.entity';
 import { BookingCorrection } from '../../domain/entities/booking-correction.entity';
+import { BookingMilestone } from '../../domain/entities/booking-milestone.entity';
 import { Service } from '@contexts/marketplace/service-catalog/domain/entities/service.entity';
 import { Profile } from '@contexts/identity/user-management/domain/entities/profile.entity';
 import {
@@ -32,6 +33,7 @@ import { TransactionType } from '@contexts/billing/payment/domain/value-objects/
 import { VerifyPaymentDto } from '@contexts/billing/payment/application/dto/payment.dto';
 import { EmailService } from '@infrastructure/email/email.service';
 import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
+import { AdminPenaltySettingsService } from '@contexts/ops/admin/application/services/admin-penalty-settings.service';
 
 const PLATFORM_FEE_RATIO = 0.15;
 
@@ -42,6 +44,8 @@ export class BookingService {
     private bookingRepository: Repository<Booking>,
     @InjectRepository(BookingCorrection)
     private bookingCorrectionRepository: Repository<BookingCorrection>,
+    @InjectRepository(BookingMilestone)
+    private bookingMilestoneRepository: Repository<BookingMilestone>,
     @InjectRepository(Service)
     private serviceRepository: Repository<Service>,
     @InjectRepository(Profile)
@@ -50,6 +54,7 @@ export class BookingService {
     private configService: ConfigService,
     private emailService: EmailService,
     private notificationOrchestratorService: NotificationOrchestratorService,
+    private adminPenaltySettingsService: AdminPenaltySettingsService,
   ) {}
 
   async create(userId: string, dto: CreateBookingDto): Promise<BookingCreateResponseDto> {
@@ -68,6 +73,7 @@ export class BookingService {
     const price = Number(service.price);
     const platformFee = price * PLATFORM_FEE_RATIO;
     const referenceCode = this.generateReference();
+    const penaltySettings = await this.adminPenaltySettingsService.getCurrentSettings();
     const callbackUrl =
       this.configService.get<string>('payment.flutterwave.callbackUrl') ||
       this.configService.get<string>('payment.callbackUrl') ||
@@ -82,7 +88,8 @@ export class BookingService {
       amount: price,
       platformFee,
       depositAmount: price,
-      correctionFee: this.getDefaultCorrectionFee(),
+      correctionsLimit: Number(penaltySettings.customerCorrectionFreeLimit || 0),
+      correctionFee: 0,
       currency: service.currency || 'NGN',
       status: BookingStatus.PENDING,
       referenceCode,
@@ -217,7 +224,7 @@ export class BookingService {
       throw new BadRequestException('No paid correction request is pending payment');
     }
 
-    const correctionFee = Number(booking.correctionFee || this.getDefaultCorrectionFee());
+    const correctionFee = Number(booking.correctionFee || 0);
     if (correctionFee <= 0) {
       throw new BadRequestException('Correction fee is not configured');
     }
@@ -430,6 +437,11 @@ export class BookingService {
       throw new ForbiddenException('Only the provider can deliver booking work');
     }
 
+    const milestoneCount = await this.bookingMilestoneRepository.count({ where: { bookingId: booking.id } });
+    if (milestoneCount > 0) {
+      throw new BadRequestException('Use the booking milestone evidence flow for this booking');
+    }
+
     if (![BookingStatus.IN_PROGRESS, BookingStatus.REVISION_REQUESTED].includes(booking.status)) {
       throw new BadRequestException('Booking must be in progress or revision requested to deliver');
     }
@@ -467,6 +479,11 @@ export class BookingService {
 
     if (booking.customerId !== userId) {
       throw new ForbiddenException('Only the customer can approve delivery');
+    }
+
+    const milestoneCount = await this.bookingMilestoneRepository.count({ where: { bookingId: booking.id } });
+    if (milestoneCount > 0) {
+      throw new BadRequestException('Use the booking milestone approval flow for this booking');
     }
 
     if (booking.status !== BookingStatus.DELIVERED) {
@@ -508,7 +525,20 @@ export class BookingService {
       throw new BadRequestException('Booking must be delivered before requesting correction');
     }
 
-    const freeCorrection = booking.requestCorrection();
+    const penaltySettings = await this.adminPenaltySettingsService.getCurrentSettings();
+    const freeLimit = Number(penaltySettings.customerCorrectionFreeLimit || 0);
+    const isTrackedFreeCorrection = booking.requestCorrection(freeLimit);
+    const correctionFee = !penaltySettings.customerCorrectionEnabled || isTrackedFreeCorrection
+      ? 0
+      : this.calculatePenaltyAmount(
+          Number(booking.amount || 0),
+          Number(penaltySettings.customerCorrectionFlatPenalty || 0),
+          Number(penaltySettings.customerCorrectionPercentPenalty || 0),
+        );
+    const freeCorrection = correctionFee <= 0;
+
+    booking.correctionFee = correctionFee;
+    booking.correctionsLimit = freeLimit;
     const correction = this.bookingCorrectionRepository.create({
       bookingId: booking.id,
       requestedBy: userId,
@@ -549,6 +579,11 @@ export class BookingService {
 
     if (booking.providerId !== userId) {
       throw new ForbiddenException('Only the provider can complete the booking');
+    }
+
+    const milestoneCount = await this.bookingMilestoneRepository.count({ where: { bookingId: booking.id } });
+    if (milestoneCount > 0) {
+      throw new BadRequestException('Use the booking milestone approval flow for this booking');
     }
 
     if (!booking.canComplete()) {
@@ -642,8 +677,13 @@ export class BookingService {
     });
   }
 
-  private getDefaultCorrectionFee(): number {
-    return Number(this.configService.get('booking.correctionFee', 0));
+  private calculatePenaltyAmount(baseAmount: number, flatPenalty: number, percentPenalty: number): number {
+    const percentAmount = baseAmount * (percentPenalty / 100);
+    return this.roundMoney(Math.max(flatPenalty + percentAmount, 0));
+  }
+
+  private roundMoney(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 
   private async notifyCustomerToCheckout(bookingId: string): Promise<void> {

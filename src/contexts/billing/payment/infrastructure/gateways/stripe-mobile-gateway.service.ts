@@ -15,6 +15,7 @@ export class StripeMobileGatewayService implements PaymentGatewayInterface {
     callbackUrl?: string;
     customer?: Record<string, any>;
     paymentMethod?: Record<string, any>;
+    saveAuthorization?: boolean;
   }): Promise<{
     authorizationUrl?: string;
     clientSecret?: string;

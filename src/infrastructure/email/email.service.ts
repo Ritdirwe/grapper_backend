@@ -217,6 +217,14 @@ export class EmailService {
     return this.sendEmail({ to: email, subject, html, text });
   }
 
+  async sendAccountActivationCode(email: string, code: string, userName?: string): Promise<boolean> {
+    const subject = 'Activate Your Account - Grapper Marketplace';
+    const html = this.getPasswordResetTemplate(code, userName);
+    const text = `Your account activation code is: ${code}\n\nThis code will expire in 15 minutes.\n\nIf you didn't request this code, please ignore this email.`;
+
+    return this.sendEmail({ to: email, subject, html, text });
+  }
+
   async sendWelcomeEmail(email: string, userName: string): Promise<boolean> {
     const subject = 'Welcome to Grapper Marketplace!';
     const html = this.getWelcomeEmailTemplate(userName);

@@ -2942,6 +2942,116 @@
         ]
       }
     },
+    "/api/payments/methods": {
+      "get": {
+        "operationId": "SavedPaymentMethodController_getSavedPaymentMethods",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedPaymentMethodResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List saved payment methods for the current user",
+        "tags": [
+          "Admin Saved Payment Methods"
+        ],
+        "description": "List saved payment methods for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/payments/methods/{id}/preferred": {
+      "post": {
+        "operationId": "SavedPaymentMethodController_setPreferredPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPaymentMethodResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set a saved payment method as preferred",
+        "tags": [
+          "Admin Saved Payment Methods"
+        ],
+        "description": "Set a saved payment method as preferred. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/payments/methods/{id}": {
+      "delete": {
+        "operationId": "SavedPaymentMethodController_deleteSavedPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a saved payment method",
+        "tags": [
+          "Admin Saved Payment Methods"
+        ],
+        "description": "Delete a saved payment method. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/payouts/banks": {
       "get": {
         "operationId": "PayoutController_listBanks",
@@ -7062,6 +7172,2162 @@
         ]
       }
     },
+    "/api/bookings/{id}/milestones/propose": {
+      "post": {
+        "operationId": "BookingMilestoneController_propose",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeBookingMilestonesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Propose booking milestones",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "Propose booking milestones. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones": {
+      "get": {
+        "operationId": "BookingMilestoneController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List booking milestones",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "List booking milestones. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/confirm": {
+      "post": {
+        "operationId": "BookingMilestoneController_confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm proposed milestones",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "Confirm proposed milestones. Audience: provider. Owner: provider.",
+        "x-owner": "provider",
+        "x-audience": [
+          "provider"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/reject": {
+      "post": {
+        "operationId": "BookingMilestoneController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject proposed milestones",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "Reject proposed milestones. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/{milestoneId}/evidence": {
+      "post": {
+        "operationId": "BookingMilestoneController_submitEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingMilestoneEvidenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit milestone evidence",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "Submit milestone evidence. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      },
+      "get": {
+        "operationId": "BookingMilestoneController_listEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneEvidenceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List milestone evidence",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "List milestone evidence. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/{milestoneId}/approve": {
+      "post": {
+        "operationId": "BookingMilestoneController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve milestone and release funds",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "Approve milestone and release funds. Audience: client. Owner: client.",
+        "x-owner": "client",
+        "x-audience": [
+          "client"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/{milestoneId}/reject": {
+      "post": {
+        "operationId": "BookingMilestoneController_rejectMilestone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject milestone evidence",
+        "tags": [
+          "Admin Service Bookings"
+        ],
+        "description": "Reject milestone evidence. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/moderation/dashboard/stats": {
+      "get": {
+        "operationId": "AdminController_getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get global system statistics for admin dashboard",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get global system statistics for admin dashboard. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/bookings": {
+      "get": {
+        "operationId": "AdminController_getBookings",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "pending_deposit",
+                "confirmed",
+                "in_progress",
+                "delivered",
+                "revision_requested",
+                "pending_completion_payment",
+                "completed",
+                "cancelled",
+                "disputed"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "seedpay",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminBookingListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all bookings for admin monitoring",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get all bookings for admin monitoring. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/bookings/{id}": {
+      "get": {
+        "operationId": "AdminController_getBookingDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get booking detail with related transactions",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get booking detail with related transactions. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/bookings/{id}/status": {
+      "put": {
+        "operationId": "AdminController_updateBookingStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUpdateBookingStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Request completed successfully with no response body."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update booking status (moderation-safe actions only)",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Update booking status (moderation-safe actions only). Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/payments": {
+      "get": {
+        "operationId": "AdminController_getPayments",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPaymentListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all transactions for admin monitoring",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get all transactions for admin monitoring. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/payments/summary": {
+      "get": {
+        "operationId": "AdminController_getPaymentSummary",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get payment summary for selected period",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get payment summary for selected period. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/disputes": {
+      "get": {
+        "operationId": "AdminController_getDisputes",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDisputeListDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all booking disputes for admin management",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get all booking disputes for admin management. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/disputes/{id}": {
+      "get": {
+        "operationId": "AdminController_getDisputeDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get dispute detail with booking context",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get dispute detail with booking context. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/disputes/{id}/resolve": {
+      "put": {
+        "operationId": "AdminController_resolveDispute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDisputeAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Request completed successfully with no response body."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolve a dispute as admin",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Resolve a dispute as admin. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/bookings/{id}/force-refund": {
+      "put": {
+        "operationId": "AdminController_forceRefundBooking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request completed successfully with no response body."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Force refund a booking and cancel it",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Force refund a booking and cancel it. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/services/{id}/{action}": {
+      "put": {
+        "operationId": "AdminController_manageService",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request completed successfully with no response body."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Manage service status (activate, deactivate, delete)",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Manage service status (activate, deactivate, delete). Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/content/{type}/{id}": {
+      "delete": {
+        "operationId": "AdminController_deleteContent",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request completed successfully with no response body."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete global content by type and ID",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Delete global content by type and ID. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/report": {
+      "post": {
+        "operationId": "ModerationController_createReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Report inappropriate content",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Report inappropriate content. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/reports": {
+      "get": {
+        "operationId": "ModerationController_getReports",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "pending",
+                "resolved",
+                "dismissed"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get list of reports (Admin only)",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get list of reports (Admin only). Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/reports/{id}/resolve": {
+      "put": {
+        "operationId": "ModerationController_resolveReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolve a report (Admin only)",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Resolve a report (Admin only). Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/overview": {
+      "get": {
+        "operationId": "AdminOverviewController_getOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverviewDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get admin overview statistics",
+        "tags": [
+          "Admin Overview"
+        ],
+        "description": "Get admin overview statistics. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/maintenance/recount": {
+      "post": {
+        "operationId": "AdminOverviewController_recountComments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecountPostCommentsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recount denormalized counts (maintenance)",
+        "tags": [
+          "Admin Overview"
+        ],
+        "description": "Recount denormalized counts (maintenance). Audience: internal. Owner: internal.",
+        "x-owner": "internal",
+        "x-audience": [
+          "internal"
+        ]
+      }
+    },
+    "/api/admin/permissions/roles": {
+      "get": {
+        "operationId": "AdminPermissionsController_getRoles",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all available roles",
+        "tags": [
+          "Admin Permissions"
+        ],
+        "description": "List all available roles. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/permissions/matrix": {
+      "get": {
+        "operationId": "AdminPermissionsController_getPermissionMatrix",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get role-permission matrix grouped by domain",
+        "tags": [
+          "Admin Permissions"
+        ],
+        "description": "Get role-permission matrix grouped by domain. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/permissions/roles/{role}": {
+      "get": {
+        "operationId": "AdminPermissionsController_getRolePermissions",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get permissions for a role",
+        "tags": [
+          "Admin Permissions"
+        ],
+        "description": "Get permissions for a role. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "AdminPermissionsController_bulkSetRolePermissions",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RolePermissionBulkUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Bulk set permissions for a role",
+        "tags": [
+          "Admin Permissions"
+        ],
+        "description": "Bulk set permissions for a role. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/permissions/roles/{role}/{permissionKey}": {
+      "put": {
+        "operationId": "AdminPermissionsController_setRolePermission",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "permissionKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRolePermissionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set single permission for a role",
+        "tags": [
+          "Admin Permissions"
+        ],
+        "description": "Set single permission for a role. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/support/tickets": {
+      "post": {
+        "operationId": "SupportTicketsController_createTicket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSupportTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a support ticket for payment, order, or service complaints",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Create a support ticket for payment, order, or service complaints. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets/me": {
+      "get": {
+        "operationId": "SupportTicketsController_listMyTickets",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "under_review",
+                "awaiting_user",
+                "resolved",
+                "closed"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "payment",
+                "order",
+                "service",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "payment pending",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user support tickets",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Get current user support tickets. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets/{id}": {
+      "get": {
+        "operationId": "SupportTicketsController_getMyTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get support ticket details for current user",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Get support ticket details for current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets/{id}/messages": {
+      "post": {
+        "operationId": "SupportTicketsController_addMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSupportTicketMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reply to a support ticket as current user",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Reply to a support ticket as current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/admin/support/tickets": {
+      "get": {
+        "operationId": "AdminSupportTicketsController_listTickets",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "under_review",
+                "awaiting_user",
+                "resolved",
+                "closed"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "payment",
+                "order",
+                "service",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "payment pending",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get support tickets for admin queue management",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Get support tickets for admin queue management. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/support/tickets/{id}": {
+      "get": {
+        "operationId": "AdminSupportTicketsController_getTicketDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get support ticket details with full message thread for admins",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Get support ticket details with full message thread for admins. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/support/tickets/{id}/messages": {
+      "post": {
+        "operationId": "AdminSupportTicketsController_addMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSupportTicketMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reply to support ticket as admin",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Reply to support ticket as admin. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/support/tickets/{id}/status": {
+      "put": {
+        "operationId": "AdminSupportTicketsController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSupportTicketStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update support ticket status as admin",
+        "tags": [
+          "Admin Support Tickets"
+        ],
+        "description": "Update support ticket status as admin. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/moderation/penalty-settings": {
+      "get": {
+        "operationId": "AdminPenaltySettingsController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPenaltySettingsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get admin penalty settings",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Get admin penalty settings. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "AdminPenaltySettingsController_updateSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminPenaltySettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPenaltySettingsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update admin penalty settings",
+        "tags": [
+          "Admin Moderation"
+        ],
+        "description": "Update admin penalty settings. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/reporting/audit-logs": {
+      "get": {
+        "operationId": "ReportingController_getAuditLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get system audit logs (Admin only)",
+        "tags": [
+          "Admin System Reporting & Analytics"
+        ],
+        "description": "Get system audit logs (Admin only). Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/reporting/analytics/user-growth": {
+      "get": {
+        "operationId": "ReportingController_getUserGrowth",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user growth analytics",
+        "tags": [
+          "Admin System Reporting & Analytics"
+        ],
+        "description": "Get user growth analytics. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/reporting/analytics/revenue": {
+      "get": {
+        "operationId": "ReportingController_getRevenueAnalytics",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get revenue analytics",
+        "tags": [
+          "Admin System Reporting & Analytics"
+        ],
+        "description": "Get revenue analytics. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/reporting/analytics/services": {
+      "get": {
+        "operationId": "ReportingController_getServicePerformance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get service performance analytics",
+        "tags": [
+          "Admin System Reporting & Analytics"
+        ],
+        "description": "Get service performance analytics. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/reporting/export/csv": {
+      "get": {
+        "operationId": "ReportingController_exportCsv",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "users",
+                "bookings",
+                "services"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file stream"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export system data to CSV",
+        "tags": [
+          "Admin System Reporting & Analytics"
+        ],
+        "description": "Export system data to CSV. Audience: admin. Owner: admin.",
+        "x-owner": "admin",
+        "x-audience": [
+          "admin"
+        ]
+      }
+    },
+    "/api/analytics/performance": {
+      "get": {
+        "operationId": "AnalyticsController_getPerformanceMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user performance metrics",
+        "tags": [
+          "Admin User Analytics"
+        ],
+        "description": "Get user performance metrics. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/analytics/client-spending": {
+      "get": {
+        "operationId": "AnalyticsController_getClientSpending",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get client spending analytics",
+        "tags": [
+          "Admin User Analytics"
+        ],
+        "description": "Get client spending analytics. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/analytics/provider-earnings": {
+      "get": {
+        "operationId": "AnalyticsController_getProviderEarnings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get provider earnings analytics",
+        "tags": [
+          "Admin User Analytics"
+        ],
+        "description": "Get provider earnings analytics. Audience: provider. Owner: provider.",
+        "x-owner": "provider",
+        "x-audience": [
+          "provider"
+        ]
+      }
+    },
+    "/api/analytics/mobile-dashboard": {
+      "get": {
+        "operationId": "AnalyticsController_getMobileDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileDashboardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get mobile dashboard summary for the current user",
+        "tags": [
+          "Admin User Analytics"
+        ],
+        "description": "Get mobile dashboard summary for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/contracts": {
       "post": {
         "operationId": "ContractController_create",
@@ -9249,547 +11515,16 @@
         ]
       }
     },
-    "/api/moderation/dashboard/stats": {
-      "get": {
-        "operationId": "AdminController_getStats",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SystemStatsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get global system statistics for admin dashboard",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get global system statistics for admin dashboard. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/bookings": {
-      "get": {
-        "operationId": "AdminController_getBookings",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "pending",
-                "pending_deposit",
-                "confirmed",
-                "in_progress",
-                "delivered",
-                "revision_requested",
-                "pending_completion_payment",
-                "completed",
-                "cancelled",
-                "disputed"
-              ]
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "seedpay",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminBookingListDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all bookings for admin monitoring",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get all bookings for admin monitoring. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/bookings/{id}": {
-      "get": {
-        "operationId": "AdminController_getBookingDetail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get booking detail with related transactions",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get booking detail with related transactions. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/bookings/{id}/status": {
-      "put": {
-        "operationId": "AdminController_updateBookingStatus",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminUpdateBookingStatusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Request completed successfully with no response body."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Update booking status (moderation-safe actions only)",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Update booking status (moderation-safe actions only). Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/payments": {
-      "get": {
-        "operationId": "AdminController_getPayments",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminPaymentListDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all transactions for admin monitoring",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get all transactions for admin monitoring. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/payments/summary": {
-      "get": {
-        "operationId": "AdminController_getPaymentSummary",
-        "parameters": [
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "day",
-                "week",
-                "month"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get payment summary for selected period",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get payment summary for selected period. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/disputes": {
-      "get": {
-        "operationId": "AdminController_getDisputes",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminDisputeListDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all booking disputes for admin management",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get all booking disputes for admin management. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/disputes/{id}": {
-      "get": {
-        "operationId": "AdminController_getDisputeDetail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get dispute detail with booking context",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get dispute detail with booking context. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/disputes/{id}/resolve": {
-      "put": {
-        "operationId": "AdminController_resolveDispute",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveDisputeAdminDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "Request completed successfully with no response body."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Resolve a dispute as admin",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Resolve a dispute as admin. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/bookings/{id}/force-refund": {
-      "put": {
-        "operationId": "AdminController_forceRefundBooking",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Request completed successfully with no response body."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Force refund a booking and cancel it",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Force refund a booking and cancel it. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/services/{id}/{action}": {
-      "put": {
-        "operationId": "AdminController_manageService",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "action",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Request completed successfully with no response body."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Manage service status (activate, deactivate, delete)",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Manage service status (activate, deactivate, delete). Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/content/{type}/{id}": {
-      "delete": {
-        "operationId": "AdminController_deleteContent",
-        "parameters": [
-          {
-            "name": "type",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Request completed successfully with no response body."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete global content by type and ID",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Delete global content by type and ID. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/report": {
+    "/api/waitlist/register": {
       "post": {
-        "operationId": "ModerationController_createReport",
+        "operationId": "WaitlistController_register",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateReportDto"
+                "$ref": "#/components/schemas/WaitlistRegisterDto"
               }
             }
           }
@@ -9800,1128 +11535,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportResponseDto"
+                  "$ref": "#/components/schemas/WaitlistRegisterResponseDto"
                 }
               }
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Report inappropriate content",
+        "summary": "Register a user on the waitlist",
         "tags": [
-          "Admin Moderation"
+          "Admin Waitlist"
         ],
-        "description": "Report inappropriate content. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/reports": {
-      "get": {
-        "operationId": "ModerationController_getReports",
-        "parameters": [
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "pending",
-                "resolved",
-                "dismissed"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ReportResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get list of reports (Admin only)",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Get list of reports (Admin only). Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/moderation/reports/{id}/resolve": {
-      "put": {
-        "operationId": "ModerationController_resolveReport",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveReportDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReportResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Resolve a report (Admin only)",
-        "tags": [
-          "Admin Moderation"
-        ],
-        "description": "Resolve a report (Admin only). Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/overview": {
-      "get": {
-        "operationId": "AdminOverviewController_getOverview",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminOverviewDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get admin overview statistics",
-        "tags": [
-          "Admin Overview"
-        ],
-        "description": "Get admin overview statistics. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/maintenance/recount": {
-      "post": {
-        "operationId": "AdminOverviewController_recountComments",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RecountPostCommentsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Recount denormalized counts (maintenance)",
-        "tags": [
-          "Admin Overview"
-        ],
-        "description": "Recount denormalized counts (maintenance). Audience: internal. Owner: internal.",
-        "x-owner": "internal",
-        "x-audience": [
-          "internal"
-        ]
-      }
-    },
-    "/api/admin/permissions/roles": {
-      "get": {
-        "operationId": "AdminPermissionsController_getRoles",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List all available roles",
-        "tags": [
-          "Admin Permissions"
-        ],
-        "description": "List all available roles. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/permissions/matrix": {
-      "get": {
-        "operationId": "AdminPermissionsController_getPermissionMatrix",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get role-permission matrix grouped by domain",
-        "tags": [
-          "Admin Permissions"
-        ],
-        "description": "Get role-permission matrix grouped by domain. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/permissions/roles/{role}": {
-      "get": {
-        "operationId": "AdminPermissionsController_getRolePermissions",
-        "parameters": [
-          {
-            "name": "role",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get permissions for a role",
-        "tags": [
-          "Admin Permissions"
-        ],
-        "description": "Get permissions for a role. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      },
-      "put": {
-        "operationId": "AdminPermissionsController_bulkSetRolePermissions",
-        "parameters": [
-          {
-            "name": "role",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RolePermissionBulkUpdateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Bulk set permissions for a role",
-        "tags": [
-          "Admin Permissions"
-        ],
-        "description": "Bulk set permissions for a role. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/permissions/roles/{role}/{permissionKey}": {
-      "put": {
-        "operationId": "AdminPermissionsController_setRolePermission",
-        "parameters": [
-          {
-            "name": "role",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "permissionKey",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetRolePermissionDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Set single permission for a role",
-        "tags": [
-          "Admin Permissions"
-        ],
-        "description": "Set single permission for a role. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/support/tickets": {
-      "post": {
-        "operationId": "SupportTicketsController_createTicket",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSupportTicketDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Resource created successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create a support ticket for payment, order, or service complaints",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Create a support ticket for payment, order, or service complaints. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/support/tickets/me": {
-      "get": {
-        "operationId": "SupportTicketsController_listMyTickets",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "open",
-                "under_review",
-                "awaiting_user",
-                "resolved",
-                "closed"
-              ]
-            }
-          },
-          {
-            "name": "category",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "payment",
-                "order",
-                "service",
-                "other"
-              ]
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "payment pending",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get current user support tickets",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Get current user support tickets. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/support/tickets/{id}": {
-      "get": {
-        "operationId": "SupportTicketsController_getMyTicket",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get support ticket details for current user",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Get support ticket details for current user. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/support/tickets/{id}/messages": {
-      "post": {
-        "operationId": "SupportTicketsController_addMessage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddSupportTicketMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Reply to a support ticket as current user",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Reply to a support ticket as current user. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/admin/support/tickets": {
-      "get": {
-        "operationId": "AdminSupportTicketsController_listTickets",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "open",
-                "under_review",
-                "awaiting_user",
-                "resolved",
-                "closed"
-              ]
-            }
-          },
-          {
-            "name": "category",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "payment",
-                "order",
-                "service",
-                "other"
-              ]
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "payment pending",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get support tickets for admin queue management",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Get support tickets for admin queue management. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/support/tickets/{id}": {
-      "get": {
-        "operationId": "AdminSupportTicketsController_getTicketDetail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get support ticket details with full message thread for admins",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Get support ticket details with full message thread for admins. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/support/tickets/{id}/messages": {
-      "post": {
-        "operationId": "AdminSupportTicketsController_addMessage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddSupportTicketMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Reply to support ticket as admin",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Reply to support ticket as admin. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/admin/support/tickets/{id}/status": {
-      "put": {
-        "operationId": "AdminSupportTicketsController_updateStatus",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSupportTicketStatusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Update support ticket status as admin",
-        "tags": [
-          "Admin Support Tickets"
-        ],
-        "description": "Update support ticket status as admin. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/reporting/audit-logs": {
-      "get": {
-        "operationId": "ReportingController_getAuditLogs",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get system audit logs (Admin only)",
-        "tags": [
-          "Admin System Reporting & Analytics"
-        ],
-        "description": "Get system audit logs (Admin only). Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/reporting/analytics/user-growth": {
-      "get": {
-        "operationId": "ReportingController_getUserGrowth",
-        "parameters": [
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "daily",
-                "weekly",
-                "monthly",
-                "yearly"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get user growth analytics",
-        "tags": [
-          "Admin System Reporting & Analytics"
-        ],
-        "description": "Get user growth analytics. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/reporting/analytics/revenue": {
-      "get": {
-        "operationId": "ReportingController_getRevenueAnalytics",
-        "parameters": [
-          {
-            "name": "period",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "daily",
-                "weekly",
-                "monthly",
-                "yearly"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get revenue analytics",
-        "tags": [
-          "Admin System Reporting & Analytics"
-        ],
-        "description": "Get revenue analytics. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/reporting/analytics/services": {
-      "get": {
-        "operationId": "ReportingController_getServicePerformance",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get service performance analytics",
-        "tags": [
-          "Admin System Reporting & Analytics"
-        ],
-        "description": "Get service performance analytics. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/reporting/export/csv": {
-      "get": {
-        "operationId": "ReportingController_exportCsv",
-        "parameters": [
-          {
-            "name": "type",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "enum": [
-                "users",
-                "bookings",
-                "services"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "CSV file stream"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Export system data to CSV",
-        "tags": [
-          "Admin System Reporting & Analytics"
-        ],
-        "description": "Export system data to CSV. Audience: admin. Owner: admin.",
-        "x-owner": "admin",
-        "x-audience": [
-          "admin"
-        ]
-      }
-    },
-    "/api/analytics/performance": {
-      "get": {
-        "operationId": "AnalyticsController_getPerformanceMetrics",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get user performance metrics",
-        "tags": [
-          "Admin User Analytics"
-        ],
-        "description": "Get user performance metrics. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/analytics/client-spending": {
-      "get": {
-        "operationId": "AnalyticsController_getClientSpending",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get client spending analytics",
-        "tags": [
-          "Admin User Analytics"
-        ],
-        "description": "Get client spending analytics. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/analytics/provider-earnings": {
-      "get": {
-        "operationId": "AnalyticsController_getProviderEarnings",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get provider earnings analytics",
-        "tags": [
-          "Admin User Analytics"
-        ],
-        "description": "Get provider earnings analytics. Audience: provider. Owner: provider.",
-        "x-owner": "provider",
-        "x-audience": [
-          "provider"
-        ]
-      }
-    },
-    "/api/analytics/mobile-dashboard": {
-      "get": {
-        "operationId": "AnalyticsController_getMobileDashboard",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MobileDashboardResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get mobile dashboard summary for the current user",
-        "tags": [
-          "Admin User Analytics"
-        ],
-        "description": "Get mobile dashboard summary for the current user. Audience: shared. Owner: shared.",
+        "description": "Register a user on the waitlist. Audience: shared. Owner: shared.",
         "x-owner": "shared",
         "x-audience": [
           "shared"
@@ -11131,6 +11755,10 @@
       "description": "Transaction initialization, verification, and payment history endpoints."
     },
     {
+      "name": "Admin Saved Payment Methods",
+      "description": "Reusable payment authorization management endpoints for saved Flutterwave cards."
+    },
+    {
       "name": "Admin Provider Payouts",
       "description": "Provider balance, payout requests, releases, and payout operations."
     },
@@ -11171,6 +11799,26 @@
       "description": "Order-level workflow actions linked to booking fulfillment."
     },
     {
+      "name": "Admin Moderation",
+      "description": "Administrative moderation workflows for content, disputes, and booking enforcement."
+    },
+    {
+      "name": "Admin Overview",
+      "description": "Administrative platform overview and maintenance endpoints."
+    },
+    {
+      "name": "Admin Permissions",
+      "description": "Role and permission matrix management endpoints."
+    },
+    {
+      "name": "Admin System Reporting & Analytics",
+      "description": "Administrative reports, exports, and platform-wide analytics endpoints."
+    },
+    {
+      "name": "Admin User Analytics",
+      "description": "Self-service analytics endpoints scoped to the authenticated user."
+    },
+    {
       "name": "Admin Contracts",
       "description": "Contract creation, milestone tracking, and collaboration document endpoints."
     },
@@ -11207,24 +11855,8 @@
       "description": "Public advertisement listing endpoints available without authentication."
     },
     {
-      "name": "Admin Moderation",
-      "description": "Administrative moderation workflows for content, disputes, and booking enforcement."
-    },
-    {
-      "name": "Admin Overview",
-      "description": "Administrative platform overview and maintenance endpoints."
-    },
-    {
-      "name": "Admin Permissions",
-      "description": "Role and permission matrix management endpoints."
-    },
-    {
-      "name": "Admin System Reporting & Analytics",
-      "description": "Administrative reports, exports, and platform-wide analytics endpoints."
-    },
-    {
-      "name": "Admin User Analytics",
-      "description": "Self-service analytics endpoints scoped to the authenticated user."
+      "name": "Admin Waitlist",
+      "description": "Public pre-launch waitlist signup and promotion endpoints."
     },
     {
       "name": "Admin Storage",
@@ -11578,6 +12210,9 @@
             "type": "string"
           },
           "university": {
+            "type": "string"
+          },
+          "preferredSavedPaymentMethodId": {
             "type": "string"
           },
           "socialLinks": {
@@ -12452,6 +13087,14 @@
           "gatewayData": {
             "type": "object",
             "description": "Gateway-specific initialization payload"
+          },
+          "saveAuthorization": {
+            "type": "boolean",
+            "description": "Save the reusable authorization after a successful payment"
+          },
+          "savedPaymentMethodId": {
+            "type": "string",
+            "description": "Use a saved payment method for this payment"
           }
         },
         "required": [
@@ -12592,6 +13235,63 @@
           "currency",
           "status",
           "gateway",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SavedPaymentMethodResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "gateway": {
+            "type": "string",
+            "enum": [
+              "paystack",
+              "stripe",
+              "flutterwave"
+            ]
+          },
+          "cardBrand": {
+            "type": "string"
+          },
+          "last4": {
+            "type": "string"
+          },
+          "expiryMonth": {
+            "type": "string"
+          },
+          "expiryYear": {
+            "type": "string"
+          },
+          "isReusable": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "gateway",
+          "isReusable",
+          "isDefault",
           "createdAt",
           "updatedAt"
         ]
@@ -12770,6 +13470,15 @@
           "amount": {
             "type": "number"
           },
+          "grossAmount": {
+            "type": "number"
+          },
+          "penaltyAmount": {
+            "type": "number"
+          },
+          "penaltyReason": {
+            "type": "string"
+          },
           "currency": {
             "type": "string"
           },
@@ -12829,12 +13538,23 @@
             "type": "number",
             "minimum": 1
           },
+          "grossAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "penaltyAmount": {
+            "type": "number",
+            "minimum": 0
+          },
           "progressPercent": {
             "type": "number",
             "minimum": 0,
             "maximum": 100
           },
           "reason": {
+            "type": "string"
+          },
+          "penaltyReason": {
             "type": "string"
           }
         },
@@ -14534,6 +15254,911 @@
           "createdAt"
         ]
       },
+      "CreateBookingMilestoneDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 100
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "percent"
+        ]
+      },
+      "ProposeBookingMilestonesDto": {
+        "type": "object",
+        "properties": {
+          "milestones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateBookingMilestoneDto"
+            }
+          }
+        },
+        "required": [
+          "milestones"
+        ]
+      },
+      "BookingMilestoneEvidenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bookingId": {
+            "type": "string"
+          },
+          "milestoneId": {
+            "type": "string"
+          },
+          "uploadedBy": {
+            "type": "string"
+          },
+          "storagePath": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          },
+          "externalUrl": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "milestoneId",
+          "uploadedBy",
+          "storagePath",
+          "url",
+          "originalName",
+          "mimeType",
+          "size",
+          "createdAt"
+        ]
+      },
+      "BookingMilestoneResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bookingId": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "number"
+          },
+          "estimatedAmount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "confirmed",
+              "pending",
+              "in_progress",
+              "submitted",
+              "approved",
+              "rejected"
+            ]
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "approvedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rejectedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rejectionReason": {
+            "type": "string"
+          },
+          "evidenceCount": {
+            "type": "number"
+          },
+          "evidences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingMilestoneEvidenceResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "createdBy",
+          "title",
+          "description",
+          "percent",
+          "estimatedAmount",
+          "status",
+          "evidenceCount"
+        ]
+      },
+      "SystemStatsDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "object"
+          },
+          "services": {
+            "type": "object"
+          },
+          "revenue": {
+            "type": "object"
+          },
+          "activity": {
+            "type": "object"
+          },
+          "bookings": {
+            "type": "object"
+          },
+          "payments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "users",
+          "services",
+          "revenue",
+          "activity",
+          "bookings",
+          "payments"
+        ]
+      },
+      "AdminBookingListDto": {
+        "type": "object",
+        "properties": {
+          "bookings": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "bookings",
+          "total"
+        ]
+      },
+      "AdminUpdateBookingStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "cancelled",
+              "disputed"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "example": "Fraud suspected"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AdminPaymentListDto": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "transactions",
+          "total"
+        ]
+      },
+      "AdminDisputeListDto": {
+        "type": "object",
+        "properties": {
+          "disputes": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "disputes",
+          "total"
+        ]
+      },
+      "ResolveDisputeAdminDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string",
+            "example": "Provider updated the deliverables and both parties agreed."
+          },
+          "adminNotes": {
+            "type": "string",
+            "example": "Refund approved by admin."
+          },
+          "refundAmount": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "resolution"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "example": "post"
+          },
+          "targetId": {
+            "type": "string",
+            "example": "uuid-of-target"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "hate_speech",
+              "harassment",
+              "inappropriate_content",
+              "fraud",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "example": "This post contains hate speech.",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "reason"
+        ]
+      },
+      "ReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reporterId": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "hate_speech",
+              "harassment",
+              "inappropriate_content",
+              "fraud",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "resolved",
+              "dismissed"
+            ]
+          },
+          "resolvedById": {
+            "type": "string"
+          },
+          "resolutionNotes": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reporterId",
+          "targetType",
+          "targetId",
+          "reason",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "resolved",
+              "dismissed"
+            ]
+          },
+          "resolutionNotes": {
+            "type": "string",
+            "example": "Target post has been removed.",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OverviewTotalsDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "number"
+          },
+          "profiles": {
+            "type": "number"
+          },
+          "posts": {
+            "type": "number"
+          },
+          "comments": {
+            "type": "number"
+          },
+          "services": {
+            "type": "number"
+          },
+          "ads": {
+            "type": "number"
+          },
+          "bookings": {
+            "type": "number"
+          },
+          "activeSessions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "users",
+          "profiles",
+          "posts",
+          "comments",
+          "services",
+          "ads",
+          "bookings",
+          "activeSessions"
+        ]
+      },
+      "DailyCountPointDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "day",
+          "count"
+        ]
+      },
+      "DailySpendPointDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "spend": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "day",
+          "spend"
+        ]
+      },
+      "TopUniversityPointDto": {
+        "type": "object",
+        "properties": {
+          "university": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "university",
+          "count"
+        ]
+      },
+      "AdminOverviewDto": {
+        "type": "object",
+        "properties": {
+          "totals": {
+            "$ref": "#/components/schemas/OverviewTotalsDto"
+          },
+          "postsByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyCountPointDto"
+            }
+          },
+          "commentsByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyCountPointDto"
+            }
+          },
+          "spendByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailySpendPointDto"
+            }
+          },
+          "topUniversities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopUniversityPointDto"
+            }
+          }
+        },
+        "required": [
+          "totals",
+          "postsByDay",
+          "commentsByDay",
+          "spendByDay",
+          "topUniversities"
+        ]
+      },
+      "RecountPostCommentsDto": {
+        "type": "object",
+        "properties": {
+          "updatedPosts": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "updatedPosts"
+        ]
+      },
+      "SetRolePermissionDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "RolePermissionBulkItemDto": {
+        "type": "object",
+        "properties": {
+          "permissionKey": {
+            "type": "string",
+            "example": "marketplace.service.create.own"
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "permissionKey",
+          "enabled"
+        ]
+      },
+      "RolePermissionBulkUpdateDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RolePermissionBulkItemDto"
+            }
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "CreateSupportTicketDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "order",
+              "service",
+              "other"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "example": "uuid-or-reference-of-target-resource"
+          },
+          "subject": {
+            "type": "string",
+            "example": "Payment was deducted but order is still pending",
+            "maxLength": 180
+          },
+          "description": {
+            "type": "string",
+            "example": "I completed checkout but transaction succeeded without updating my order."
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
+            "default": "normal"
+          }
+        },
+        "required": [
+          "category",
+          "subject",
+          "description"
+        ]
+      },
+      "AddSupportTicketMessageDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Please share your transaction reference so we can verify your payment."
+          },
+          "attachments": {
+            "example": [
+              "https://example.com/evidence.png"
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "isInternalNote": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "UpdateSupportTicketStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "under_review",
+              "awaiting_user",
+              "resolved",
+              "closed"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AdminPenaltySettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerCorrectionEnabled": {
+            "type": "boolean"
+          },
+          "customerCorrectionFreeLimit": {
+            "type": "number"
+          },
+          "customerCorrectionFlatPenalty": {
+            "type": "number"
+          },
+          "customerCorrectionPercentPenalty": {
+            "type": "number"
+          },
+          "providerEvidenceEnabled": {
+            "type": "boolean"
+          },
+          "providerEvidenceFreeLimit": {
+            "type": "number"
+          },
+          "providerEvidenceFlatPenalty": {
+            "type": "number"
+          },
+          "providerEvidencePercentPenalty": {
+            "type": "number"
+          },
+          "providerRejectionEnabled": {
+            "type": "boolean"
+          },
+          "providerRejectionFlatPenalty": {
+            "type": "number"
+          },
+          "providerRejectionPercentPenalty": {
+            "type": "number"
+          },
+          "providerRejectionPenaltyMode": {
+            "type": "string",
+            "enum": [
+              "once_per_rejection",
+              "once_per_milestone"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customerCorrectionEnabled",
+          "customerCorrectionFreeLimit",
+          "customerCorrectionFlatPenalty",
+          "customerCorrectionPercentPenalty",
+          "providerEvidenceEnabled",
+          "providerEvidenceFreeLimit",
+          "providerEvidenceFlatPenalty",
+          "providerEvidencePercentPenalty",
+          "providerRejectionEnabled",
+          "providerRejectionFlatPenalty",
+          "providerRejectionPercentPenalty",
+          "providerRejectionPenaltyMode",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateAdminPenaltySettingsDto": {
+        "type": "object",
+        "properties": {
+          "customerCorrectionEnabled": {
+            "type": "boolean"
+          },
+          "customerCorrectionFreeLimit": {
+            "type": "number",
+            "example": 3
+          },
+          "customerCorrectionFlatPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "customerCorrectionPercentPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerEvidenceEnabled": {
+            "type": "boolean"
+          },
+          "providerEvidenceFreeLimit": {
+            "type": "number",
+            "example": 3
+          },
+          "providerEvidenceFlatPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerEvidencePercentPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerRejectionEnabled": {
+            "type": "boolean"
+          },
+          "providerRejectionFlatPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerRejectionPercentPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerRejectionPenaltyMode": {
+            "type": "string",
+            "enum": [
+              "once_per_rejection",
+              "once_per_milestone"
+            ]
+          }
+        }
+      },
+      "MobileDashboardCardDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "currency",
+              "count"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "formattedValue": {
+            "type": "string",
+            "example": "N42,000"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "kind"
+        ]
+      },
+      "MobileDashboardActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "timeLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "subtitle",
+          "createdAt",
+          "timeLabel"
+        ]
+      },
+      "MobileDashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "provider",
+              "client"
+            ]
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MobileDashboardCardDto"
+            }
+          },
+          "recentActivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MobileDashboardActivityDto"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "cards",
+          "recentActivity"
+        ]
+      },
       "CreateContractDto": {
         "type": "object",
         "properties": {}
@@ -15265,614 +16890,143 @@
           }
         }
       },
-      "SystemStatsDto": {
+      "WaitlistRegisterDto": {
         "type": "object",
         "properties": {
-          "users": {
-            "type": "object"
-          },
-          "services": {
-            "type": "object"
-          },
-          "revenue": {
-            "type": "object"
-          },
-          "activity": {
-            "type": "object"
-          },
-          "bookings": {
-            "type": "object"
-          },
-          "payments": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "users",
-          "services",
-          "revenue",
-          "activity",
-          "bookings",
-          "payments"
-        ]
-      },
-      "AdminBookingListDto": {
-        "type": "object",
-        "properties": {
-          "bookings": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "bookings",
-          "total"
-        ]
-      },
-      "AdminUpdateBookingStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
+          "email": {
             "type": "string",
-            "enum": [
-              "cancelled",
-              "disputed"
-            ]
+            "example": "user@example.com"
           },
-          "reason": {
-            "type": "string",
-            "example": "Fraud suspected"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "AdminPaymentListDto": {
-        "type": "object",
-        "properties": {
-          "transactions": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "transactions",
-          "total"
-        ]
-      },
-      "AdminDisputeListDto": {
-        "type": "object",
-        "properties": {
-          "disputes": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "disputes",
-          "total"
-        ]
-      },
-      "ResolveDisputeAdminDto": {
-        "type": "object",
-        "properties": {
-          "resolution": {
-            "type": "string",
-            "example": "Provider updated the deliverables and both parties agreed."
-          },
-          "adminNotes": {
-            "type": "string",
-            "example": "Refund approved by admin."
-          },
-          "refundAmount": {
-            "type": "number",
-            "example": 1000
-          }
-        },
-        "required": [
-          "resolution"
-        ]
-      },
-      "CreateReportDto": {
-        "type": "object",
-        "properties": {
-          "targetType": {
-            "type": "string",
-            "example": "post"
-          },
-          "targetId": {
-            "type": "string",
-            "example": "uuid-of-target"
-          },
-          "reason": {
-            "type": "string",
-            "enum": [
-              "spam",
-              "hate_speech",
-              "harassment",
-              "inappropriate_content",
-              "fraud",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "string",
-            "example": "This post contains hate speech.",
-            "maxLength": 500
-          }
-        },
-        "required": [
-          "targetType",
-          "targetId",
-          "reason"
-        ]
-      },
-      "ReportResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
+          "phoneNumber": {
             "type": "string"
           },
-          "reporterId": {
-            "type": "string"
-          },
-          "targetType": {
-            "type": "string"
-          },
-          "targetId": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string",
-            "enum": [
-              "spam",
-              "hate_speech",
-              "harassment",
-              "inappropriate_content",
-              "fraud",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "resolved",
-              "dismissed"
-            ]
-          },
-          "resolvedById": {
-            "type": "string"
-          },
-          "resolutionNotes": {
-            "type": "string"
-          },
-          "resolvedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "reporterId",
-          "targetType",
-          "targetId",
-          "reason",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ResolveReportDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "resolved",
-              "dismissed"
-            ]
-          },
-          "resolutionNotes": {
-            "type": "string",
-            "example": "Target post has been removed.",
-            "maxLength": 1000
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "OverviewTotalsDto": {
-        "type": "object",
-        "properties": {
-          "users": {
-            "type": "number"
-          },
-          "profiles": {
-            "type": "number"
-          },
-          "posts": {
-            "type": "number"
-          },
-          "comments": {
-            "type": "number"
-          },
-          "services": {
-            "type": "number"
-          },
-          "ads": {
-            "type": "number"
-          },
-          "bookings": {
-            "type": "number"
-          },
-          "activeSessions": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "users",
-          "profiles",
-          "posts",
-          "comments",
-          "services",
-          "ads",
-          "bookings",
-          "activeSessions"
-        ]
-      },
-      "DailyCountPointDto": {
-        "type": "object",
-        "properties": {
-          "day": {
-            "type": "string"
-          },
-          "count": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "day",
-          "count"
-        ]
-      },
-      "DailySpendPointDto": {
-        "type": "object",
-        "properties": {
-          "day": {
-            "type": "string"
-          },
-          "spend": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "day",
-          "spend"
-        ]
-      },
-      "TopUniversityPointDto": {
-        "type": "object",
-        "properties": {
-          "university": {
-            "type": "string"
-          },
-          "count": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "university",
-          "count"
-        ]
-      },
-      "AdminOverviewDto": {
-        "type": "object",
-        "properties": {
-          "totals": {
-            "$ref": "#/components/schemas/OverviewTotalsDto"
-          },
-          "postsByDay": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DailyCountPointDto"
-            }
-          },
-          "commentsByDay": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DailyCountPointDto"
-            }
-          },
-          "spendByDay": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DailySpendPointDto"
-            }
-          },
-          "topUniversities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TopUniversityPointDto"
-            }
-          }
-        },
-        "required": [
-          "totals",
-          "postsByDay",
-          "commentsByDay",
-          "spendByDay",
-          "topUniversities"
-        ]
-      },
-      "RecountPostCommentsDto": {
-        "type": "object",
-        "properties": {
-          "updatedPosts": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "updatedPosts"
-        ]
-      },
-      "SetRolePermissionDto": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "enabled"
-        ]
-      },
-      "RolePermissionBulkItemDto": {
-        "type": "object",
-        "properties": {
-          "permissionKey": {
-            "type": "string",
-            "example": "marketplace.service.create.own"
-          },
-          "enabled": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "permissionKey",
-          "enabled"
-        ]
-      },
-      "RolePermissionBulkUpdateDto": {
-        "type": "object",
-        "properties": {
-          "permissions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RolePermissionBulkItemDto"
-            }
-          }
-        },
-        "required": [
-          "permissions"
-        ]
-      },
-      "CreateSupportTicketDto": {
-        "type": "object",
-        "properties": {
-          "category": {
-            "type": "string",
-            "enum": [
-              "payment",
-              "order",
-              "service",
-              "other"
-            ]
-          },
-          "targetId": {
-            "type": "string",
-            "example": "uuid-or-reference-of-target-resource"
-          },
-          "subject": {
-            "type": "string",
-            "example": "Payment was deducted but order is still pending",
-            "maxLength": 180
-          },
-          "description": {
-            "type": "string",
-            "example": "I completed checkout but transaction succeeded without updating my order."
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "low",
-              "normal",
-              "high",
-              "urgent"
-            ],
-            "default": "normal"
-          }
-        },
-        "required": [
-          "category",
-          "subject",
-          "description"
-        ]
-      },
-      "AddSupportTicketMessageDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "example": "Please share your transaction reference so we can verify your payment."
-          },
-          "attachments": {
-            "example": [
-              "https://example.com/evidence.png"
-            ],
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "isInternalNote": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "UpdateSupportTicketStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "under_review",
-              "awaiting_user",
-              "resolved",
-              "closed"
-            ]
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "MobileDashboardCardDto": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "value": {
-            "type": "number"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "currency",
-              "count"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "example": "NGN"
-          },
-          "formattedValue": {
-            "type": "string",
-            "example": "N42,000"
-          }
-        },
-        "required": [
-          "key",
-          "label",
-          "value",
-          "kind"
-        ]
-      },
-      "MobileDashboardActivityDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "subtitle": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "status": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "timeLabel": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "title",
-          "subtitle",
-          "createdAt",
-          "timeLabel"
-        ]
-      },
-      "MobileDashboardResponseDto": {
-        "type": "object",
-        "properties": {
           "role": {
             "type": "string",
             "enum": [
-              "provider",
-              "client"
+              "user",
+              "provider"
             ]
           },
-          "cards": {
+          "fullName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "birthdate": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other",
+              "prefer_not_to_say"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "university": {
+            "type": "string"
+          },
+          "socialLinks": {
+            "type": "object"
+          },
+          "businessName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "skills": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MobileDashboardCardDto"
+              "type": "string"
             }
           },
-          "recentActivity": {
+          "certifications": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MobileDashboardActivityDto"
+              "type": "object"
             }
+          },
+          "yearsOfExperience": {
+            "type": "number"
+          },
+          "portfolio": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "hourlyRate": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "responseTimeHours": {
+            "type": "number"
+          },
+          "availabilityHours": {
+            "type": "object"
           }
         },
         "required": [
+          "email",
+          "role"
+        ]
+      },
+      "WaitlistRegisterResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "provider"
+            ]
+          },
+          "isPromoted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
           "role",
-          "cards",
-          "recentActivity"
+          "isPromoted",
+          "createdAt"
         ]
       }
     }
@@ -15891,6 +17045,7 @@
         "Admin User Profiles",
         "Admin User Preferences",
         "Admin User Analytics",
+        "Admin Waitlist",
         "Admin Storage"
       ]
     },
@@ -15935,6 +17090,7 @@
       "name": "Finance",
       "tags": [
         "Admin Payments & Transactions",
+        "Admin Saved Payment Methods",
         "Admin Provider Payouts",
         "Admin Subscription Plans",
         "Admin Subscriptions"

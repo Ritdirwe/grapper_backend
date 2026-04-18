@@ -6,6 +6,8 @@ import {
   IsEmail,
   Min,
   IsObject,
+  IsBoolean,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { TransactionType, PaymentGateway } from '../../domain/value-objects/payment-enums.vo';
@@ -53,6 +55,16 @@ export class InitializePaymentDto {
   @IsObject()
   @IsOptional()
   gatewayData?: Record<string, any>;
+
+  @ApiProperty({ required: false, description: 'Save the reusable authorization after a successful payment' })
+  @IsBoolean()
+  @IsOptional()
+  saveAuthorization?: boolean;
+
+  @ApiProperty({ required: false, description: 'Use a saved payment method for this payment' })
+  @IsUUID()
+  @IsOptional()
+  savedPaymentMethodId?: string;
 }
 
 export class VerifyPaymentDto {

@@ -62,6 +62,9 @@ export class User extends BaseEntity {
   @Column({ name: 'session_version', type: 'int', default: 1 })
   sessionVersion: number;
 
+  @Column({ name: 'must_reset_password', default: false })
+  mustResetPassword: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -104,6 +107,6 @@ export class User extends BaseEntity {
   }
 
   canLogin(): boolean {
-    return this.isActive() && this.emailVerified;
+    return this.isActive() && this.emailVerified && !this.mustResetPassword;
   }
 }

@@ -23,6 +23,8 @@ export enum OrderStatus {
 }
 
 export enum MilestoneStatus {
+  PROPOSED = 'proposed',
+  CONFIRMED = 'confirmed',
   PENDING = 'pending',
   IN_PROGRESS = 'in_progress',
   SUBMITTED = 'submitted',

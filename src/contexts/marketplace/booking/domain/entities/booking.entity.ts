@@ -13,6 +13,7 @@ import { BookingStatus } from '../value-objects/booking-enums.vo';
 import { BookingCorrection } from './booking-correction.entity';
 import { BookingFile } from './booking-file.entity';
 import { BookingMessage } from './booking-message.entity';
+import { BookingMilestone } from './booking-milestone.entity';
 
 @Entity('bookings')
 @Index(['customerId'])
@@ -145,6 +146,9 @@ export class Booking extends BaseEntity {
   @OneToMany(() => BookingMessage, message => message.booking)
   messages: BookingMessage[];
 
+  @OneToMany(() => BookingMilestone, milestone => milestone.booking)
+  milestones: BookingMilestone[];
+
   // Helper methods
   confirm(): void {
     this.status = BookingStatus.CONFIRMED;
@@ -208,14 +212,14 @@ export class Booking extends BaseEntity {
     return this.status === BookingStatus.DELIVERED;
   }
 
-  canRequestFreeCorrection(): boolean {
-    return this.correctionsUsed < this.correctionsLimit &&
-           this.canRequestCorrection();
+  canRequestFreeCorrection(limit = this.correctionsLimit): boolean {
+    return this.correctionsUsed < limit && this.canRequestCorrection();
   }
 
-  requestCorrection(): boolean {
+  requestCorrection(limit = this.correctionsLimit): boolean {
+    this.correctionsLimit = limit;
     this.correctionsUsed += 1;
     this.status = BookingStatus.REVISION_REQUESTED;
-    return this.correctionsUsed <= this.correctionsLimit; // true = free, false = paid
+    return this.correctionsUsed <= limit; // true = free, false = paid
   }
 }

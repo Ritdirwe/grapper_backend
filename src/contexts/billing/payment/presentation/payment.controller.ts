@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Headers,
+  Req,
 } from '@nestjs/common';
 import { PaymentService } from '../application/services/payment.service';
 import {
@@ -65,8 +66,9 @@ export class PaymentController {
   async paystackWebhook(
     @Body() payload: any,
     @Headers('x-paystack-signature') signature: string,
+    @Req() req: any,
   ): Promise<{ message: string }> {
-    await this.paymentService.handleWebhook(payload, PaymentGateway.PAYSTACK);
+    await this.paymentService.handleWebhook(payload, PaymentGateway.PAYSTACK, signature, req.rawBody);
     return { message: 'Webhook processed' };
   }
 
@@ -78,11 +80,13 @@ export class PaymentController {
   async flutterwaveWebhook(
     @Body() payload: any,
     @Headers('flutterwave-signature') signature: string,
+    @Req() req: any,
   ): Promise<{ message: string }> {
     await this.paymentService.handleWebhook(
       payload,
       PaymentGateway.FLUTTERWAVE,
       signature,
+      req.rawBody,
     );
     return { message: 'Webhook processed' };
   }

@@ -192,6 +192,7 @@ export class ProfileService {
       city: profile.city,
       website: profile.website,
       university: profile.university,
+      preferredSavedPaymentMethodId: profile.preferredSavedPaymentMethodId,
       socialLinks: profile.socialLinks,
       verificationStatus: profile.verificationStatus,
       isVerified: profile.isVerified(),

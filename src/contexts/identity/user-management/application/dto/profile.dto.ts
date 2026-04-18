@@ -127,6 +127,9 @@ export class ProfileResponseDto {
   university?: string;
 
   @ApiProperty({ required: false })
+  preferredSavedPaymentMethodId?: string;
+
+  @ApiProperty({ required: false })
   socialLinks?: Record<string, string>;
 
   @ApiProperty()

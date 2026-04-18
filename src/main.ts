@@ -6,18 +6,37 @@ import {
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rawBody from 'fastify-raw-body';
 import multipart from '@fastify/multipart';
 import {
   buildAudienceSwaggerDocument,
   enrichSwaggerDocument,
   withSwaggerInfo,
 } from '@common/swagger/swagger-docs';
+import { RequestThrottleGuard } from '@common/guards/request-throttle.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ logger: true }),
   );
+
+  await app.register(helmet, {
+    contentSecurityPolicy: false,
+  });
+
+  await app.register(rawBody, {
+    field: 'rawBody',
+    global: true,
+    encoding: 'utf8',
+    runFirst: true,
+  });
+
+  app.getHttpAdapter().getInstance().addHook('onSend', async (request, reply, payload) => {
+    reply.header('x-request-id', request.id);
+    return payload;
+  });
 
   // Register Fastify CORS plugin
   await app.register(cors, {
@@ -26,7 +45,6 @@ async function bootstrap() {
       if (!origin || origin === 'null') {
         return callback(null, true);
       }
-
       const allowedOrigins = new Set(
         [
           process.env.FRONTEND_URL,
@@ -86,6 +104,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  app.useGlobalGuards(new RequestThrottleGuard());
 
   // Global prefix (exclude root for health check)
   app.setGlobalPrefix('api', {

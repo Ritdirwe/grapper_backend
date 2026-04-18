@@ -186,6 +186,18 @@ export class AuthService {
 
     // Check if user can login
     if (!user.canLogin()) {
+      if (user.mustResetPassword) {
+        await this.authActivityService.log({
+          action: AuthActivityAction.LOGIN_FAILED,
+          userId: user.id,
+          email: user.email,
+          ipAddress: context?.ipAddress,
+          userAgent: context?.userAgent,
+          metadata: { reason: 'activation_pending' },
+        });
+        throw new UnauthorizedException('Please activate your account');
+      }
+
       if (!user.emailVerified) {
         await this.authActivityService.log({
           action: AuthActivityAction.LOGIN_FAILED,
@@ -449,7 +461,11 @@ export class AuthService {
     const passwordHash = await this.passwordHasher.hash(dto.newPassword);
 
     // Update user password
-    await this.userRepository.update(dto.userId, { passwordHash });
+    await this.userRepository.update(dto.userId, {
+      passwordHash,
+      mustResetPassword: false,
+      emailVerified: true,
+    });
 
     // Mark code as used
     code.markAsUsed();

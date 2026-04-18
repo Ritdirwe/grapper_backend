@@ -137,6 +137,18 @@ export class CreatePayoutReleaseDto {
   @Min(1)
   amount: number;
 
+  @ApiProperty({ required: false, minimum: 0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  grossAmount?: number;
+
+  @ApiProperty({ required: false, minimum: 0 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  penaltyAmount?: number;
+
   @ApiProperty({ required: false, minimum: 0, maximum: 100 })
   @IsOptional()
   @IsNumber()
@@ -148,6 +160,11 @@ export class CreatePayoutReleaseDto {
   @IsOptional()
   @IsString()
   reason?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  penaltyReason?: string;
 }
 
 export class PayoutReleaseResponseDto {
@@ -171,6 +188,15 @@ export class PayoutReleaseResponseDto {
 
   @ApiProperty()
   amount: number;
+
+  @ApiProperty({ required: false })
+  grossAmount?: number;
+
+  @ApiProperty({ required: false })
+  penaltyAmount?: number;
+
+  @ApiProperty({ required: false })
+  penaltyReason?: string;
 
   @ApiProperty()
   currency: string;

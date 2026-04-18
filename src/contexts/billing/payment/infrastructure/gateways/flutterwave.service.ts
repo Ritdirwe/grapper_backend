@@ -19,6 +19,28 @@ type FlutterwaveCharge = {
   status?: string;
   paid_at?: string;
   processor_response?: unknown;
+  card?: {
+    token?: string;
+    type?: string;
+    brand?: string;
+    last_4?: string;
+    last4?: string;
+    exp_month?: string;
+    exp_year?: string;
+    expiry_month?: string;
+    expiry_year?: string;
+  };
+  authorization?: {
+    authorization_code?: string;
+    token?: string;
+  };
+  link?: string;
+  redirect_url?: string;
+  next_action?: {
+    redirect_url?: {
+      url?: string;
+    };
+  };
 };
 
 type FlutterwaveTransfer = {
@@ -72,6 +94,7 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     callbackUrl?: string;
     customer?: Record<string, any>;
     paymentMethod?: Record<string, any>;
+    saveAuthorization?: boolean;
   }): Promise<{
     authorizationUrl?: string;
     clientSecret?: string;
@@ -79,6 +102,17 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     gatewayReference?: string;
     reference: string;
   }> {
+    if (params.paymentMethod?.token) {
+      return this.chargeSavedPaymentMethod({
+        amount: params.amount,
+        email: params.email,
+        reference: params.reference,
+        currency: params.currency,
+        metadata: params.metadata,
+        token: String(params.paymentMethod.token),
+      });
+    }
+
     const authHeader = await this.getAuthorizationHeaderValue();
 
     const redirectUrl = params.callbackUrl || this.callbackUrl;
@@ -97,6 +131,7 @@ export class FlutterwaveService implements PaymentGatewayInterface {
       },
       payment_method: params.paymentMethod || { type: 'opay' },
       meta: params.metadata,
+      save_authorization: params.saveAuthorization || false,
       title: 'Grapper',
       description: params.metadata?.description || `Payment ${params.reference}`,
       x_trace_id: params.reference,
@@ -134,6 +169,62 @@ export class FlutterwaveService implements PaymentGatewayInterface {
       };
     } catch (error) {
       this.handleGatewayError(error, 'Flutterwave payment initialization failed');
+    }
+  }
+
+  async chargeSavedPaymentMethod(params: {
+    amount: number;
+    email: string;
+    reference: string;
+    currency?: string;
+    metadata?: Record<string, any>;
+    token: string;
+  }): Promise<{
+    authorizationUrl?: string;
+    clientSecret?: string;
+    accessCode?: string;
+    gatewayReference?: string;
+    reference: string;
+  }> {
+    const authHeader = await this.getAuthorizationHeaderValue();
+    const base = this.baseUrl.replace(/\/+$/, '');
+    const url = base.endsWith('/v3') ? `${base}/tokenized-charges` : `${base}/v3/tokenized-charges`;
+
+    try {
+      const response = await axios.post(
+        url,
+        {
+          token: params.token,
+          amount: params.amount,
+          currency: params.currency || 'NGN',
+          email: params.email,
+          tx_ref: params.reference,
+          meta: params.metadata,
+        },
+        {
+          headers: {
+            Authorization: authHeader,
+            'Content-Type': 'application/json',
+            'X-Trace-Id': params.reference,
+            'X-Idempotency-Key': `${params.reference}-${Date.now()}`,
+          },
+        },
+      );
+
+      const data = response.data?.data || response.data || {};
+      const authorizationUrl =
+        data?.next_action?.redirect_url?.url ||
+        data?.redirect_url ||
+        data?.link ||
+        data?.authorization_url;
+
+      return {
+        authorizationUrl,
+        gatewayReference: String(data.id || data.reference || params.reference),
+        reference: String(data.tx_ref || data.reference || params.reference),
+      };
+    } catch (error) {
+      this.handleGatewayError(error, 'Flutterwave tokenized charge failed');
     }
   }
 
@@ -305,7 +396,7 @@ export class FlutterwaveService implements PaymentGatewayInterface {
     };
   }
 
-  verifyWebhookSignature(payload: any, signature?: string): void {
+  verifyWebhookSignature(rawBody: string | Buffer, signature?: string): void {
     if (!this.webhookSecret) {
       throw new UnauthorizedException('Flutterwave webhook secret is not configured');
     }
@@ -314,7 +405,6 @@ export class FlutterwaveService implements PaymentGatewayInterface {
       throw new UnauthorizedException('Missing Flutterwave webhook signature');
     }
 
-    const rawBody = JSON.stringify(payload || {});
     const computed = createHmac('sha256', this.webhookSecret)
       .update(rawBody)
       .digest('base64');

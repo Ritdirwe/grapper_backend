@@ -59,6 +59,32 @@ cp .env.example .env
 createdb grapper_marketplace
 ```
 
+4. Create the isolated waitlist database:
+
+```bash
+pnpm waitlist:db:create
+```
+
+Waitlist env vars to fill in `.env`:
+
+- `WAITLIST_DATABASE_HOST`
+- `WAITLIST_DATABASE_PORT`
+- `WAITLIST_DATABASE_USER`
+- `WAITLIST_DATABASE_PASSWORD`
+- `WAITLIST_DATABASE_NAME`
+
+5. Run the waitlist migrations:
+
+```bash
+pnpm waitlist:migration:run
+```
+
+If you need to create a new waitlist migration later:
+
+```bash
+pnpm waitlist:migration:generate src/infrastructure/database/migrations-waitlist/<Name>
+```
+
 ### Development
 
 Start development server:
@@ -103,6 +129,27 @@ pnpm migration:revert
 - `DELETE /api/push/tokens/:id` - Delete a specific token
 - `POST /api/push/test` - Send a test notification to the current user
 - `POST /api/push/broadcast` - Admin broadcast to active tokens
+
+### Device Registration Flow (User side)
+
+1. User logs in and receives a JWT.
+2. The mobile app requests a push token:
+   - Expo token if the app uses Expo Push
+   - FCM token if the app uses native Firebase messaging
+3. The mobile app calls `POST /api/push/register` with:
+
+```json
+{
+  "token": "ExponentPushToken[...] or fcm_token",
+  "platform": "expo or fcm",
+  "deviceId": "optional-device-id"
+}
+```
+
+Notes:
+- Use `platform: "expo"` for Expo tokens.
+- Use `platform: "fcm"` for Firebase tokens.
+- Send the JWT in `Authorization: Bearer <token>`.
 
 Firebase env vars:
 

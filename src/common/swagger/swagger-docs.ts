@@ -89,6 +89,10 @@ const TAG_DESCRIPTIONS: Record<string, { description: string; group: string }> =
     description: 'Transaction initialization, verification, and payment history endpoints.',
     group: 'Finance',
   },
+  'Saved Payment Methods': {
+    description: 'Reusable payment authorization management endpoints for saved Flutterwave cards.',
+    group: 'Finance',
+  },
   'Provider Payouts': {
     description: 'Provider balance, payout requests, releases, and payout operations.',
     group: 'Finance',
@@ -139,6 +143,10 @@ const TAG_DESCRIPTIONS: Record<string, { description: string; group: string }> =
   },
   'User Analytics': {
     description: 'Self-service analytics endpoints scoped to the authenticated user.',
+    group: 'Shared Access',
+  },
+  Waitlist: {
+    description: 'Public pre-launch waitlist signup and promotion endpoints.',
     group: 'Shared Access',
   },
   'Admin Overview': {

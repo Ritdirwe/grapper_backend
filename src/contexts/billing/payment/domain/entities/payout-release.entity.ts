@@ -38,6 +38,15 @@ export class PayoutRelease extends BaseEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount: number;
 
+  @Column({ name: 'gross_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  grossAmount?: number;
+
+  @Column({ name: 'penalty_amount', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  penaltyAmount?: number;
+
+  @Column({ name: 'penalty_reason', type: 'text', nullable: true })
+  penaltyReason?: string;
+
   @Column({ default: 'NGN' })
   currency: string;
 

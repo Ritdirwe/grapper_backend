@@ -1322,6 +1322,116 @@
         ]
       }
     },
+    "/api/payments/methods": {
+      "get": {
+        "operationId": "SavedPaymentMethodController_getSavedPaymentMethods",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedPaymentMethodResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List saved payment methods for the current user",
+        "tags": [
+          "Saved Payment Methods"
+        ],
+        "description": "List saved payment methods for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/payments/methods/{id}/preferred": {
+      "post": {
+        "operationId": "SavedPaymentMethodController_setPreferredPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPaymentMethodResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set a saved payment method as preferred",
+        "tags": [
+          "Saved Payment Methods"
+        ],
+        "description": "Set a saved payment method as preferred. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/payments/methods/{id}": {
+      "delete": {
+        "operationId": "SavedPaymentMethodController_deleteSavedPaymentMethod",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a saved payment method",
+        "tags": [
+          "Saved Payment Methods"
+        ],
+        "description": "Delete a saved payment method. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/push/tokens": {
       "get": {
         "operationId": "PushController_getTokens",
@@ -4131,6 +4241,672 @@
         ]
       }
     },
+    "/api/bookings/{id}/milestones/propose": {
+      "post": {
+        "operationId": "BookingMilestoneController_propose",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposeBookingMilestonesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Propose booking milestones",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "Propose booking milestones. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones": {
+      "get": {
+        "operationId": "BookingMilestoneController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List booking milestones",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "List booking milestones. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/reject": {
+      "post": {
+        "operationId": "BookingMilestoneController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject proposed milestones",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "Reject proposed milestones. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/{milestoneId}/evidence": {
+      "post": {
+        "operationId": "BookingMilestoneController_submitEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingMilestoneEvidenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit milestone evidence",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "Submit milestone evidence. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      },
+      "get": {
+        "operationId": "BookingMilestoneController_listEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneEvidenceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List milestone evidence",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "List milestone evidence. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/{milestoneId}/approve": {
+      "post": {
+        "operationId": "BookingMilestoneController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve milestone and release funds",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "Approve milestone and release funds. Audience: client. Owner: client.",
+        "x-owner": "client",
+        "x-audience": [
+          "client"
+        ]
+      }
+    },
+    "/api/bookings/{id}/milestones/{milestoneId}/reject": {
+      "post": {
+        "operationId": "BookingMilestoneController_rejectMilestone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "milestoneId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BookingMilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject milestone evidence",
+        "tags": [
+          "Service Bookings"
+        ],
+        "description": "Reject milestone evidence. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets": {
+      "post": {
+        "operationId": "SupportTicketsController_createTicket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSupportTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a support ticket for payment, order, or service complaints",
+        "tags": [
+          "Support Tickets"
+        ],
+        "description": "Create a support ticket for payment, order, or service complaints. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets/me": {
+      "get": {
+        "operationId": "SupportTicketsController_listMyTickets",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "under_review",
+                "awaiting_user",
+                "resolved",
+                "closed"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "payment",
+                "order",
+                "service",
+                "other"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "payment pending",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user support tickets",
+        "tags": [
+          "Support Tickets"
+        ],
+        "description": "Get current user support tickets. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets/{id}": {
+      "get": {
+        "operationId": "SupportTicketsController_getMyTicket",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get support ticket details for current user",
+        "tags": [
+          "Support Tickets"
+        ],
+        "description": "Get support ticket details for current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/support/tickets/{id}/messages": {
+      "post": {
+        "operationId": "SupportTicketsController_addMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSupportTicketMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reply to a support ticket as current user",
+        "tags": [
+          "Support Tickets"
+        ],
+        "description": "Reply to a support ticket as current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/analytics/performance": {
+      "get": {
+        "operationId": "AnalyticsController_getPerformanceMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user performance metrics",
+        "tags": [
+          "User Analytics"
+        ],
+        "description": "Get user performance metrics. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/analytics/client-spending": {
+      "get": {
+        "operationId": "AnalyticsController_getClientSpending",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get client spending analytics",
+        "tags": [
+          "User Analytics"
+        ],
+        "description": "Get client spending analytics. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/analytics/mobile-dashboard": {
+      "get": {
+        "operationId": "AnalyticsController_getMobileDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileDashboardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get mobile dashboard summary for the current user",
+        "tags": [
+          "User Analytics"
+        ],
+        "description": "Get mobile dashboard summary for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/contracts": {
       "post": {
         "operationId": "ContractController_create",
@@ -6121,16 +6897,16 @@
         ]
       }
     },
-    "/api/support/tickets": {
+    "/api/waitlist/register": {
       "post": {
-        "operationId": "SupportTicketsController_createTicket",
+        "operationId": "WaitlistController_register",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateSupportTicketDto"
+                "$ref": "#/components/schemas/WaitlistRegisterDto"
               }
             }
           }
@@ -6141,285 +6917,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/WaitlistRegisterResponseDto"
                 }
               }
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Create a support ticket for payment, order, or service complaints",
+        "summary": "Register a user on the waitlist",
         "tags": [
-          "Support Tickets"
+          "Waitlist"
         ],
-        "description": "Create a support ticket for payment, order, or service complaints. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/support/tickets/me": {
-      "get": {
-        "operationId": "SupportTicketsController_listMyTickets",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": 20,
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "open",
-                "under_review",
-                "awaiting_user",
-                "resolved",
-                "closed"
-              ]
-            }
-          },
-          {
-            "name": "category",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "payment",
-                "order",
-                "service",
-                "other"
-              ]
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "example": "payment pending",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get current user support tickets",
-        "tags": [
-          "Support Tickets"
-        ],
-        "description": "Get current user support tickets. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/support/tickets/{id}": {
-      "get": {
-        "operationId": "SupportTicketsController_getMyTicket",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get support ticket details for current user",
-        "tags": [
-          "Support Tickets"
-        ],
-        "description": "Get support ticket details for current user. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/support/tickets/{id}/messages": {
-      "post": {
-        "operationId": "SupportTicketsController_addMessage",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddSupportTicketMessageDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Reply to a support ticket as current user",
-        "tags": [
-          "Support Tickets"
-        ],
-        "description": "Reply to a support ticket as current user. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/analytics/performance": {
-      "get": {
-        "operationId": "AnalyticsController_getPerformanceMetrics",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get user performance metrics",
-        "tags": [
-          "User Analytics"
-        ],
-        "description": "Get user performance metrics. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/analytics/client-spending": {
-      "get": {
-        "operationId": "AnalyticsController_getClientSpending",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get client spending analytics",
-        "tags": [
-          "User Analytics"
-        ],
-        "description": "Get client spending analytics. Audience: shared. Owner: shared.",
-        "x-owner": "shared",
-        "x-audience": [
-          "shared"
-        ]
-      }
-    },
-    "/api/analytics/mobile-dashboard": {
-      "get": {
-        "operationId": "AnalyticsController_getMobileDashboard",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Request completed successfully.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MobileDashboardResponseDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get mobile dashboard summary for the current user",
-        "tags": [
-          "User Analytics"
-        ],
-        "description": "Get mobile dashboard summary for the current user. Audience: shared. Owner: shared.",
+        "description": "Register a user on the waitlist. Audience: shared. Owner: shared.",
         "x-owner": "shared",
         "x-audience": [
           "shared"
@@ -6621,6 +7129,10 @@
       "description": "Transaction initialization, verification, and payment history endpoints."
     },
     {
+      "name": "Saved Payment Methods",
+      "description": "Reusable payment authorization management endpoints for saved Flutterwave cards."
+    },
+    {
       "name": "Push Notifications",
       "description": "Push registration and notification dispatch endpoints."
     },
@@ -6655,6 +7167,10 @@
     {
       "name": "Service Orders",
       "description": "Order-level workflow actions linked to booking fulfillment."
+    },
+    {
+      "name": "User Analytics",
+      "description": "Self-service analytics endpoints scoped to the authenticated user."
     },
     {
       "name": "Contracts",
@@ -6693,8 +7209,8 @@
       "description": "Public advertisement listing endpoints available without authentication."
     },
     {
-      "name": "User Analytics",
-      "description": "Self-service analytics endpoints scoped to the authenticated user."
+      "name": "Waitlist",
+      "description": "Public pre-launch waitlist signup and promotion endpoints."
     },
     {
       "name": "Storage",
@@ -7048,6 +7564,9 @@
             "type": "string"
           },
           "university": {
+            "type": "string"
+          },
+          "preferredSavedPaymentMethodId": {
             "type": "string"
           },
           "socialLinks": {
@@ -7922,6 +8441,14 @@
           "gatewayData": {
             "type": "object",
             "description": "Gateway-specific initialization payload"
+          },
+          "saveAuthorization": {
+            "type": "boolean",
+            "description": "Save the reusable authorization after a successful payment"
+          },
+          "savedPaymentMethodId": {
+            "type": "string",
+            "description": "Use a saved payment method for this payment"
           }
         },
         "required": [
@@ -8062,6 +8589,63 @@
           "currency",
           "status",
           "gateway",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SavedPaymentMethodResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "gateway": {
+            "type": "string",
+            "enum": [
+              "paystack",
+              "stripe",
+              "flutterwave"
+            ]
+          },
+          "cardBrand": {
+            "type": "string"
+          },
+          "last4": {
+            "type": "string"
+          },
+          "expiryMonth": {
+            "type": "string"
+          },
+          "expiryYear": {
+            "type": "string"
+          },
+          "isReusable": {
+            "type": "boolean"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "gateway",
+          "isReusable",
+          "isDefault",
           "createdAt",
           "updatedAt"
         ]
@@ -8240,6 +8824,15 @@
           "amount": {
             "type": "number"
           },
+          "grossAmount": {
+            "type": "number"
+          },
+          "penaltyAmount": {
+            "type": "number"
+          },
+          "penaltyReason": {
+            "type": "string"
+          },
           "currency": {
             "type": "string"
           },
@@ -8299,12 +8892,23 @@
             "type": "number",
             "minimum": 1
           },
+          "grossAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "penaltyAmount": {
+            "type": "number",
+            "minimum": 0
+          },
           "progressPercent": {
             "type": "number",
             "minimum": 0,
             "maximum": 100
           },
           "reason": {
+            "type": "string"
+          },
+          "penaltyReason": {
             "type": "string"
           }
         },
@@ -10004,6 +10608,911 @@
           "createdAt"
         ]
       },
+      "CreateBookingMilestoneDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 100
+          },
+          "sortOrder": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "percent"
+        ]
+      },
+      "ProposeBookingMilestonesDto": {
+        "type": "object",
+        "properties": {
+          "milestones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateBookingMilestoneDto"
+            }
+          }
+        },
+        "required": [
+          "milestones"
+        ]
+      },
+      "BookingMilestoneEvidenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bookingId": {
+            "type": "string"
+          },
+          "milestoneId": {
+            "type": "string"
+          },
+          "uploadedBy": {
+            "type": "string"
+          },
+          "storagePath": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string"
+          },
+          "externalUrl": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "milestoneId",
+          "uploadedBy",
+          "storagePath",
+          "url",
+          "originalName",
+          "mimeType",
+          "size",
+          "createdAt"
+        ]
+      },
+      "BookingMilestoneResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bookingId": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "percent": {
+            "type": "number"
+          },
+          "estimatedAmount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "confirmed",
+              "pending",
+              "in_progress",
+              "submitted",
+              "approved",
+              "rejected"
+            ]
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "submittedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "approvedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rejectedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "rejectionReason": {
+            "type": "string"
+          },
+          "evidenceCount": {
+            "type": "number"
+          },
+          "evidences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookingMilestoneEvidenceResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "bookingId",
+          "createdBy",
+          "title",
+          "description",
+          "percent",
+          "estimatedAmount",
+          "status",
+          "evidenceCount"
+        ]
+      },
+      "SystemStatsDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "object"
+          },
+          "services": {
+            "type": "object"
+          },
+          "revenue": {
+            "type": "object"
+          },
+          "activity": {
+            "type": "object"
+          },
+          "bookings": {
+            "type": "object"
+          },
+          "payments": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "users",
+          "services",
+          "revenue",
+          "activity",
+          "bookings",
+          "payments"
+        ]
+      },
+      "AdminBookingListDto": {
+        "type": "object",
+        "properties": {
+          "bookings": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "bookings",
+          "total"
+        ]
+      },
+      "AdminUpdateBookingStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "cancelled",
+              "disputed"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "example": "Fraud suspected"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AdminPaymentListDto": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "transactions",
+          "total"
+        ]
+      },
+      "AdminDisputeListDto": {
+        "type": "object",
+        "properties": {
+          "disputes": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "disputes",
+          "total"
+        ]
+      },
+      "ResolveDisputeAdminDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string",
+            "example": "Provider updated the deliverables and both parties agreed."
+          },
+          "adminNotes": {
+            "type": "string",
+            "example": "Refund approved by admin."
+          },
+          "refundAmount": {
+            "type": "number",
+            "example": 1000
+          }
+        },
+        "required": [
+          "resolution"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "example": "post"
+          },
+          "targetId": {
+            "type": "string",
+            "example": "uuid-of-target"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "hate_speech",
+              "harassment",
+              "inappropriate_content",
+              "fraud",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "example": "This post contains hate speech.",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "reason"
+        ]
+      },
+      "ReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reporterId": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "hate_speech",
+              "harassment",
+              "inappropriate_content",
+              "fraud",
+              "other"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "resolved",
+              "dismissed"
+            ]
+          },
+          "resolvedById": {
+            "type": "string"
+          },
+          "resolutionNotes": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reporterId",
+          "targetType",
+          "targetId",
+          "reason",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "resolved",
+              "dismissed"
+            ]
+          },
+          "resolutionNotes": {
+            "type": "string",
+            "example": "Target post has been removed.",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "OverviewTotalsDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "number"
+          },
+          "profiles": {
+            "type": "number"
+          },
+          "posts": {
+            "type": "number"
+          },
+          "comments": {
+            "type": "number"
+          },
+          "services": {
+            "type": "number"
+          },
+          "ads": {
+            "type": "number"
+          },
+          "bookings": {
+            "type": "number"
+          },
+          "activeSessions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "users",
+          "profiles",
+          "posts",
+          "comments",
+          "services",
+          "ads",
+          "bookings",
+          "activeSessions"
+        ]
+      },
+      "DailyCountPointDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "day",
+          "count"
+        ]
+      },
+      "DailySpendPointDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string"
+          },
+          "spend": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "day",
+          "spend"
+        ]
+      },
+      "TopUniversityPointDto": {
+        "type": "object",
+        "properties": {
+          "university": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "university",
+          "count"
+        ]
+      },
+      "AdminOverviewDto": {
+        "type": "object",
+        "properties": {
+          "totals": {
+            "$ref": "#/components/schemas/OverviewTotalsDto"
+          },
+          "postsByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyCountPointDto"
+            }
+          },
+          "commentsByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyCountPointDto"
+            }
+          },
+          "spendByDay": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailySpendPointDto"
+            }
+          },
+          "topUniversities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopUniversityPointDto"
+            }
+          }
+        },
+        "required": [
+          "totals",
+          "postsByDay",
+          "commentsByDay",
+          "spendByDay",
+          "topUniversities"
+        ]
+      },
+      "RecountPostCommentsDto": {
+        "type": "object",
+        "properties": {
+          "updatedPosts": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "updatedPosts"
+        ]
+      },
+      "SetRolePermissionDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "RolePermissionBulkItemDto": {
+        "type": "object",
+        "properties": {
+          "permissionKey": {
+            "type": "string",
+            "example": "marketplace.service.create.own"
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "permissionKey",
+          "enabled"
+        ]
+      },
+      "RolePermissionBulkUpdateDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RolePermissionBulkItemDto"
+            }
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "CreateSupportTicketDto": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "payment",
+              "order",
+              "service",
+              "other"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "example": "uuid-or-reference-of-target-resource"
+          },
+          "subject": {
+            "type": "string",
+            "example": "Payment was deducted but order is still pending",
+            "maxLength": 180
+          },
+          "description": {
+            "type": "string",
+            "example": "I completed checkout but transaction succeeded without updating my order."
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent"
+            ],
+            "default": "normal"
+          }
+        },
+        "required": [
+          "category",
+          "subject",
+          "description"
+        ]
+      },
+      "AddSupportTicketMessageDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Please share your transaction reference so we can verify your payment."
+          },
+          "attachments": {
+            "example": [
+              "https://example.com/evidence.png"
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "isInternalNote": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "UpdateSupportTicketStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "under_review",
+              "awaiting_user",
+              "resolved",
+              "closed"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AdminPenaltySettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerCorrectionEnabled": {
+            "type": "boolean"
+          },
+          "customerCorrectionFreeLimit": {
+            "type": "number"
+          },
+          "customerCorrectionFlatPenalty": {
+            "type": "number"
+          },
+          "customerCorrectionPercentPenalty": {
+            "type": "number"
+          },
+          "providerEvidenceEnabled": {
+            "type": "boolean"
+          },
+          "providerEvidenceFreeLimit": {
+            "type": "number"
+          },
+          "providerEvidenceFlatPenalty": {
+            "type": "number"
+          },
+          "providerEvidencePercentPenalty": {
+            "type": "number"
+          },
+          "providerRejectionEnabled": {
+            "type": "boolean"
+          },
+          "providerRejectionFlatPenalty": {
+            "type": "number"
+          },
+          "providerRejectionPercentPenalty": {
+            "type": "number"
+          },
+          "providerRejectionPenaltyMode": {
+            "type": "string",
+            "enum": [
+              "once_per_rejection",
+              "once_per_milestone"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "customerCorrectionEnabled",
+          "customerCorrectionFreeLimit",
+          "customerCorrectionFlatPenalty",
+          "customerCorrectionPercentPenalty",
+          "providerEvidenceEnabled",
+          "providerEvidenceFreeLimit",
+          "providerEvidenceFlatPenalty",
+          "providerEvidencePercentPenalty",
+          "providerRejectionEnabled",
+          "providerRejectionFlatPenalty",
+          "providerRejectionPercentPenalty",
+          "providerRejectionPenaltyMode",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateAdminPenaltySettingsDto": {
+        "type": "object",
+        "properties": {
+          "customerCorrectionEnabled": {
+            "type": "boolean"
+          },
+          "customerCorrectionFreeLimit": {
+            "type": "number",
+            "example": 3
+          },
+          "customerCorrectionFlatPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "customerCorrectionPercentPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerEvidenceEnabled": {
+            "type": "boolean"
+          },
+          "providerEvidenceFreeLimit": {
+            "type": "number",
+            "example": 3
+          },
+          "providerEvidenceFlatPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerEvidencePercentPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerRejectionEnabled": {
+            "type": "boolean"
+          },
+          "providerRejectionFlatPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerRejectionPercentPenalty": {
+            "type": "number",
+            "example": 0
+          },
+          "providerRejectionPenaltyMode": {
+            "type": "string",
+            "enum": [
+              "once_per_rejection",
+              "once_per_milestone"
+            ]
+          }
+        }
+      },
+      "MobileDashboardCardDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "currency",
+              "count"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "example": "NGN"
+          },
+          "formattedValue": {
+            "type": "string",
+            "example": "N42,000"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "kind"
+        ]
+      },
+      "MobileDashboardActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "timeLabel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title",
+          "subtitle",
+          "createdAt",
+          "timeLabel"
+        ]
+      },
+      "MobileDashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "provider",
+              "client"
+            ]
+          },
+          "cards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MobileDashboardCardDto"
+            }
+          },
+          "recentActivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MobileDashboardActivityDto"
+            }
+          }
+        },
+        "required": [
+          "role",
+          "cards",
+          "recentActivity"
+        ]
+      },
       "CreateContractDto": {
         "type": "object",
         "properties": {}
@@ -10735,614 +12244,143 @@
           }
         }
       },
-      "SystemStatsDto": {
+      "WaitlistRegisterDto": {
         "type": "object",
         "properties": {
-          "users": {
-            "type": "object"
-          },
-          "services": {
-            "type": "object"
-          },
-          "revenue": {
-            "type": "object"
-          },
-          "activity": {
-            "type": "object"
-          },
-          "bookings": {
-            "type": "object"
-          },
-          "payments": {
-            "type": "object"
-          }
-        },
-        "required": [
-          "users",
-          "services",
-          "revenue",
-          "activity",
-          "bookings",
-          "payments"
-        ]
-      },
-      "AdminBookingListDto": {
-        "type": "object",
-        "properties": {
-          "bookings": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "bookings",
-          "total"
-        ]
-      },
-      "AdminUpdateBookingStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
+          "email": {
             "type": "string",
-            "enum": [
-              "cancelled",
-              "disputed"
-            ]
+            "example": "user@example.com"
           },
-          "reason": {
-            "type": "string",
-            "example": "Fraud suspected"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "AdminPaymentListDto": {
-        "type": "object",
-        "properties": {
-          "transactions": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "transactions",
-          "total"
-        ]
-      },
-      "AdminDisputeListDto": {
-        "type": "object",
-        "properties": {
-          "disputes": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "disputes",
-          "total"
-        ]
-      },
-      "ResolveDisputeAdminDto": {
-        "type": "object",
-        "properties": {
-          "resolution": {
-            "type": "string",
-            "example": "Provider updated the deliverables and both parties agreed."
-          },
-          "adminNotes": {
-            "type": "string",
-            "example": "Refund approved by admin."
-          },
-          "refundAmount": {
-            "type": "number",
-            "example": 1000
-          }
-        },
-        "required": [
-          "resolution"
-        ]
-      },
-      "CreateReportDto": {
-        "type": "object",
-        "properties": {
-          "targetType": {
-            "type": "string",
-            "example": "post"
-          },
-          "targetId": {
-            "type": "string",
-            "example": "uuid-of-target"
-          },
-          "reason": {
-            "type": "string",
-            "enum": [
-              "spam",
-              "hate_speech",
-              "harassment",
-              "inappropriate_content",
-              "fraud",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "string",
-            "example": "This post contains hate speech.",
-            "maxLength": 500
-          }
-        },
-        "required": [
-          "targetType",
-          "targetId",
-          "reason"
-        ]
-      },
-      "ReportResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
+          "phoneNumber": {
             "type": "string"
           },
-          "reporterId": {
-            "type": "string"
-          },
-          "targetType": {
-            "type": "string"
-          },
-          "targetId": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string",
-            "enum": [
-              "spam",
-              "hate_speech",
-              "harassment",
-              "inappropriate_content",
-              "fraud",
-              "other"
-            ]
-          },
-          "description": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "resolved",
-              "dismissed"
-            ]
-          },
-          "resolvedById": {
-            "type": "string"
-          },
-          "resolutionNotes": {
-            "type": "string"
-          },
-          "resolvedAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "reporterId",
-          "targetType",
-          "targetId",
-          "reason",
-          "status",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ResolveReportDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "pending",
-              "resolved",
-              "dismissed"
-            ]
-          },
-          "resolutionNotes": {
-            "type": "string",
-            "example": "Target post has been removed.",
-            "maxLength": 1000
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "OverviewTotalsDto": {
-        "type": "object",
-        "properties": {
-          "users": {
-            "type": "number"
-          },
-          "profiles": {
-            "type": "number"
-          },
-          "posts": {
-            "type": "number"
-          },
-          "comments": {
-            "type": "number"
-          },
-          "services": {
-            "type": "number"
-          },
-          "ads": {
-            "type": "number"
-          },
-          "bookings": {
-            "type": "number"
-          },
-          "activeSessions": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "users",
-          "profiles",
-          "posts",
-          "comments",
-          "services",
-          "ads",
-          "bookings",
-          "activeSessions"
-        ]
-      },
-      "DailyCountPointDto": {
-        "type": "object",
-        "properties": {
-          "day": {
-            "type": "string"
-          },
-          "count": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "day",
-          "count"
-        ]
-      },
-      "DailySpendPointDto": {
-        "type": "object",
-        "properties": {
-          "day": {
-            "type": "string"
-          },
-          "spend": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "day",
-          "spend"
-        ]
-      },
-      "TopUniversityPointDto": {
-        "type": "object",
-        "properties": {
-          "university": {
-            "type": "string"
-          },
-          "count": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "university",
-          "count"
-        ]
-      },
-      "AdminOverviewDto": {
-        "type": "object",
-        "properties": {
-          "totals": {
-            "$ref": "#/components/schemas/OverviewTotalsDto"
-          },
-          "postsByDay": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DailyCountPointDto"
-            }
-          },
-          "commentsByDay": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DailyCountPointDto"
-            }
-          },
-          "spendByDay": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DailySpendPointDto"
-            }
-          },
-          "topUniversities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TopUniversityPointDto"
-            }
-          }
-        },
-        "required": [
-          "totals",
-          "postsByDay",
-          "commentsByDay",
-          "spendByDay",
-          "topUniversities"
-        ]
-      },
-      "RecountPostCommentsDto": {
-        "type": "object",
-        "properties": {
-          "updatedPosts": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "updatedPosts"
-        ]
-      },
-      "SetRolePermissionDto": {
-        "type": "object",
-        "properties": {
-          "enabled": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "enabled"
-        ]
-      },
-      "RolePermissionBulkItemDto": {
-        "type": "object",
-        "properties": {
-          "permissionKey": {
-            "type": "string",
-            "example": "marketplace.service.create.own"
-          },
-          "enabled": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "permissionKey",
-          "enabled"
-        ]
-      },
-      "RolePermissionBulkUpdateDto": {
-        "type": "object",
-        "properties": {
-          "permissions": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RolePermissionBulkItemDto"
-            }
-          }
-        },
-        "required": [
-          "permissions"
-        ]
-      },
-      "CreateSupportTicketDto": {
-        "type": "object",
-        "properties": {
-          "category": {
-            "type": "string",
-            "enum": [
-              "payment",
-              "order",
-              "service",
-              "other"
-            ]
-          },
-          "targetId": {
-            "type": "string",
-            "example": "uuid-or-reference-of-target-resource"
-          },
-          "subject": {
-            "type": "string",
-            "example": "Payment was deducted but order is still pending",
-            "maxLength": 180
-          },
-          "description": {
-            "type": "string",
-            "example": "I completed checkout but transaction succeeded without updating my order."
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "low",
-              "normal",
-              "high",
-              "urgent"
-            ],
-            "default": "normal"
-          }
-        },
-        "required": [
-          "category",
-          "subject",
-          "description"
-        ]
-      },
-      "AddSupportTicketMessageDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "example": "Please share your transaction reference so we can verify your payment."
-          },
-          "attachments": {
-            "example": [
-              "https://example.com/evidence.png"
-            ],
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "isInternalNote": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "message"
-        ]
-      },
-      "UpdateSupportTicketStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "under_review",
-              "awaiting_user",
-              "resolved",
-              "closed"
-            ]
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "MobileDashboardCardDto": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "value": {
-            "type": "number"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "currency",
-              "count"
-            ]
-          },
-          "currency": {
-            "type": "string",
-            "example": "NGN"
-          },
-          "formattedValue": {
-            "type": "string",
-            "example": "N42,000"
-          }
-        },
-        "required": [
-          "key",
-          "label",
-          "value",
-          "kind"
-        ]
-      },
-      "MobileDashboardActivityDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "subtitle": {
-            "type": "string"
-          },
-          "amount": {
-            "type": "number"
-          },
-          "status": {
-            "type": "string"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "timeLabel": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "title",
-          "subtitle",
-          "createdAt",
-          "timeLabel"
-        ]
-      },
-      "MobileDashboardResponseDto": {
-        "type": "object",
-        "properties": {
           "role": {
             "type": "string",
             "enum": [
-              "provider",
-              "client"
+              "user",
+              "provider"
             ]
           },
-          "cards": {
+          "fullName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "coverImageUrl": {
+            "type": "string"
+          },
+          "birthdate": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "other",
+              "prefer_not_to_say"
+            ]
+          },
+          "location": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "university": {
+            "type": "string"
+          },
+          "socialLinks": {
+            "type": "object"
+          },
+          "businessName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "skills": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MobileDashboardCardDto"
+              "type": "string"
             }
           },
-          "recentActivity": {
+          "certifications": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MobileDashboardActivityDto"
+              "type": "object"
             }
+          },
+          "yearsOfExperience": {
+            "type": "number"
+          },
+          "portfolio": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "hourlyRate": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "responseTimeHours": {
+            "type": "number"
+          },
+          "availabilityHours": {
+            "type": "object"
           }
         },
         "required": [
+          "email",
+          "role"
+        ]
+      },
+      "WaitlistRegisterResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "provider"
+            ]
+          },
+          "isPromoted": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
           "role",
-          "cards",
-          "recentActivity"
+          "isPromoted",
+          "createdAt"
         ]
       }
     }
@@ -11361,6 +12399,7 @@
         "User Profiles",
         "User Preferences",
         "User Analytics",
+        "Waitlist",
         "Storage"
       ]
     },
@@ -11394,6 +12433,7 @@
       "name": "Finance",
       "tags": [
         "Payments & Transactions",
+        "Saved Payment Methods",
         "Subscription Plans",
         "Subscriptions"
       ]

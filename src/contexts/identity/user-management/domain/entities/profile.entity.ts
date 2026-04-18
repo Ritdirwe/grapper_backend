@@ -72,6 +72,9 @@ export class Profile extends BaseEntity {
   @Column({ name: 'verification_document_url', nullable: true })
   verificationDocumentUrl?: string;
 
+  @Column({ name: 'preferred_saved_payment_method_id', nullable: true })
+  preferredSavedPaymentMethodId?: string;
+
   @Column({ name: 'verified_at', nullable: true })
   verifiedAt?: Date;
 

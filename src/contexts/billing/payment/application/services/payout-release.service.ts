@@ -40,13 +40,17 @@ export class PayoutReleaseService {
     const alreadyReleased = await this.getAlreadyReleasedAmount(dto.sourceType, dto.sourceId);
     const remainingReleasable = sourceContext.maxReleasable - alreadyReleased;
 
-    if (dto.amount > remainingReleasable) {
+    const grossAmount = this.roundMoney(dto.grossAmount != null ? Number(dto.grossAmount) : Number(dto.amount));
+    const penaltyAmount = this.roundMoney(Math.max(Number(dto.penaltyAmount || 0), 0));
+    const netAmount = this.roundMoney(Math.max(grossAmount - penaltyAmount, 0));
+
+    if (grossAmount > remainingReleasable) {
       throw new BadRequestException(
         `Release amount exceeds remaining releasable amount (${remainingReleasable.toFixed(2)})`,
       );
     }
 
-    if (dto.amount <= 0) {
+    if (netAmount <= 0) {
       throw new BadRequestException('Release amount must be greater than zero');
     }
 
@@ -68,8 +72,14 @@ export class PayoutReleaseService {
         throw new BadRequestException('Only approved milestones can be released');
       }
 
-      if (Number(milestone.amount) !== Number(dto.amount)) {
-        throw new BadRequestException('Milestone release amount must exactly match milestone amount');
+      const expectedAmount = this.roundMoney(
+        milestone.percent != null
+          ? sourceContext.maxReleasable * (Number(milestone.percent) / 100)
+          : Number(milestone.amount || 0),
+      );
+
+      if (grossAmount !== expectedAmount) {
+        throw new BadRequestException('Milestone release amount must match milestone allocation');
       }
 
       const existingMilestoneRelease = await this.payoutReleaseRepository.findOne({
@@ -99,7 +109,10 @@ export class PayoutReleaseService {
       sourceId: dto.sourceId,
       releaseMode: dto.releaseMode,
       milestoneId: dto.milestoneId,
-      amount: dto.amount,
+      amount: netAmount,
+      grossAmount,
+      penaltyAmount,
+      penaltyReason: dto.penaltyReason,
       currency: sourceContext.currency,
       progressPercent: dto.progressPercent,
       reason: dto.reason,
@@ -219,7 +232,7 @@ export class PayoutReleaseService {
 
     if (sourceType === PayoutReleaseSourceType.BOOKING) {
       const rows = await this.dataSource.query(
-        `SELECT id, provider_id, currency, amount, platform_fee, status, payment_status
+        `SELECT id, provider_id, currency, amount, platform_fee, status, deposit_paid
          FROM bookings
          WHERE id = $1
          LIMIT 1`,
@@ -235,7 +248,7 @@ export class PayoutReleaseService {
         throw new BadRequestException('Booking is not eligible for payout release');
       }
 
-      if (String(booking.payment_status || '').toLowerCase() !== 'completed') {
+      if (!Boolean(booking.deposit_paid)) {
         throw new BadRequestException('Booking payment must be completed before release');
       }
 
@@ -243,12 +256,23 @@ export class PayoutReleaseService {
       const platformFee = Number(booking.platform_fee || 0);
       const maxReleasable = Math.max(grossAmount - platformFee, 0);
 
+      const milestones = await this.dataSource.query(
+        `SELECT id, percent, status
+         FROM booking_milestones
+         WHERE booking_id = $1`,
+        [sourceId],
+      );
+
       return {
         providerId: booking.provider_id as string,
         currency: (booking.currency as string) || 'NGN',
         maxReleasable,
         status: booking.status as string,
-        milestones: [],
+        milestones: milestones.map((m: any) => ({
+          id: m.id as string,
+          percent: m.percent != null ? Number(m.percent) : undefined,
+          status: String(m.status || '').toLowerCase(),
+        })),
       };
     }
 
@@ -264,11 +288,18 @@ export class PayoutReleaseService {
       releaseMode: release.releaseMode,
       milestoneId: release.milestoneId,
       amount: Number(release.amount),
+      grossAmount: release.grossAmount != null ? Number(release.grossAmount) : undefined,
+      penaltyAmount: release.penaltyAmount != null ? Number(release.penaltyAmount) : undefined,
+      penaltyReason: release.penaltyReason,
       currency: release.currency,
       progressPercent: release.progressPercent ? Number(release.progressPercent) : undefined,
       reason: release.reason,
       releasedBy: release.releasedBy,
       createdAt: release.createdAt,
     };
+  }
+
+  private roundMoney(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 }

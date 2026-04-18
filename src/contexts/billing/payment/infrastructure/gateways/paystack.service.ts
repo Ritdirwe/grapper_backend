@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentGatewayInterface } from '../../domain/interfaces/payment-gateway.interface';
 import axios from 'axios';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 @Injectable()
 export class PaystackService implements PaymentGatewayInterface {
@@ -21,6 +22,7 @@ export class PaystackService implements PaymentGatewayInterface {
     callbackUrl?: string;
     customer?: Record<string, any>;
     paymentMethod?: Record<string, any>;
+    saveAuthorization?: boolean;
   }): Promise<{
     authorizationUrl?: string;
     clientSecret?: string;
@@ -140,6 +142,27 @@ export class PaystackService implements PaymentGatewayInterface {
         );
       }
       throw error;
+    }
+  }
+
+  verifyWebhookSignature(rawBody: string | Buffer, signature?: string): void {
+    if (!signature) {
+      throw new BadRequestException('Missing Paystack signature');
+    }
+
+    if (!this.secretKey) {
+      throw new BadRequestException('Paystack secret key is not configured');
+    }
+
+    const computed = createHmac('sha512', this.secretKey)
+      .update(rawBody)
+      .digest('hex');
+
+    const expected = Buffer.from(computed, 'hex');
+    const provided = Buffer.from(signature, 'hex');
+
+    if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
+      throw new BadRequestException('Invalid Paystack webhook signature');
     }
   }
 

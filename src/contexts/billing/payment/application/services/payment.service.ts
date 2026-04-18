@@ -10,6 +10,7 @@ import { Transaction } from '../../domain/entities/transaction.entity';
 import { PaystackService } from '../../infrastructure/gateways/paystack.service';
 import { FlutterwaveService } from '../../infrastructure/gateways/flutterwave.service';
 import { StripeMobileGatewayService } from '../../infrastructure/gateways/stripe-mobile-gateway.service';
+import { SavedPaymentMethodService } from './saved-payment-method.service';
 import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
 import {
   TransactionType,
@@ -31,6 +32,7 @@ export class PaymentService {
     private paystackService: PaystackService,
     private flutterwaveService: FlutterwaveService,
     private stripeMobileGatewayService: StripeMobileGatewayService,
+    private savedPaymentMethodService: SavedPaymentMethodService,
     private configService: ConfigService,
     private dataSource: DataSource,
     private notificationOrchestratorService: NotificationOrchestratorService,
@@ -67,6 +69,25 @@ export class PaymentService {
       );
     }
 
+    if (dto.savedPaymentMethodId && activeGateway !== PaymentGateway.FLUTTERWAVE) {
+      throw new BadRequestException('Saved payment methods are only supported for Flutterwave');
+    }
+
+    const selectedSavedMethod =
+      activeGateway === PaymentGateway.FLUTTERWAVE
+        ? dto.savedPaymentMethodId
+          ? await this.savedPaymentMethodService.getById(userId, dto.savedPaymentMethodId)
+          : await this.savedPaymentMethodService.findPreferred(userId)
+        : null;
+
+    if (selectedSavedMethod && selectedSavedMethod.gateway !== PaymentGateway.FLUTTERWAVE) {
+      throw new BadRequestException('Saved payment method is not supported for the active gateway');
+    }
+
+    if (dto.savedPaymentMethodId && !selectedSavedMethod) {
+      throw new NotFoundException('Saved payment method not found');
+    }
+
     const reference = options?.reference || this.generateReference();
     let transaction = await this.transactionRepository.findOne({ where: { reference } });
     if (!transaction) {
@@ -82,6 +103,8 @@ export class PaymentService {
         description: dto.description,
         metadata: {
           email: dto.email,
+          saveAuthorization: dto.saveAuthorization || false,
+          savedPaymentMethodId: selectedSavedMethod?.id || dto.savedPaymentMethodId || null,
         },
       });
     } else {
@@ -96,6 +119,8 @@ export class PaymentService {
       transaction.metadata = {
         ...(transaction.metadata || {}),
         email: dto.email,
+        saveAuthorization: dto.saveAuthorization || false,
+        savedPaymentMethodId: selectedSavedMethod?.id || dto.savedPaymentMethodId || null,
       };
     }
 
@@ -114,10 +139,20 @@ export class PaymentService {
         orderId: dto.orderId,
         bookingId: dto.bookingId,
         type: dto.type,
+        saveAuthorization: dto.saveAuthorization || false,
+        savedPaymentMethodId: selectedSavedMethod?.id || dto.savedPaymentMethodId || null,
       },
       callbackUrl: options?.callbackUrl || this.configService.get('payment.callbackUrl'),
       customer: dto.gatewayData?.customer,
-      paymentMethod: dto.gatewayData?.paymentMethod,
+      saveAuthorization: dto.saveAuthorization || false,
+      paymentMethod:
+        selectedSavedMethod && transaction.gateway === PaymentGateway.FLUTTERWAVE
+          ? {
+              type: 'tokenized',
+              token: selectedSavedMethod.providerAuthorizationId,
+              authorizationCode: selectedSavedMethod.authorizationCode,
+            }
+          : dto.gatewayData?.paymentMethod,
     });
 
     if (initResult.gatewayReference) {
@@ -164,6 +199,8 @@ export class PaymentService {
       );
       await this.transactionRepository.save(transaction);
 
+      await this.persistSavedPaymentMethodIfRequested(transaction, verifyResult.gatewayResponse);
+
       if (transaction.orderId) {
         await this.markOrderAsPaid(transaction.orderId, dto.reference);
         await this.notifyOrderPaid(transaction.orderId, transaction.userId, dto.reference);
@@ -187,8 +224,11 @@ export class PaymentService {
     payload: any,
     gateway: PaymentGateway,
     signature?: string,
+    rawBody?: string | Buffer,
   ): Promise<void> {
     if (gateway === PaymentGateway.PAYSTACK) {
+      this.paystackService.verifyWebhookSignature(rawBody || JSON.stringify(payload || {}), signature);
+
       if (!payload || typeof payload !== 'object') {
         return;
       }
@@ -227,7 +267,7 @@ export class PaymentService {
     }
 
     if (gateway === PaymentGateway.FLUTTERWAVE) {
-      this.flutterwaveService.verifyWebhookSignature(payload, signature);
+      this.flutterwaveService.verifyWebhookSignature(rawBody || JSON.stringify(payload || {}), signature);
 
       if (!payload || typeof payload !== 'object') {
         return;
@@ -265,6 +305,8 @@ export class PaymentService {
             verifyResult.gatewayResponse,
           );
           await this.transactionRepository.save(transaction);
+
+          await this.persistSavedPaymentMethodIfRequested(transaction, verifyResult.gatewayResponse);
 
           if (transaction.orderId) {
             await this.markOrderAsPaid(transaction.orderId, txRef);
@@ -493,6 +535,80 @@ export class PaymentService {
       `${booking.serviceTitle || 'A booking'} has been paid and is ready for fulfillment.`,
       { bookingId: booking.id, reference },
     );
+  }
+
+  private async persistSavedPaymentMethodIfRequested(
+    transaction: Transaction,
+    gatewayResponse: Record<string, any>,
+  ): Promise<void> {
+    const shouldSave = Boolean(transaction.metadata?.saveAuthorization);
+
+    if (!shouldSave || transaction.gateway !== PaymentGateway.FLUTTERWAVE) {
+      return;
+    }
+
+    const savedMethod = this.extractFlutterwaveSavedPaymentMethod(gatewayResponse);
+    if (!savedMethod) {
+      return;
+    }
+
+    const saved = await this.savedPaymentMethodService.saveFromGateway(transaction.userId, {
+      gateway: PaymentGateway.FLUTTERWAVE,
+      providerAuthorizationId: savedMethod.providerAuthorizationId,
+      authorizationCode: savedMethod.authorizationCode,
+      cardBrand: savedMethod.cardBrand,
+      last4: savedMethod.last4,
+      expiryMonth: savedMethod.expiryMonth,
+      expiryYear: savedMethod.expiryYear,
+      metadata: {
+        ...savedMethod.metadata,
+        transactionReference: transaction.reference,
+        transactionId: transaction.id,
+      },
+      isDefault: !transaction.metadata?.savedPaymentMethodId,
+    });
+
+    transaction.metadata = {
+      ...(transaction.metadata || {}),
+      savedPaymentMethodId: saved.id,
+    };
+    await this.transactionRepository.save(transaction);
+  }
+
+  private extractFlutterwaveSavedPaymentMethod(gatewayResponse: Record<string, any>): {
+    providerAuthorizationId: string;
+    authorizationCode?: string;
+    cardBrand?: string;
+    last4?: string;
+    expiryMonth?: string;
+    expiryYear?: string;
+    metadata?: Record<string, any>;
+  } | null {
+    const response = gatewayResponse || {};
+    const card = response.card || response.payment_card || response.data?.card;
+    const authorization = response.authorization || response.data?.authorization;
+    const providerAuthorizationId = String(
+      card?.token || authorization?.token || authorization?.authorization_code || '',
+    ).trim();
+
+    if (!providerAuthorizationId) {
+      return null;
+    }
+
+    return {
+      providerAuthorizationId,
+      authorizationCode: authorization?.authorization_code || authorization?.token,
+      cardBrand: card?.type || card?.brand,
+      last4: card?.last_4 || card?.last4,
+      expiryMonth: card?.exp_month || card?.expiry_month,
+      expiryYear: card?.exp_year || card?.expiry_year,
+      metadata: {
+        gatewayReference: response.id || response.reference || response.tx_ref,
+        status: response.status,
+        chargedAmount: response.amount,
+        currency: response.currency,
+      },
+    };
   }
 
   private async getOrderContext(orderId: string): Promise<{ id: string; customerId: string; providerId: string; serviceTitle?: string } | null> {
