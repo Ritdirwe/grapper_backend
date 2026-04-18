@@ -66,6 +66,6 @@ if [[ "$exists" == "1" ]]; then
 	exit 0
 fi
 
-psql -h "${WAITLIST_DATABASE_HOST}" -p "${WAITLIST_DATABASE_PORT}" -U "${WAITLIST_DATABASE_USER}" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"${WAITLIST_DATABASE_NAME}\";"
+sudo -u postgres createdb -O "${WAITLIST_DATABASE_USER}" "${WAITLIST_DATABASE_NAME}"
 
 printf '%s\n' "Waitlist database created successfully"
