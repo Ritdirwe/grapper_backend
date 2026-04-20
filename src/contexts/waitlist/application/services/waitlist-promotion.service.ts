@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WaitlistEntry } from '../../domain/entities/waitlist-entry.entity';
@@ -9,14 +9,14 @@ import { UserRole, UserStatus } from '@contexts/identity/domain/value-objects/us
 import { VerificationStatus } from '@contexts/identity/user-management/domain/value-objects/user-enums.vo';
 import { AuthService } from '@contexts/identity/application/services/auth.service';
 import { WaitlistRole } from '../dto/waitlist.dto';
+import { WaitlistDatabaseService } from '../../infrastructure/waitlist-database.service';
 
 @Injectable()
 export class WaitlistPromotionService {
   private readonly logger = new Logger(WaitlistPromotionService.name);
 
   constructor(
-    @InjectRepository(WaitlistEntry, 'waitlist')
-    private readonly waitlistRepository: Repository<WaitlistEntry>,
+    private readonly waitlistDatabaseService: WaitlistDatabaseService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Profile)
@@ -27,7 +27,8 @@ export class WaitlistPromotionService {
   ) {}
 
   async promoteAll(limit = 100): Promise<{ promoted: number; skipped: number; failed: number }> {
-    const entries = await this.waitlistRepository.find({
+    const waitlistRepository = await this.getWaitlistRepository();
+    const entries = await waitlistRepository.find({
       where: { isPromoted: false },
       order: { createdAt: 'ASC' },
       take: limit,
@@ -55,7 +56,8 @@ export class WaitlistPromotionService {
   }
 
   async promoteOne(entryId: string): Promise<'promoted' | 'skipped'> {
-    const entry = await this.waitlistRepository.findOne({ where: { id: entryId } });
+    const waitlistRepository = await this.getWaitlistRepository();
+    const entry = await waitlistRepository.findOne({ where: { id: entryId } });
     if (!entry || entry.isPromoted) {
       return 'skipped';
     }
@@ -119,10 +121,19 @@ export class WaitlistPromotionService {
     entry.isPromoted = true;
     entry.promotedUserId = savedUser.id;
     entry.promotedAt = new Date();
-    await this.waitlistRepository.save(entry);
+    await waitlistRepository.save(entry);
 
     await this.authService.requestPasswordReset({ email: savedUser.email });
 
     return 'promoted';
+  }
+
+  private async getWaitlistRepository(): Promise<Repository<WaitlistEntry>> {
+    try {
+      return await this.waitlistDatabaseService.getRepository();
+    } catch (error) {
+      this.logger.warn('Waitlist database is unavailable');
+      throw new ServiceUnavailableException('Waitlist database is unavailable');
+    }
   }
 }

@@ -1,23 +1,25 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ConflictException, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import * as argon2 from 'argon2';
 import { WaitlistEntry } from '../../domain/entities/waitlist-entry.entity';
 import { User } from '@contexts/identity/domain/entities/user.entity';
 import { WaitlistRegisterDto, WaitlistRegisterResponseDto } from '../dto/waitlist.dto';
 import { WaitlistRole } from '../dto/waitlist.dto';
+import { WaitlistDatabaseService } from '../../infrastructure/waitlist-database.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class WaitlistService {
   constructor(
-    @InjectRepository(WaitlistEntry, 'waitlist')
-    private readonly waitlistRepository: Repository<WaitlistEntry>,
+    private readonly waitlistDatabaseService: WaitlistDatabaseService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
 
   async register(dto: WaitlistRegisterDto): Promise<WaitlistRegisterResponseDto> {
+    const waitlistRepository = await this.getWaitlistRepository();
+
     const existingLiveUser = await this.userRepository.findOne({ where: { email: dto.email } });
     if (existingLiveUser) {
       throw new ConflictException('User with this email already exists');
@@ -30,13 +32,13 @@ export class WaitlistService {
       }
     }
 
-    const existingWaitlistEntry = await this.waitlistRepository.findOne({ where: { email: dto.email } });
+    const existingWaitlistEntry = await waitlistRepository.findOne({ where: { email: dto.email } });
     if (existingWaitlistEntry) {
       throw new ConflictException('User is already on the waitlist');
     }
 
     if (dto.phoneNumber) {
-      const waitlistPhone = await this.waitlistRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
+      const waitlistPhone = await waitlistRepository.findOne({ where: { phoneNumber: dto.phoneNumber } });
       if (waitlistPhone) {
         throw new ConflictException('User with this phone number already exists on the waitlist');
       }
@@ -45,7 +47,7 @@ export class WaitlistService {
     const tempPassword = randomBytes(24).toString('hex');
     const passwordHash = await argon2.hash(tempPassword);
 
-    const entry = this.waitlistRepository.create({
+    const entry = waitlistRepository.create({
       email: dto.email,
       phoneNumber: dto.phoneNumber,
       role: dto.role,
@@ -75,7 +77,7 @@ export class WaitlistService {
       availabilityHours: dto.availabilityHours,
     });
 
-    const saved = await this.waitlistRepository.save(entry);
+    const saved = await waitlistRepository.save(entry);
 
     return {
       id: saved.id,
@@ -84,5 +86,13 @@ export class WaitlistService {
       isPromoted: saved.isPromoted,
       createdAt: saved.createdAt,
     };
+  }
+
+  private async getWaitlistRepository(): Promise<Repository<WaitlistEntry>> {
+    try {
+      return await this.waitlistDatabaseService.getRepository();
+    } catch {
+      throw new ServiceUnavailableException('Waitlist service is temporarily unavailable');
+    }
   }
 }

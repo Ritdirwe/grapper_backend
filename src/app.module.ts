@@ -83,23 +83,6 @@ function validateEnvironment(config: Record<string, any>) {
       inject: [ConfigService],
     }),
 
-    TypeOrmModule.forRootAsync({
-      name: 'waitlist',
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('waitlistDatabase.host'),
-        port: configService.get('waitlistDatabase.port'),
-        username: configService.get('waitlistDatabase.username'),
-        password: configService.get('waitlistDatabase.password'),
-        database: configService.get('waitlistDatabase.database'),
-        autoLoadEntities: true,
-        synchronize: configService.get('waitlistDatabase.synchronize'),
-        logging: configService.get('app.env') === 'development',
-      }),
-      inject: [ConfigService],
-    }),
-
     // Infrastructure
     AuthorizationModule,
     EmailModule,
