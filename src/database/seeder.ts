@@ -23,7 +23,9 @@ import { Booking } from '../modules/booking/domain/entities/booking.entity';
 import { BookingCorrection } from '../contexts/marketplace/booking/domain/entities/booking-correction.entity';
 import { BookingFile } from '../contexts/marketplace/booking/domain/entities/booking-file.entity';
 import { BookingMessage } from '../contexts/marketplace/booking/domain/entities/booking-message.entity';
-import { Milestone } from '../modules/booking/domain/entities/milestone.entity';
+import { Milestone } from '../contexts/marketplace/booking/domain/entities/milestone.entity';
+import { BookingMilestone } from '../contexts/marketplace/booking/domain/entities/booking-milestone.entity';
+import { BookingMilestoneEvidence } from '../contexts/marketplace/booking/domain/entities/booking-milestone-evidence.entity';
 import { Dispute } from '../modules/booking/domain/entities/dispute.entity';
 import { Transaction } from '../modules/payment/domain/entities/transaction.entity';
 import { VerificationRequest } from '../contexts/identity/user-management/domain/entities/verification-request.entity';
@@ -62,8 +64,10 @@ export class DatabaseSeeder {
         BookingCorrection,
         BookingFile,
         BookingMessage,
-        Order,
         Milestone,
+        Order,
+        BookingMilestone,
+        BookingMilestoneEvidence,
         Dispute,
         Transaction,
         VerificationRequest,
