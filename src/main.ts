@@ -88,6 +88,7 @@ async function bootstrap() {
 
   // Register Fastify Multipart plugin for file uploads
   await app.register(multipart, {
+    attachFieldsToBody: 'keyValues',
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB limit
     },

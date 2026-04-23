@@ -12,6 +12,7 @@ import {
   HttpStatus,
   Req,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PostService } from '../application/services/post.service';
 import { CommentService } from '../application/services/comment.service';
@@ -134,22 +135,29 @@ export class PostController {
     }
 
     // Handle multipart form data
-    const parts = req.parts ? await req.parts() : [];
-    let content = '';
-    let visibility = 'public';
-    const mediaUrls: string[] = [];
+    const body = req.body ?? {};
+    let content = String(body.content ?? '').trim();
+    let visibility = String(body.visibility ?? 'public').trim() || 'public';
+    const mediaUrls: string[] = Array.isArray(body.mediaUrls) ? body.mediaUrls : [];
 
-    for await (const part of parts) {
-      if (part.type === 'file') {
-        const buffer = await part.toBuffer();
-        const path = `posts/${Date.now()}-${part.filename}`;
-        const url = await this.storageService.uploadFile(buffer, path, part.mimetype);
-        mediaUrls.push(url);
-      } else {
-        const value = await part.value;
-        if (part.fieldname === 'content') content = value;
-        if (part.fieldname === 'visibility') visibility = value;
+    if (req.parts) {
+      for await (const part of req.parts()) {
+        if (part.type === 'file') {
+          const buffer = await part.toBuffer();
+          const path = `posts/${Date.now()}-${part.filename}`;
+          const url = await this.storageService.uploadFile(buffer, path, part.mimetype);
+          mediaUrls.push(url);
+          continue;
+        }
+
+        const value = String(part.value ?? '').trim();
+        if (part.fieldname === 'content' && value) content = value;
+        if (part.fieldname === 'visibility' && value) visibility = value;
       }
+    }
+
+    if (!content) {
+      throw new BadRequestException('Post content is required');
     }
 
     return this.postService.create(user.id, { 
