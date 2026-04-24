@@ -37,15 +37,54 @@ export class StorageController {
     },
   })
   async uploadFile(@Req() req: any) {
-    const data = await req.file();
-    if (!data) {
+    let buffer: Buffer | null = null;
+    let filename = `upload-${Date.now()}.bin`;
+    let mimetype = 'application/octet-stream';
+
+    // 1. Try to extract from attached body fields (fastify multipart option: attachFieldsToBody)
+    if (req.body) {
+      const bodyFile = Array.isArray(req.body.file) ? req.body.file[0] : req.body.file;
+      if (bodyFile?.toBuffer) {
+        buffer = await bodyFile.toBuffer();
+        filename = bodyFile.filename || filename;
+        mimetype = bodyFile.mimetype || mimetype;
+      } else if (Buffer.isBuffer(bodyFile)) {
+        buffer = bodyFile;
+      }
+    }
+
+    try {
+      // 2. Try to extract from req.file()
+      if (!buffer && typeof req.file === 'function') {
+        const data = await req.file();
+        if (data) {
+          buffer = await data.toBuffer();
+          filename = data.filename || filename;
+          mimetype = data.mimetype || mimetype;
+        }
+      }
+
+      // 3. Try to extract from req.parts()
+      if (!buffer && typeof req.parts === 'function') {
+        const parts = req.parts();
+        for await (const part of parts) {
+          if (part.type === 'file' && !buffer) {
+            buffer = await part.toBuffer();
+            filename = part.filename || filename;
+            mimetype = part.mimetype || mimetype;
+          }
+        }
+      }
+    } catch (err) {
+      // Ignore errors if the stream was already consumed
+    }
+
+    if (!buffer) {
       throw new BadRequestException('No file uploaded');
     }
 
-    const buffer = await data.toBuffer();
-    const path = `uploads/${Date.now()}-${data.filename}`;
-    const url = await this.storageService.uploadFile(buffer, path, data.mimetype);
-
+    const path = `uploads/${Date.now()}-${filename}`;
+    const url = await this.storageService.uploadFile(buffer, path, mimetype);
     return { url, path };
   }
 
@@ -69,28 +108,47 @@ export class StorageController {
     },
   })
   async updateFile(@Req() req: any) {
-    const parts = req.parts ? await req.parts() : [];
-    let updatePath = '';
-    let filePart: any = null;
+    let updatePath = req.body?.path;
+    let buffer: Buffer | null = null;
+    let mimetype = 'application/octet-stream';
 
-    for await (const part of parts) {
-      if (part.type === 'file') {
-        filePart = part;
-      } else if (part.fieldname === 'path') {
-        updatePath = String(await part.value);
+    // 1. Try body fields (fastify attachFieldsToBody)
+    if (req.body) {
+      const bodyFile = Array.isArray(req.body.file) ? req.body.file[0] : req.body.file;
+      if (bodyFile?.toBuffer) {
+        buffer = await bodyFile.toBuffer();
+        mimetype = bodyFile.mimetype || mimetype;
+      } else if (Buffer.isBuffer(bodyFile)) {
+        buffer = bodyFile;
       }
+    }
+
+    // 2. Try falling back to parts (handles standard multipart streams without global attachFieldsToBody)
+    try {
+      if ((!buffer || !updatePath) && typeof req.parts === 'function') {
+        const parts = req.parts();
+        for await (const part of parts) {
+          if (part.type === 'file' && part.fieldname === 'file') {
+            buffer = await part.toBuffer();
+            mimetype = part.mimetype || mimetype;
+          } else if (part.type === 'field' && part.fieldname === 'path') {
+            updatePath = String(part.value);
+          }
+        }
+      }
+    } catch (err) {
+      // Ignore if stream consumed
     }
 
     if (!updatePath) {
       throw new BadRequestException('Path is required');
     }
 
-    if (!filePart) {
+    if (!buffer) {
       throw new BadRequestException('No file uploaded');
     }
 
-    const buffer = await filePart.toBuffer();
-    const url = await this.storageService.updateFile(buffer, updatePath, filePart.mimetype);
+    const url = await this.storageService.updateFile(buffer, updatePath, mimetype);
 
     return { url, path: updatePath };
   }
