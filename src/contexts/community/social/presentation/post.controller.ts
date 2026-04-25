@@ -139,14 +139,37 @@ export class PostController {
     let content = String(body.content ?? '').trim();
     let visibility = String(body.visibility ?? 'public').trim() || 'public';
     const mediaUrls: string[] = Array.isArray(body.mediaUrls) ? body.mediaUrls : [];
+    const bodyImages = body.images;
 
-    if (req.parts) {
+    const uploadPart = async (filePart: any) => {
+      if (!filePart) {
+        return;
+      }
+
+      const buffer = filePart.toBuffer ? await filePart.toBuffer() : Buffer.isBuffer(filePart) ? filePart : null;
+      if (!buffer) {
+        return;
+      }
+
+      const filename = filePart.filename || `upload-${Date.now()}.bin`;
+      const mimetype = filePart.mimetype || 'application/octet-stream';
+      const path = `posts/${Date.now()}-${filename}`;
+      const url = await this.storageService.uploadFile(buffer, path, mimetype);
+      mediaUrls.push(url);
+    };
+
+    if (Array.isArray(bodyImages)) {
+      for (const image of bodyImages) {
+        await uploadPart(image);
+      }
+    } else if (bodyImages) {
+      await uploadPart(bodyImages);
+    }
+
+    if (!bodyImages && req.parts) {
       for await (const part of req.parts()) {
         if (part.type === 'file') {
-          const buffer = await part.toBuffer();
-          const path = `posts/${Date.now()}-${part.filename}`;
-          const url = await this.storageService.uploadFile(buffer, path, part.mimetype);
-          mediaUrls.push(url);
+          await uploadPart(part);
           continue;
         }
 
