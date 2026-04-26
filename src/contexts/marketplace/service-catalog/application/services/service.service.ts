@@ -51,6 +51,7 @@ export class ServiceService {
 
     const service = this.serviceRepository.create({
       ...dto,
+      coverImageUrl: dto.coverImageUrl?.trim() || undefined,
       providerId,
       slug,
       status: ServiceStatus.DRAFT,
@@ -90,7 +91,10 @@ export class ServiceService {
       dto['slug'] = this.generateSlug(dto.title);
     }
 
-    Object.assign(service, dto);
+    Object.assign(service, {
+      ...dto,
+      ...(dto.coverImageUrl !== undefined ? { coverImageUrl: dto.coverImageUrl.trim() || undefined } : {}),
+    });
     await this.serviceRepository.save(service);
 
     return this.mapToResponseDto(service);

@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserPreferences } from '@contexts/identity/user-management/domain/entities/user-preferences.entity';
 import { NotificationCategory, NotificationEventDto } from '../dto/notification-event.dto';
-import { PushService } from './push.service';
+import { NotificationService } from './notification.service';
 
 @Injectable()
 export class NotificationOrchestratorService {
   constructor(
-    private readonly pushService: PushService,
+    private readonly notificationService: NotificationService,
     @InjectRepository(UserPreferences)
     private readonly preferencesRepository: Repository<UserPreferences>,
   ) {}
@@ -18,19 +18,16 @@ export class NotificationOrchestratorService {
       return;
     }
 
-    await this.pushService.sendToUser(userId, event.title, event.body, {
-      ...(event.data || {}),
-      category: event.category,
-      deepLink: event.deepLink,
+    await this.notificationService.createAndDispatch(userId, event.type || event.category, event.title, event.body, {
+      entityType: event.data?.entityType,
+      entityId: event.data?.entityId,
+      actionUrl: event.deepLink || event.data?.actionUrl,
+      actorId: event.data?.actorId,
     });
   }
 
   async notifyBookingConfirmed(userId: string, title: string, body: string, data?: Record<string, any>): Promise<void> {
     return this.notifyUser(userId, { category: NotificationCategory.BOOKING, title, body, data });
-  }
-
-  async notifyBookingUpdate(userId: string, title: string, body: string, data?: Record<string, any>): Promise<void> {
-    return this.notifyBookingConfirmed(userId, title, body, data);
   }
 
   async notifyPayment(userId: string, title: string, body: string, data?: Record<string, any>): Promise<void> {

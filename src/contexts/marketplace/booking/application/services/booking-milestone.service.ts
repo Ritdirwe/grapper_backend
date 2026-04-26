@@ -23,6 +23,8 @@ import {
   PayoutReleaseSourceType,
 } from '@contexts/billing/payment/domain/entities/payout-release.entity';
 import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
+import { NotificationCategory } from '@contexts/community/notification/application/dto/notification-event.dto';
+import { NotificationType } from '@contexts/community/notification/domain/value-objects/notification-type.vo';
 import { AdminPenaltySettingsService } from '@contexts/ops/admin/application/services/admin-penalty-settings.service';
 
 @Injectable()
@@ -103,6 +105,18 @@ export class BookingMilestoneService {
     );
 
     await this.milestoneRepository.save(milestones);
+
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_MILESTONE_CREATED,
+      title: 'Milestones ready for review',
+      body: `${booking.service?.title || 'Your booking'} milestone plan is ready to confirm.`,
+      data: {
+        bookingId: booking.id,
+        providerId: booking.providerId,
+      },
+    });
+
     return this.listMilestones(bookingId, userId);
   }
 
@@ -136,6 +150,17 @@ export class BookingMilestoneService {
     });
 
     await this.milestoneRepository.save(milestones);
+
+    await this.notificationOrchestratorService.notifyUser(booking.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_MILESTONE_CONFIRMED,
+      title: 'Milestones confirmed',
+      body: `${booking.service?.title || 'Your booking'} milestone plan was confirmed.`,
+      data: {
+        bookingId: booking.id,
+      },
+    });
+
     return this.listMilestones(bookingId, userId);
   }
 
@@ -166,6 +191,17 @@ export class BookingMilestoneService {
     });
 
     await this.milestoneRepository.save(milestones);
+
+    await this.notificationOrchestratorService.notifyUser(booking.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_MILESTONE_REJECTED,
+      title: 'Milestones rejected',
+      body: `${booking.service?.title || 'Your booking'} milestone plan was rejected.`,
+      data: {
+        bookingId: booking.id,
+      },
+    });
+
     return this.listMilestones(bookingId, userId);
   }
 
@@ -285,15 +321,16 @@ export class BookingMilestoneService {
       await this.bookingRepository.save(booking);
     }
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.customerId,
-      'Milestone evidence submitted',
-      `${booking.service?.title || 'Your booking'} received new evidence for review.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_MILESTONE_SUBMITTED,
+      title: 'Milestone evidence submitted',
+      body: `${booking.service?.title || 'Your booking'} received new evidence for review.`,
+      data: {
         bookingId: booking.id,
         milestoneId,
       },
-    );
+    });
 
     return this.mapEvidence(evidence);
   }
@@ -369,15 +406,16 @@ export class BookingMilestoneService {
       await this.bookingRepository.save(booking);
     }
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.providerId,
-      'Milestone approved',
-      `${booking.service?.title || 'Your booking'} milestone was approved.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_MILESTONE_APPROVED,
+      title: 'Milestone approved',
+      body: `${booking.service?.title || 'Your booking'} milestone was approved.`,
+      data: {
         bookingId: booking.id,
         milestoneId,
       },
-    );
+    });
 
     return this.listMilestones(bookingId, userId);
   }
@@ -425,15 +463,16 @@ export class BookingMilestoneService {
     };
     await this.milestoneRepository.save(milestone);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.providerId,
-      'Milestone rejected',
-      `${booking.service?.title || 'Your booking'} milestone was rejected.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_MILESTONE_REJECTED,
+      title: 'Milestone rejected',
+      body: `${booking.service?.title || 'Your booking'} milestone was rejected.`,
+      data: {
         bookingId: booking.id,
         milestoneId,
       },
-    );
+    });
 
     return this.listMilestones(bookingId, userId);
   }

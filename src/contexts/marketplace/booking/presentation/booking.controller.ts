@@ -63,7 +63,10 @@ export class BookingController {
 
   @Post()
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_CREATE)
-  @ApiOperation({ summary: 'Create a new booking and return payment metadata' })
+  @ApiOperation({
+    summary: 'Create a new booking and return payment metadata',
+    description: 'Creates the booking record first and returns payment metadata for checkout. Notification delivery failures do not block booking creation.',
+  })
   @ApiResponse({ status: 201, type: BookingCreateResponseDto })
   async createBooking(
     @CurrentUser() user: AuthUser,

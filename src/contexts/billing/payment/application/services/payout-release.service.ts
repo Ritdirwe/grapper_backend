@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
+import { NotificationCategory } from '@contexts/community/notification/application/dto/notification-event.dto';
+import { NotificationType } from '@contexts/community/notification/domain/value-objects/notification-type.vo';
 import {
   PayoutRelease,
   PayoutReleaseMode,
@@ -21,6 +24,7 @@ export class PayoutReleaseService {
     @InjectRepository(PayoutRelease)
     private readonly payoutReleaseRepository: Repository<PayoutRelease>,
     private readonly dataSource: DataSource,
+    private readonly notificationOrchestratorService: NotificationOrchestratorService,
   ) {}
 
   async createRelease(
@@ -123,6 +127,20 @@ export class PayoutReleaseService {
     });
 
     await this.payoutReleaseRepository.save(release);
+
+    await this.notificationOrchestratorService.notifyUser(dto.providerId, {
+      category: NotificationCategory.PAYMENT,
+      type: NotificationType.PAYOUT_RELEASE_CREATED,
+      title: 'Payout release created',
+      body: `A payout release of ${release.currency} ${Number(release.amount).toFixed(2)} has been created.`,
+      data: {
+        entityType: 'payout_release',
+        entityId: release.id,
+        actionUrl: `/payouts/releases/${release.id}`,
+      },
+      deepLink: `/payouts/releases/${release.id}`,
+    });
+
     return this.mapToResponse(release);
   }
 

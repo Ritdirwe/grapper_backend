@@ -33,6 +33,8 @@ import { TransactionType } from '@contexts/billing/payment/domain/value-objects/
 import { VerifyPaymentDto } from '@contexts/billing/payment/application/dto/payment.dto';
 import { EmailService } from '@infrastructure/email/email.service';
 import { NotificationOrchestratorService } from '@contexts/community/notification/application/services/notification-orchestrator.service';
+import { NotificationCategory } from '@contexts/community/notification/application/dto/notification-event.dto';
+import { NotificationType } from '@contexts/community/notification/domain/value-objects/notification-type.vo';
 import { AdminPenaltySettingsService } from '@contexts/ops/admin/application/services/admin-penalty-settings.service';
 
 const PLATFORM_FEE_RATIO = 0.15;
@@ -100,16 +102,17 @@ export class BookingService {
 
     await this.bookingRepository.save(booking);
 
-    await this.notificationOrchestratorService.notifyBookingConfirmed(
-      service.providerId,
-      'New booking request',
-      `${service.title} has a new booking request.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(service.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_CREATED,
+      title: 'New booking request',
+      body: `${service.title} has a new booking request.`,
+      data: {
         bookingId: booking.id,
         serviceId: service.id,
         customerId: userId,
       },
-    );
+    });
 
     const email = await this.getUserEmail(userId);
     const paymentMeta: BookingPaymentMetaDto = {
@@ -382,15 +385,16 @@ export class BookingService {
 
     await this.notifyCustomerToCheckout(booking.id);
 
-    await this.notificationOrchestratorService.notifyBookingConfirmed(
-      booking.customerId,
-      'Booking confirmed',
-      `Your booking${booking.referenceCode ? ` ${booking.referenceCode}` : ''} was confirmed by the provider.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_CONFIRMED,
+      title: 'Booking confirmed',
+      body: `Your booking${booking.referenceCode ? ` ${booking.referenceCode}` : ''} was confirmed by the provider.`,
+      data: {
         bookingId: booking.id,
         providerId: booking.providerId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -413,15 +417,16 @@ export class BookingService {
     booking.start();
     await this.bookingRepository.save(booking);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.customerId,
-      'Work started',
-      `${booking.service?.title || 'Your booking'} is now in progress.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_STARTED,
+      title: 'Work started',
+      body: `${booking.service?.title || 'Your booking'} is now in progress.`,
+      data: {
         bookingId: booking.id,
         providerId: booking.providerId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -457,15 +462,16 @@ export class BookingService {
     };
     await this.bookingRepository.save(booking);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.customerId,
-      'Work delivered',
-      `${booking.service?.title || 'Your booking'} has been delivered and is awaiting your review.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_DELIVERED,
+      title: 'Work delivered',
+      body: `${booking.service?.title || 'Your booking'} has been delivered and is awaiting your review.`,
+      data: {
         bookingId: booking.id,
         providerId: booking.providerId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -493,15 +499,16 @@ export class BookingService {
     booking.approveWork();
     await this.bookingRepository.save(booking);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.providerId,
-      'Delivery approved',
-      `The customer approved ${booking.referenceCode || 'the booking'}.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_DELIVERABLE_APPROVED,
+      title: 'Delivery approved',
+      body: `The customer approved ${booking.referenceCode || 'the booking'}.`,
+      data: {
         bookingId: booking.id,
         customerId: booking.customerId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -556,16 +563,17 @@ export class BookingService {
     await this.bookingRepository.save(booking);
     await this.bookingCorrectionRepository.save(correction);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.providerId,
-      'Correction requested',
-      `A correction was requested for ${booking.referenceCode || 'a booking'}.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.providerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_CORRECTION_REQUESTED,
+      title: 'Correction requested',
+      body: `A correction was requested for ${booking.referenceCode || 'a booking'}.`,
+      data: {
         bookingId: booking.id,
         correctionId: correction.id,
         customerId: booking.customerId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -593,15 +601,16 @@ export class BookingService {
     booking.complete();
     await this.bookingRepository.save(booking);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.customerId,
-      'Booking completed',
-      `${booking.service?.title || 'Your booking'} has been completed.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_COMPLETED,
+      title: 'Booking completed',
+      body: `${booking.service?.title || 'Your booking'} has been completed.`,
+      data: {
         bookingId: booking.id,
         providerId: booking.providerId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -627,15 +636,16 @@ export class BookingService {
     booking.cancel(dto.reason, userId);
     await this.bookingRepository.save(booking);
 
-    await this.notificationOrchestratorService.notifyBookingUpdate(
-      booking.customerId === userId ? booking.providerId : booking.customerId,
-      'Booking cancelled',
-      `${booking.service?.title || 'A booking'} was cancelled.`,
-      {
+    await this.notificationOrchestratorService.notifyUser(booking.customerId === userId ? booking.providerId : booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_CANCELLED,
+      title: 'Booking cancelled',
+      body: `${booking.service?.title || 'A booking'} was cancelled.`,
+      data: {
         bookingId: booking.id,
         cancelledBy: userId,
       },
-    );
+    });
 
     return this.mapToResponseDto(booking);
   }
@@ -703,6 +713,17 @@ export class BookingService {
 
     const frontendUrl = this.configService.get<string>('app.frontendUrl') || '';
     const bookingUrl = frontendUrl ? `${frontendUrl}/bookings/${booking.id}` : '';
+
+    await this.notificationOrchestratorService.notifyUser(booking.customerId, {
+      category: NotificationCategory.BOOKING,
+      type: NotificationType.BOOKING_CHECKOUT_REQUIRED,
+      title: 'Payment required',
+      body: 'Your booking is confirmed and ready for payment.',
+      data: {
+        bookingId: booking.id,
+        serviceId: booking.serviceId,
+      },
+    });
 
     await this.emailService.sendEmail({
       to: customerEmail,

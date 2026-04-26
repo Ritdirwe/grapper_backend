@@ -2444,6 +2444,124 @@
         ]
       }
     },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List notifications for the current user",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "List notifications for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/notifications/read-all": {
+      "patch": {
+        "operationId": "NotificationController_markAllAsRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark all notifications as read",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Mark all notifications as read. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationController_getUnreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get unread notification count for the current user",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Get unread notification count for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationController_markAsRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a notification as read",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Mark a notification as read. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/categories": {
       "get": {
         "operationId": "CategoryController_findAll",
@@ -5587,6 +5705,30 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "note": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "externalUrl": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Resource created successfully.",
@@ -8447,6 +8589,10 @@
     {
       "name": "Storage",
       "description": "File upload and storage integration endpoints."
+    },
+    {
+      "name": "Notifications",
+      "description": "Notifications endpoints."
     },
     {
       "name": "Support Tickets",
@@ -13659,6 +13805,7 @@
       "name": "Other",
       "tags": [
         "User Searches",
+        "Notifications",
         "Support Tickets"
       ]
     },

@@ -136,23 +136,38 @@ export class PostController {
 
     // Handle multipart form data
     const body = req.body ?? {};
-    let content = String(body.content ?? '').trim();
-    let visibility = String(body.visibility ?? 'public').trim() || 'public';
+    const unwrapField = (value: any) => {
+      let current = value;
+      while (current && typeof current === 'object' && 'value' in current) {
+        current = current.value;
+      }
+      return current;
+    };
+    let content = String(unwrapField(body.content) ?? '').trim();
+    let visibility = String(unwrapField(body.visibility) ?? 'public').trim() || 'public';
     const mediaUrls: string[] = Array.isArray(body.mediaUrls) ? body.mediaUrls : [];
-    const bodyImages = body.images;
+    const bodyImages = unwrapField(body.images);
+    const hasBodyImages = Array.isArray(bodyImages) ? bodyImages.length > 0 : Boolean(bodyImages);
+
+    const normalizeFilePart = (part: any) => part?.value ?? part;
 
     const uploadPart = async (filePart: any) => {
-      if (!filePart) {
+      const part = normalizeFilePart(filePart);
+      if (!part) {
         return;
       }
 
-      const buffer = filePart.toBuffer ? await filePart.toBuffer() : Buffer.isBuffer(filePart) ? filePart : null;
+      const filename = String(part.filename ?? '').trim();
+      if (!filename) {
+        throw new BadRequestException('Image filename is required');
+      }
+
+      const buffer = part.toBuffer ? await part.toBuffer() : Buffer.isBuffer(part) ? part : null;
       if (!buffer) {
         return;
       }
 
-      const filename = filePart.filename || `upload-${Date.now()}.bin`;
-      const mimetype = filePart.mimetype || 'application/octet-stream';
+      const mimetype = part.mimetype || 'application/octet-stream';
       const path = `posts/${Date.now()}-${filename}`;
       const url = await this.storageService.uploadFile(buffer, path, mimetype);
       mediaUrls.push(url);
@@ -166,7 +181,7 @@ export class PostController {
       await uploadPart(bodyImages);
     }
 
-    if (!bodyImages && req.parts) {
+    if (!hasBodyImages && req.parts) {
       for await (const part of req.parts()) {
         if (part.type === 'file') {
           await uploadPart(part);

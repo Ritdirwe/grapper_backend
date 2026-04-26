@@ -3734,6 +3734,124 @@
         ]
       }
     },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List notifications for the current user",
+        "tags": [
+          "Admin Notifications"
+        ],
+        "description": "List notifications for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/notifications/read-all": {
+      "patch": {
+        "operationId": "NotificationController_markAllAsRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark all notifications as read",
+        "tags": [
+          "Admin Notifications"
+        ],
+        "description": "Mark all notifications as read. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationController_getUnreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get unread notification count for the current user",
+        "tags": [
+          "Admin Notifications"
+        ],
+        "description": "Get unread notification count for the current user. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationController_markAsRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a notification as read",
+        "tags": [
+          "Admin Notifications"
+        ],
+        "description": "Mark a notification as read. Audience: shared. Owner: shared.",
+        "x-owner": "shared",
+        "x-audience": [
+          "shared"
+        ]
+      }
+    },
     "/api/categories": {
       "get": {
         "operationId": "CategoryController_findAll",
@@ -5940,6 +6058,7 @@
     },
     "/api/bookings": {
       "post": {
+        "description": "Creates the booking record first and returns payment metadata for checkout. Notification delivery failures do not block booking creation.",
         "operationId": "BookingController_createBooking",
         "parameters": [],
         "requestBody": {
@@ -5973,7 +6092,6 @@
         "tags": [
           "Admin Service Bookings"
         ],
-        "description": "Create a new booking and return payment metadata. Audience: client. Owner: client.",
         "x-owner": "client",
         "x-audience": [
           "client"
@@ -7387,6 +7505,30 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "note": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "externalUrl": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Resource created successfully.",
@@ -11861,6 +12003,10 @@
     {
       "name": "Admin Storage",
       "description": "File upload and storage integration endpoints."
+    },
+    {
+      "name": "Admin Notifications",
+      "description": "Admin Notifications endpoints."
     },
     {
       "name": "Admin Support Tickets",
@@ -17083,6 +17229,7 @@
       "name": "Other",
       "tags": [
         "Admin User Searches",
+        "Admin Notifications",
         "Admin Support Tickets"
       ]
     },

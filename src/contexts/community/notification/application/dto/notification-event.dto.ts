@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import { NotificationType } from '../../domain/value-objects/notification-type.vo';
 
 export enum NotificationCategory {
   BOOKING = 'booking',
@@ -10,6 +11,11 @@ export enum NotificationCategory {
 }
 
 export class NotificationEventDto {
+  @ApiProperty({ enum: NotificationType, required: false })
+  @IsEnum(NotificationType)
+  @IsOptional()
+  type?: NotificationType;
+
   @ApiProperty({ enum: NotificationCategory })
   @IsEnum(NotificationCategory)
   category: NotificationCategory;

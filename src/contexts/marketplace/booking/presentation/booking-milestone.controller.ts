@@ -11,7 +11,15 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -36,6 +44,7 @@ export class BookingMilestoneController {
   @Post('propose')
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_PROVIDER_DELIVER)
   @ApiOperation({ summary: 'Propose booking milestones' })
+  @ApiBody({ type: ProposeBookingMilestonesDto })
   @ApiResponse({ status: 201, type: [BookingMilestoneResponseDto] })
   async propose(
     @Param('id') bookingId: string,
@@ -72,6 +81,7 @@ export class BookingMilestoneController {
   @HttpCode(HttpStatus.OK)
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_APPROVE)
   @ApiOperation({ summary: 'Reject proposed milestones' })
+  @ApiQuery({ name: 'reason', required: true, type: String })
   @ApiResponse({ status: 200, type: [BookingMilestoneResponseDto] })
   async reject(
     @Param('id') bookingId: string,
@@ -89,6 +99,25 @@ export class BookingMilestoneController {
   @ApiConsumes('multipart/form-data')
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_PROVIDER_DELIVER)
   @ApiOperation({ summary: 'Submit milestone evidence' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+        note: {
+          type: 'string',
+          nullable: true,
+        },
+        externalUrl: {
+          type: 'string',
+          nullable: true,
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 201, type: BookingMilestoneEvidenceResponseDto })
   async submitEvidence(
     @Param('id') bookingId: string,
@@ -158,6 +187,7 @@ export class BookingMilestoneController {
   @HttpCode(HttpStatus.OK)
   @Permissions(PERMISSIONS.MARKETPLACE_BOOKING_CUSTOMER_APPROVE)
   @ApiOperation({ summary: 'Reject milestone evidence' })
+  @ApiQuery({ name: 'reason', required: true, type: String })
   @ApiResponse({ status: 200, type: [BookingMilestoneResponseDto] })
   async rejectMilestone(
     @Param('id') bookingId: string,
