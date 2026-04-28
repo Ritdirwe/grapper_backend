@@ -60,7 +60,7 @@ async function main() {
       });
 
       if (JSON.stringify(nextMediaUrls) !== JSON.stringify(mediaUrls)) {
-        await dataSource.query(`UPDATE posts SET media_urls = $1, updated_at = NOW() WHERE id = $2`, [nextMediaUrls, post.id]);
+        await dataSource.query(`UPDATE posts SET media_urls = $1::jsonb, updated_at = NOW() WHERE id = $2`, [JSON.stringify(nextMediaUrls), post.id]);
         updatedPosts++;
       }
     }
