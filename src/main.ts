@@ -9,6 +9,8 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rawBody from 'fastify-raw-body';
 import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import { join } from 'path';
 import {
   buildAudienceSwaggerDocument,
   enrichSwaggerDocument,
@@ -94,6 +96,13 @@ async function bootstrap() {
     },
   });
 
+  // Serve uploaded files publicly at /uploads/*
+  await app.register(fastifyStatic, {
+    root: join(process.cwd(), process.env.UPLOAD_DIR || 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
+  });
+
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
@@ -116,7 +125,6 @@ async function bootstrap() {
   // Swagger Configuration
   const { DocumentBuilder, SwaggerModule } = await import('@nestjs/swagger');
   const { writeFileSync } = await import('fs');
-  const { join } = await import('path');
   
   const config = new DocumentBuilder()
     .setTitle('Grapper API')
