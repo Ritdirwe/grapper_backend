@@ -25,19 +25,19 @@ export class DiscoveryController {
   @Get('recommendations')
   @ApiOperation({ summary: 'Get personalized service recommendations for the current user' })
   @Permissions(PERMISSIONS.MARKETPLACE_DISCOVERY_PERSONALIZED_READ)
-  async getRecommendations(@CurrentUser() user: AuthUser) {
+  async getRecommendations(@CurrentUser() user?: AuthUser) {
     // Basic implementation: return most ordered services for now
     return this.serviceService.search({
       limit: 10,
       sortBy: 'orders' as any,
       sortOrder: 'desc',
-    });
+    }, user?.id);
   }
 
   @Public()
   @Get('recommendations/providers')
   @ApiOperation({ summary: 'Get recommended providers based on rating and availability' })
-  async getProviderRecommendations() {
+  async getProviderRecommendations(@CurrentUser() user?: AuthUser) {
     const result = await this.providerProfileService.searchProvidersWithUser({
       isAvailable: true,
       page: 1,
@@ -70,13 +70,14 @@ export class DiscoveryController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('windowDays') windowDays?: number,
+    @CurrentUser() user?: AuthUser,
   ) {
     if (type === 'services') {
       return this.serviceService.search({
         limit: 10,
         sortBy: 'rating' as any,
         sortOrder: 'desc',
-      });
+      }, user?.id);
     }
 
     return this.postService.getTrendingPosts({
@@ -94,11 +95,12 @@ export class DiscoveryController {
   async search(
     @Query('q') q: string,
     @Query('type') type: string = 'all',
+    @CurrentUser() user?: AuthUser,
   ) {
     const results: any = {};
     
     if (type === 'services' || type === 'all') {
-      results.services = await this.serviceService.search({ search: q, limit: 10 });
+      results.services = await this.serviceService.search({ search: q, limit: 10 }, user?.id);
     }
     
     // Profiles search would be implemented in ProfileService

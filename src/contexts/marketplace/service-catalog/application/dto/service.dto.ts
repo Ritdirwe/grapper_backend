@@ -387,6 +387,9 @@ export class ServiceResponseDto {
   };
 
   @ApiProperty({ required: false })
+  canBook?: boolean;
+
+  @ApiProperty({ required: false })
   category?: {
     id: string;
     name: string;

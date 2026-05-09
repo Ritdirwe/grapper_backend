@@ -4,6 +4,7 @@ import { UserManagementModule } from '@contexts/identity/user-management.module'
 import { Category } from './domain/entities/category.entity';
 import { Service } from './domain/entities/service.entity';
 import { ServiceImage } from './domain/entities/service-image.entity';
+import { Booking } from '@contexts/marketplace/booking/domain/entities/booking.entity';
 import { CategoryService } from './application/services/category.service';
 import { ServiceService } from './application/services/service.service';
 import { CategoryController } from './presentation/category.controller';
@@ -13,7 +14,7 @@ import { SocialModule } from '@contexts/community/social/social.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Category, Service, ServiceImage]),
+    TypeOrmModule.forFeature([Category, Service, ServiceImage, Booking]),
     UserManagementModule,
     SocialModule,
   ],

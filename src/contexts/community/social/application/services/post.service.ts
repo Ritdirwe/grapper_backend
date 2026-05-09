@@ -121,24 +121,24 @@ export class PostService {
 
   async getFeed(userId: string, page = 1, limit = 20): Promise<{ data: PostResponseDto[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
     // Get user's following list
-    const following = await this.followRepository.find({
-      where: { followerId: userId },
-      select: ['followingId'],
-    });
+    // const following = await this.followRepository.find({
+    //   where: { followerId: userId },
+    //   select: ['followingId'],
+    // });
 
-    const followingIds = following.map(f => f.followingId);
-    followingIds.push(userId); // Include own posts
+    // const followingIds = following.map(f => f.followingId);
+    // followingIds.push(userId); // Include own posts
 
     const [posts, total] = await this.postRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
       .leftJoinAndSelect('user.profile', 'profile')
-      .where('post.user_id IN (:...userIds)', { userIds: followingIds })
-      .andWhere('(post.visibility = :public OR post.visibility = :followers OR post.user_id = :userId)', {
-        public: PostVisibility.PUBLIC,
-        followers: PostVisibility.FOLLOWERS,
-        userId,
-      })
+      // .where('post.user_id IN (:...userIds)', { userIds: followingIds })
+      // .andWhere('(post.visibility = :public OR post.visibility = :followers OR post.user_id = :userId)', {
+      //   public: PostVisibility.PUBLIC,
+      //   followers: PostVisibility.FOLLOWERS,
+      //   userId,
+      // })
       .orderBy('post.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)

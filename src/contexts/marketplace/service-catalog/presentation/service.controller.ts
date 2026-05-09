@@ -45,8 +45,8 @@ export class ServiceController {
   @Get('search')
   @ApiOperation({ summary: 'Search and filter services' })
   @ApiResponse({ status: 200, type: [ServiceResponseDto] })
-  async search(@Query() query: ServiceQueryDto) {
-    return this.serviceService.search(query);
+  async search(@Query() query: ServiceQueryDto, @CurrentUser() user?: AuthUser) {
+    return this.serviceService.search(query, user?.id);
   }
 
   @ApiBearerAuth()

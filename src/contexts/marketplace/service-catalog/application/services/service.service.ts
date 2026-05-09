@@ -11,6 +11,8 @@ import { Service } from '../../domain/entities/service.entity';
 import { ServiceImage } from '../../domain/entities/service-image.entity';
 import { Category } from '../../domain/entities/category.entity';
 import { ServiceStatus } from '../../domain/value-objects/service-enums.vo';
+import { Booking } from '@contexts/marketplace/booking/domain/entities/booking.entity';
+import { BookingStatus } from '@contexts/marketplace/booking/domain/value-objects/booking-enums.vo';
 import {
   CreateServiceDto,
   UpdateServiceDto,
@@ -36,6 +38,8 @@ export class ServiceService {
     private categoryService: CategoryService,
     @Inject(PROFILE_READ_CONTRACT)
     private profileReadService: ProfileReadContract,
+    @InjectRepository(Booking)
+    private bookingRepository: Repository<Booking>,
   ) {}
 
   async create(providerId: string, dto: CreateServiceDto): Promise<ServiceResponseDto> {
@@ -147,7 +151,10 @@ export class ServiceService {
     return this.mapToResponseDto(service, images, profile);
   }
 
-  async search(query: ServiceQueryDto): Promise<{ data: ServiceResponseDto[]; total: number }> {
+  async search(
+    query: ServiceQueryDto,
+    userId?: string,
+  ): Promise<{ data: ServiceResponseDto[]; total: number }> {
     const {
       search,
       categoryId,
@@ -228,9 +235,10 @@ export class ServiceService {
 
     const total = await qb.getCount();
     const services = await qb.skip(skip).take(limit).getMany();
+    const canBookMap = userId ? await this.getCanBookMap(userId, services) : new Map<string, boolean>();
 
     return {
-      data: services.map(s => this.mapToResponseDto(s)),
+      data: services.map(s => this.mapToResponseDto(s, undefined, undefined, canBookMap.get(s.id))),
       total,
     };
   }
@@ -383,6 +391,7 @@ export class ServiceService {
     service: Service,
     images?: ServiceImage[],
     profile?: ProfileSummary,
+    canBook?: boolean,
   ): ServiceResponseDto {
     return {
       id: service.id,
@@ -425,6 +434,7 @@ export class ServiceService {
             avatarUrl: profile.avatarUrl,
           }
         : undefined,
+      canBook,
       category: service.category
         ? {
             id: service.category.id,
@@ -435,5 +445,26 @@ export class ServiceService {
       createdAt: service.createdAt,
       updatedAt: service.updatedAt,
     };
+  }
+
+  private async getCanBookMap(userId: string, services: Service[]): Promise<Map<string, boolean>> {
+    if (!services.length) {
+      return new Map();
+    }
+
+    const serviceIds = services.map(service => service.id);
+    const providerIds = [...new Set(services.map(service => service.providerId))];
+
+    const bookings = await this.bookingRepository
+      .createQueryBuilder('booking')
+      .select('booking.serviceId', 'serviceId')
+      .where('booking.customerId = :userId', { userId })
+      .andWhere('booking.providerId IN (:...providerIds)', { providerIds })
+      .andWhere('booking.serviceId IN (:...serviceIds)', { serviceIds })
+      .andWhere('booking.status = :status', { status: BookingStatus.PENDING })
+      .getRawMany<{ serviceId: string }>();
+
+    const blocked = new Set(bookings.map(booking => booking.serviceId));
+    return new Map(serviceIds.map(serviceId => [serviceId, !blocked.has(serviceId)]));
   }
 }
