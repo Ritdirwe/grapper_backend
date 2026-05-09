@@ -19,6 +19,7 @@ import {
   ServiceResponseDto,
 } from '../application/dto/service.dto';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@common/guards/optional-jwt-auth.guard';
 import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { Public } from '@common/decorators/public.decorator';
@@ -43,6 +44,7 @@ export class ServiceController {
 
   @Public()
   @Get('search')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Search and filter services' })
   @ApiResponse({ status: 200, type: [ServiceResponseDto] })
   async search(@Query() query: ServiceQueryDto, @CurrentUser() user?: AuthUser) {

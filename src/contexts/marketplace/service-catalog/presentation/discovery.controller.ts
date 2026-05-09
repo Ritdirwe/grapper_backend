@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@common/guards/optional-jwt-auth.guard';
 import { PermissionsGuard } from '@common/guards/permissions.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { AuthUser } from '@shared/types/auth-user.type';
@@ -36,6 +37,7 @@ export class DiscoveryController {
 
   @Public()
   @Get('recommendations/providers')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get recommended providers based on rating and availability' })
   async getProviderRecommendations(@CurrentUser() user?: AuthUser) {
     const result = await this.providerProfileService.searchProvidersWithUser({
@@ -60,6 +62,7 @@ export class DiscoveryController {
 
   @Public()
   @Get('trending')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get trending services or posts' })
   @ApiQuery({ name: 'type', enum: ['services', 'posts'], default: 'services' })
   @ApiQuery({ name: 'page', required: false })
@@ -89,6 +92,7 @@ export class DiscoveryController {
 
   @Public()
   @Get('search')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Global search across services and profiles' })
   @ApiQuery({ name: 'q', required: true })
   @ApiQuery({ name: 'type', enum: ['services', 'profiles', 'all'], default: 'all' })

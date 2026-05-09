@@ -72,6 +72,19 @@ export class BookingService {
       throw new BadRequestException('Cannot book your own service');
     }
 
+    const existingPendingBooking = await this.bookingRepository.findOne({
+      where: {
+        customerId: userId,
+        providerId: service.providerId,
+        serviceId: service.id,
+        status: BookingStatus.PENDING,
+      },
+    });
+
+    if (existingPendingBooking) {
+      throw new BadRequestException('You already have a pending booking for this service');
+    }
+
     const price = Number(service.price);
     const platformFee = price * PLATFORM_FEE_RATIO;
     const referenceCode = this.generateReference();
