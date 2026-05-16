@@ -210,6 +210,36 @@ export class ResolveDisputeAdminDto {
   refundAmount?: number;
 }
 
+export class AdminReviewsQueryDto {
+  @ApiProperty({ required: false, example: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @ApiProperty({ required: false, example: 20 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty({ required: false, example: 'customer' })
+  @IsString()
+  @IsOptional()
+  reviewType?: string;
+}
+
+export class AdminReviewListDto {
+  @ApiProperty({ isArray: true })
+  reviews: Record<string, unknown>[];
+
+  @ApiProperty()
+  total: number;
+}
+
 export class OverviewTotalsDto {
   @ApiProperty()
   users: number;

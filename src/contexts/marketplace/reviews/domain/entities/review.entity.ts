@@ -5,9 +5,15 @@ import { User } from '@contexts/identity/domain/entities/user.entity';
 import { Service } from '@contexts/marketplace/service-catalog/domain/entities/service.entity';
 import { Booking } from '@contexts/marketplace/booking/domain/entities/booking.entity';
 
+export enum ReviewType {
+  CUSTOMER = 'customer',
+  PROVIDER = 'provider',
+}
+
 @Entity('reviews')
 @Index(['serviceId'])
 @Index(['userId'])
+@Index(['bookingId'])
 export class Review extends BaseEntity {
   @Column({ name: 'booking_id', nullable: true })
   bookingId?: string;
@@ -25,6 +31,9 @@ export class Review extends BaseEntity {
 
   @Column({ name: 'user_id' })
   userId: string;
+
+  @Column({ name: 'review_type', type: 'enum', enum: ReviewType, default: ReviewType.CUSTOMER })
+  reviewType: ReviewType;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })

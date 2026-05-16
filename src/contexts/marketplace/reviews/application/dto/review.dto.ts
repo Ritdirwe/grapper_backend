@@ -1,6 +1,7 @@
 
 import { IsString, IsNumber, Min, Max, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ReviewType } from '../../domain/entities/review.entity';
 
 export class CreateReviewDto {
   @ApiProperty()
@@ -16,6 +17,10 @@ export class CreateReviewDto {
   @ApiProperty()
   @IsString()
   comment: string;
+
+  @ApiProperty({ enum: ReviewType, required: false })
+  @IsOptional()
+  reviewType?: ReviewType;
 }
 
 export class UpdateReviewDto {

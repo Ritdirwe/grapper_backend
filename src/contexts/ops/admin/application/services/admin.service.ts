@@ -7,9 +7,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ModerationReport } from '../../domain/entities/moderation-report.entity';
+import { Review } from '@contexts/marketplace/reviews/domain/entities/review.entity';
 import {
   AdminBookingListDto,
   AdminBookingsQueryDto,
+  AdminReviewListDto,
+  AdminReviewsQueryDto,
   AdminDisputeListDto,
   AdminPaymentListDto,
   CreateReportDto,
@@ -37,6 +40,8 @@ export class AdminService {
   constructor(
     @InjectRepository(ModerationReport)
     private reportRepository: Repository<ModerationReport>,
+    @InjectRepository(Review)
+    private reviewRepository: Repository<Review>,
     private reportingService: ReportingService,
     @Inject(PLATFORM_READ_CONTRACT)
     private platformReadService: PlatformReadContract,
@@ -236,6 +241,20 @@ export class AdminService {
     return this.mapToReportDto(report);
   }
 
+  async getReviews(query: AdminReviewsQueryDto = {}): Promise<AdminReviewListDto> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const [reviews, total] = await this.reviewRepository.findAndCount({
+      where: query.reviewType ? { reviewType: query.reviewType as any } : {},
+      relations: ['user', 'service', 'booking'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return { reviews: reviews as unknown as Record<string, unknown>[], total };
+  }
+
   async deleteContent(actorId: string, targetType: string, targetId: string): Promise<void> {
     switch (targetType) {
       case 'post':
@@ -246,6 +265,9 @@ export class AdminService {
         break;
       case 'ad':
         await this.platformReadService.deleteContent('ad', targetId);
+        break;
+      case 'review':
+        await this.reviewRepository.delete(targetId);
         break;
       default:
         throw new BadRequestException('Invalid target type');

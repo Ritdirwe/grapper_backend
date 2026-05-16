@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ModerationReport } from './domain/entities/moderation-report.entity';
+import { Review } from '@contexts/marketplace/reviews/domain/entities/review.entity';
 import { SupportTicket } from './domain/entities/support-ticket.entity';
 import { SupportTicketMessage } from './domain/entities/support-ticket-message.entity';
 import { AdminPenaltySetting } from './domain/entities/admin-penalty-setting.entity';
@@ -17,7 +18,7 @@ import { AdminPenaltySettingsController } from './presentation/admin-penalty-set
 import { ReportingModule } from '../reporting/reporting.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ModerationReport, SupportTicket, SupportTicketMessage, AdminPenaltySetting]), ReportingModule],
+  imports: [TypeOrmModule.forFeature([ModerationReport, Review, SupportTicket, SupportTicketMessage, AdminPenaltySetting]), ReportingModule],
   controllers: [
     AdminController,
     ModerationController,
