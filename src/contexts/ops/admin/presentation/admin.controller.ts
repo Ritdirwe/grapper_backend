@@ -17,6 +17,7 @@ import { Permissions } from '@common/decorators/permissions.decorator';
 import {
   AdminBookingListDto,
   AdminBookingsQueryDto,
+  AdminReviewResponseDto,
   AdminReviewListDto,
   AdminReviewsQueryDto,
   AdminDisputeListDto,
@@ -189,5 +190,14 @@ export class AdminController {
   @ApiResponse({ status: 200, type: AdminReviewListDto })
   async getReviews(@Query() query?: AdminReviewsQueryDto): Promise<AdminReviewListDto> {
     return this.adminService.getReviews(query);
+  }
+
+  @Delete('reviews/:id')
+  @Permissions(PERMISSIONS.OPS_ADMIN_CONTENT_DELETE)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a review during moderation' })
+  @ApiResponse({ status: 204 })
+  async deleteReview(@Param('id') id: string): Promise<void> {
+    return this.adminService.deleteContent('admin', 'review', id);
   }
 }

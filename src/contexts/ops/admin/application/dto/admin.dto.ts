@@ -14,6 +14,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { ReportReason, ReportStatus } from '../../domain/value-objects/moderation-enums.vo';
 import { BookingStatus } from '@contexts/marketplace/booking/domain/value-objects/booking-enums.vo';
+import { ReviewType } from '@contexts/marketplace/reviews/domain/entities/review.entity';
 
 export class CreateReportDto {
   @ApiProperty({ example: 'post' })
@@ -238,6 +239,41 @@ export class AdminReviewListDto {
 
   @ApiProperty()
   total: number;
+}
+
+export class AdminReviewResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  serviceId: string;
+
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ enum: ReviewType })
+  reviewType: ReviewType;
+
+  @ApiProperty({ required: false })
+  bookingId?: string;
+
+  @ApiProperty()
+  rating: number;
+
+  @ApiProperty({ required: false })
+  comment?: string;
+
+  @ApiProperty({ required: false })
+  response?: string;
+
+  @ApiProperty()
+  helpfulCount: number;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
 }
 
 export class OverviewTotalsDto {

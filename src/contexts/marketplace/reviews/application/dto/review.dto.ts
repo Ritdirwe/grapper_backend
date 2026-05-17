@@ -37,6 +37,87 @@ export class UpdateReviewDto {
   comment?: string;
 }
 
+export class ReviewAuthorDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({ required: false })
+  displayName?: string;
+
+  @ApiProperty({ required: false })
+  avatarUrl?: string;
+}
+
+export class ReviewServiceSummaryDto {
+  @ApiProperty()
+  averageRating: number;
+
+  @ApiProperty()
+  totalReviews: number;
+}
+
 export class ReviewResponseDto {
-    // ... DTO structure if using auto-mapping, but typically entities are returned or mapped manually
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  serviceId: string;
+
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ enum: ReviewType })
+  reviewType: ReviewType;
+
+  @ApiProperty({ required: false })
+  bookingId?: string;
+
+  @ApiProperty()
+  rating: number;
+
+  @ApiProperty({ required: false })
+  comment?: string;
+
+  @ApiProperty({ required: false })
+  response?: string;
+
+  @ApiProperty()
+  helpfulCount: number;
+
+  @ApiProperty({ isArray: true })
+  helpfulUserIds: string[];
+
+  @ApiProperty({ required: false, type: ReviewAuthorDto })
+  user?: ReviewAuthorDto;
+
+  @ApiProperty({ required: false, type: ReviewServiceSummaryDto })
+  service?: ReviewServiceSummaryDto;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+}
+
+export class ReviewListMetaDto {
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  totalPages: number;
+}
+
+export class ReviewListResponseDto {
+  @ApiProperty({ type: [ReviewResponseDto] })
+  data: ReviewResponseDto[];
+
+  @ApiProperty({ type: ReviewListMetaDto })
+  meta: ReviewListMetaDto;
 }
